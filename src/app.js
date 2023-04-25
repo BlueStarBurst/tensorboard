@@ -20,7 +20,7 @@ if (darkMode === null) {
 
 function setDarkTheme(isDark) {
     if (isDark) {
-        document.documentElement.style.setProperty('--bg-color', '#222');
+        document.documentElement.style.setProperty('--bg-color', '#1c2638');
         document.documentElement.style.setProperty('--text-color', '#fff');
         document.documentElement.style.setProperty('--canvas-color', '#1c2a43');
     } else {
@@ -193,8 +193,8 @@ function App() {
         var newWidth = Math.max(canvas.clientWidth + delta, window.innerWidth * w / 100 - 20);
         var newHeight = Math.max(canvas.clientHeight + delta, window.innerWidth * w / 100 - 20);
 
-        newWidth = Math.min(newWidth, 2000);
-        newHeight = Math.min(newHeight, 2000);
+        newWidth = Math.min(newWidth, 3000);
+        newHeight = Math.min(newHeight, 3000);
 
         // resize the canvas element by the delta
         canvas.style.width = newWidth + 'px';

@@ -31,6 +31,6 @@ export default function Canvas(props) {
     }
 
     return (
-        <canvas ref={canvas} className='canvas-elem' width={2000} height={2000} onDrag={preventDefault} />
+        <canvas ref={canvas} className='canvas-elem' width={3000} height={3000} onDrag={preventDefault} />
     )
 }
