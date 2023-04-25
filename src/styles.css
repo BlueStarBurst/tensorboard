@@ -1,7 +1,3 @@
-html {
-  overflow-x: hidden;
-}
-
 :root {
   --mouse-x: 50%;
   --mouse-y: 0px;
@@ -9,6 +5,12 @@ html {
   --canvas-color: #1c2a43;
   --text-color: #000000;
   --pointer-events: auto;
+  --cursor: auto;
+}
+
+html {
+  overflow-x: hidden;
+  cursor: var(--cursor);
 }
 
 *::-webkit-scrollbar {
@@ -56,8 +58,8 @@ html {
   width: var(--mouse-x);
   overflow: auto;
   /* width: min-content; */
-  min-width: 25%;
-  max-width: 75%;
+  /* min-width: 25%; */
+  /* max-width: 75%; */
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   pointer-events: var(--pointer-events);
 }
@@ -66,9 +68,13 @@ html {
   color: var(--text-color);
   width: calc(100% - var(--mouse-x));
   background-color: var(--bg-color);
-  min-width: 25%;
+  /* min-width: 25%; */
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   /* transition: all 0.01s ease-in-out; */
+}
+
+.transition-width {
+  transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out, color 0.5s ease-in-out;
 }
 
 .fill-over {
