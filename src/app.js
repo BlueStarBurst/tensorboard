@@ -20,8 +20,8 @@ if (darkMode === null) {
 
 function setDarkTheme(isDark) {
     if (isDark) {
-        document.documentElement.style.setProperty('--bg-color', '#1c2638');
-        document.documentElement.style.setProperty('--text-color', '#fff');
+        document.documentElement.style.setProperty('--bg-color', '#182031');
+        document.documentElement.style.setProperty('--text-color', '#b0b0b0');
         document.documentElement.style.setProperty('--canvas-color', '#1c2a43');
     } else {
         document.documentElement.style.setProperty('--bg-color', '#fff');
@@ -34,15 +34,29 @@ function setDarkTheme(isDark) {
 
 var pixelL = localStorage.getItem('pixelL') || 10;
 
+var mouseXext = 0;
+var mouseYext = 0;
+
 setDarkTheme(darkMode);
 
 document.documentElement.style.setProperty('--mouse-x', w + '%');
 
 function App() {
 
+    const [darkThemes, setDarkThemes] = React.useState(false);
+
     const [isResizing, setIsResizing] = React.useState(false);
 
+    const [mouseX, setMouseX] = React.useState(0);
+    const [mouseY, setMouseY] = React.useState(0);
+
+    const [panel, setPanel] = React.useState('tools');
+
     function setMouseCoords(e) {
+        setMouseX(e.clientX);
+        setMouseY(e.clientY);
+        mouseXext = e.clientX;
+        mouseYext = e.clientY;
         if (isResizing) {
             resizeTools(e);
         }
@@ -89,11 +103,11 @@ function App() {
         // get ig b is pressed
         if (e.key === 'b') {
             console.log('b');
+            console.log(darkThemes);
+            setDarkThemes(!darkMode);
             setDarkTheme(!darkMode);
         }
     }
-
-
 
     const canvasContainer = React.useRef(null);
 
@@ -101,6 +115,7 @@ function App() {
         console.log('mouseUp');
         setIsResizing(false);
         setIsPanning(false);
+        setIsDragging(false);
         // save w and h to local storage
 
         // get all children of the element with id "parent" and add the transition-width class
@@ -160,6 +175,8 @@ function App() {
             localStorage.setItem('canvasHeight', canvas.clientHeight);
         }
 
+        setDarkThemes(darkMode)
+
         // set the canvas width and height
         console.log('canvasWidth', localStorage.getItem('canvasWidth'));
         canvas.style.width = localStorage.getItem('canvasWidth') + 'px';
@@ -202,10 +219,21 @@ function App() {
         refreshCanvasWidth();
     }
 
+    const [isDragging, setIsDragging] = React.useState(false);
+
+    const [panelContent, setPanelContent] = React.useState(<Tools />);
+    useEffect(() => {
+        if (panel == 'tools') {
+            setPanelContent(<Tools mouseX={mouseX} mouseY={mouseY} isDragging={isDragging} setIsDragging={setIsDragging} />);
+        } else if (panel == 'notebook') {
+            setPanelContent(<Notebook />);
+        }
+    }, [panel]);
+
     return (
         <div className='rows' id="parent" onMouseMove={setMouseCoords} onMouseUp={mouseUp}>
             <div className='canvas' onMouseMove={panCanvas} onKeyDown={onKeyPressed} onMouseDown={(e) => { setIsPanning(true) }} ref={canvasContainer} >
-                <Canvas />
+                <Canvas darkMode={darkThemes} />
                 {/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
             </div>
             <div className="slider" onMouseDown={(e) => {
@@ -216,11 +244,114 @@ function App() {
                 }
             }}>
             </div>
-            <div className='notebook'>
-                NOTEBOOK
+            <div className='right-panel'>
+                <div className='right-panel-header'>
+                    <div className={'right-panel-header-option ' + (panel == 'tools' ? 'selected' : "")} onClick={(e) => {
+                        setPanel('tools');
+                    }}>
+                        <h5>Tools</h5>
+                    </div>
+                    <div className={'right-panel-header-option ' + (panel == 'notebook' ? 'selected' : "")} onClick={(e) => {
+                        setPanel('notebook');
+                    }}>
+                        <h5>Notebook</h5>
+                    </div>
+                </div>
+
+                {panel == "tools" ?
+                    <div className='tools'>
+                        <DraggableTemplate mouseX={mouseX} mouseY={mouseY} isDragging={isDragging} setIsDragging={setIsDragging}>
+                            Data
+                        </DraggableTemplate>
+                    </div>
+                    : panelContent}
+
             </div>
         </div>
     );
+}
+
+function Tools(props) {
+    return null;
+}
+
+function Notebook(props) {
+    return null;
+}
+
+function DraggableTemplate(props) {
+
+    const [thisComponent, setThisComponent] = React.useState(false);
+    const ref = React.useRef(null);
+
+    const [numInputs, setNumInputs] = React.useState(0);
+    const [numOutputs, setNumOutputs] = React.useState(0);
+
+    function mouseDown(e) {
+        setThisComponent(true);
+        props.setIsDragging(true);
+    }
+
+    useEffect(() => {
+        if (!props.isDragging) {
+            setThisComponent(false);
+        }
+        if (thisComponent) {
+            ref.current.style.left = mouseXext + 'px';
+            ref.current.style.top = mouseYext + 'px';
+        }
+    }, [thisComponent, props.mouseX, props.mouseY, props.isDragging]);
+
+    return (
+        <>
+            {thisComponent ?
+                <div
+                    ref={ref}
+                    className='draggable'
+                    onMouseUp={(e) => { props.setIsDragging(false); setThisComponent(false) }}
+                    onMouseMove={(e) => { console.log('dragging'); }}>
+                    <div className='inputs'>
+                        {
+                            // loop for numOutputs
+                            [...Array(numInputs)].map((e, i) => {
+                                return <div className='input' key={i} />
+                            })
+                        }
+                    </div>
+                    {props.children}
+                    <div className='outputs'>
+                        {
+                            // loop for numOutputs
+                            [...Array(numOutputs)].map((e, i) => {
+                                return <div className='output' key={i} />
+                            })
+                        }
+                    </div>
+                </div> : null}
+            <div className='template-component' onMouseDown={mouseDown}>
+                <div className='inputs'>
+                    {
+                        // loop for numOutputs
+                        [...Array(numInputs)].map((e, i) => {
+                            return <div className='input' key={i} />
+                        })
+                    }
+                </div>
+                <div className='template-component-content'>
+                    {props.children}
+                </div>
+                <div className='outputs'>
+                    {
+                        // loop for numOutputs
+                        [...Array(numOutputs)].map((e, i) => {
+                            return <div className='output' key={i} />
+                        })
+                    }
+                </div>
+            </div>
+        </>
+
+    )
 }
 
 // render the app component

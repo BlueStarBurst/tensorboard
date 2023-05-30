@@ -5,6 +5,7 @@ export default function Canvas(props) {
 
     React.useEffect(() => {
         if (canvas) {
+            console.log("DARK THEME")
             // draw a grid of dots on the canvas element
             const ctx = canvas.current.getContext('2d');
 
@@ -15,7 +16,11 @@ export default function Canvas(props) {
 
             ctx.clearRect(0, 0, w, h);
 
-            ctx.fillStyle = '#ffffff25';
+            if (props.darkMode) {
+                ctx.fillStyle = '#ffffff25';
+            } else {
+                ctx.fillStyle = '#00000025';
+            }
             for (var i = dist / 2; i < w; i += dist) {
                 for (var j = dist / 2; j < h; j += dist) {
                     ctx.beginPath();
@@ -24,7 +29,7 @@ export default function Canvas(props) {
                 }
             }
         }
-    }, [canvas]);
+    }, [props]);
 
     function preventDefault(e) {
         e.preventDefault();
