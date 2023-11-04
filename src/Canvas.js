@@ -5,7 +5,7 @@ export default function Canvas(props) {
 
     React.useEffect(() => {
         if (canvas) {
-            console.log("DARK THEME")
+            // console.log("DARK THEME")
             // draw a grid of dots on the canvas element
             const ctx = canvas.current.getContext('2d');
 

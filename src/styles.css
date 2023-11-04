@@ -13,7 +13,12 @@ html {
   cursor: var(--cursor);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
 }
 
@@ -65,6 +70,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .canvas {
+  position: relative;
   background-color: var(--canvas-color);
   color: var(--text-color);
   height: 100vh;
@@ -75,6 +81,7 @@ h1, h2, h3, h4, h5, h6 {
   /* max-width: 75%; */
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   pointer-events: var(--pointer-events);
+  /* scroll-behavior: smooth; */
 }
 
 .right-panel {
@@ -106,25 +113,7 @@ h1, h2, h3, h4, h5, h6 {
   height: fit-content;
 }
 
-.draggable {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: fit-content;
-  height: fit-content;
-  background-color: white;
-  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
-  pointer-events: var(--pointer-events);
-  padding: 2rem;
-  border-radius: 1rem;
-  user-select: none;
-  color: black;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 1000;
-  display: flex;
-  flex-direction: row;
-}
+
 
 .template-component {
   position: relative;
@@ -148,6 +137,28 @@ h1, h2, h3, h4, h5, h6 {
   background-color: rgba(130, 130, 130, 0.066);
 }
 
+.real-component {
+  position: absolute;
+  width: fit-content;
+  height: fit-content;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  /* background-color: var(--canvas-color); */
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+  padding: 2rem;
+  border-radius: 1rem;
+  background-color: rgba(0, 0, 0, 0.237);
+  cursor: grab;
+  user-select: none;
+  /* pointer-events: none; */
+}
+
+.real-component:hover {
+  background-color: rgba(130, 130, 130, 0.066);
+}
+
 .right-panel-header {
   display: flex;
   flex-direction: row;
@@ -162,29 +173,32 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   background-color: transparent;
-  transition: all 0.5s ease-in-out;
   flex-grow: 2;
+  width: max-content;
+  /* border-radius: 10px 10px 0 0; */
+}
+
+.filler {
   width: 100%;
-  
-  border-radius: 30px 30px 0 0;
 }
 
 .selected {
   background-color: var(--bg-color);
-  transition: all 0.5s ease-in-out;
+  /* transition: background-color 0.5s ease-in-out; */
 }
 
 .unselected {
   background-color: #0000001b;
-  transition: all 0.5s ease-in-out;
+  /* transition: background-color 0.5s ease-in-out; */
 }
 
 
 
-.input, .output {
+.input,
+.output {
   width: 5px;
   height: 5px;
   /* background-color: white; */
@@ -195,7 +209,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .input {
   background-color: aquamarine;
-  
 }
 
 .output {
@@ -216,4 +229,30 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   flex-grow: 1;
   padding: 1rem;
+}
+
+.draggable {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: fit-content;
+  height: fit-content;
+  background-color: white !important;
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+  pointer-events: var(--pointer-events);
+  padding: 2rem;
+  border-radius: 1rem;
+  user-select: none;
+  color: black;
+  transform: translate(-50%, -50%);
+  /* pointer-events: none; */
+  z-index: 1000;
+  display: flex;
+  flex-direction: row;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  /* background-color: var(--canvas-color); */
+  cursor: grab;
 }
