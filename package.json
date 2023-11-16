@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "docs": "webpack --mode development --config ./webpack.docs.config.cjs --watch",
+    "docs": "webpack --mode development --config ./webpack.docs.js --watch",
     "server": "node server.js",
     "start": "webpack-dev-server --open --config ./webpack.dev.config.cjs --mode development"
   },
