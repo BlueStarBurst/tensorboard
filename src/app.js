@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import Canvas from "./Canvas.js";
 
 import "./styles.css";
+import { DBManager } from "./component.js";
 
 var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
@@ -55,6 +56,7 @@ function App() {
 	const [isCreating, setIsCreating] = React.useState(false);
 
 	const [panelContent, setPanelContent] = React.useState(<Tools />);
+	const [items, setItems] = React.useState(DBManager.getInstance().getItems());
 
 	function setMouseCoords(e) {
 		setMouseX(e.clientX);
@@ -216,6 +218,7 @@ function App() {
 
 		// setCanvasWidth(localStorage.getItem('canvasWidth') || 300);
 		// setCanvasHeight(canvasContainer.current.clientHeight);
+
 		return () => {
 			document.removeEventListener("keydown", onKeyPressed);
 		};
@@ -227,6 +230,11 @@ function App() {
 			setIsCreating(false);
 		}
 	}, [isDragging]);
+
+	const [refresh, setRefresh] = React.useState(false);
+	useEffect(() => {
+		refreshCanvasWidth();
+	}, [items]);
 
 	function preventDefault(e) {
 		console.log("preventDefault");
@@ -273,7 +281,7 @@ function App() {
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
 
-		if (delta > 0) {
+		if (delta > 0 && newWidth < 3000 && newHeight < 3000) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
@@ -287,8 +295,6 @@ function App() {
 		refreshCanvasWidth();
 	}
 
-	const [items, setItems] = React.useState([]);
-
 	function createItem() {
 		var leftRelativeToCanvas =
 			mouseX -
@@ -298,15 +304,36 @@ function App() {
 			mouseY -
 			canvasContainer.current.offsetTop +
 			canvasContainer.current.scrollTop;
-		setItems([
-			...items,
-			{
-				left: leftRelativeToCanvas / canvSize.x,
-				top: topRelativeToCanvas / canvSize.y,
-				numInputs: 1,
-				numOutputs: 1,
-			},
-		]);
+		var id = getNewId();
+
+		var newItem = {
+			left: Math.min(leftRelativeToCanvas / canvSize.x, 0.85),
+			top: topRelativeToCanvas / canvSize.y,
+			numInputs: 1,
+			numOutputs: 1,
+			id: id,
+		};
+		var tempItems = items;
+		tempItems[id] = newItem;
+
+		DBManager.getInstance().setItem(id, newItem);
+
+		setItems(tempItems);
+	}
+
+	function deleteItem(id) {
+		var tempItems = items;
+		delete tempItems[id];
+		setItems(tempItems);
+		DBManager.getInstance().removeItem(id);
+	}
+
+	function getNewId() {
+		var id = Math.floor(Math.random() * 1000000000);
+		while (id in Object.keys(items)) {
+			id = Math.floor(Math.random() * 1000000000);
+		}
+		return id;
 	}
 
 	useEffect(() => {
@@ -340,10 +367,11 @@ function App() {
 				}}
 				ref={canvasContainer}
 			>
-				{items.map((item, i) => {
+				{Object.values(items).map((item, i) => {
 					return (
 						<RealItem
-							key={i}
+							key={item.id}
+							id={item.id}
 							scale={canvSize.x / 1200}
 							left={item.left}
 							top={item.top}
@@ -355,6 +383,7 @@ function App() {
 							setMouseCoords={setMouseCoords}
 							mouseX={mouseX}
 							mouseY={mouseY}
+							deleteItem={deleteItem}
 						>
 							Data
 						</RealItem>
@@ -523,7 +552,7 @@ function RealItem(props) {
 		setStartPos({ x: e.clientX, y: e.clientY });
 		setThisComponent(true);
 		props.setIsDragging(true);
-		console.log("START DRAGGING");
+		console.log("START DRAGGING ", props.id);
 	}
 
 	useEffect(() => {
@@ -548,6 +577,20 @@ function RealItem(props) {
 
 	useEffect(() => {
 		if (!props.isDragging) {
+			if (thisComponent) {
+				console.log("ERROR STOP ", props.id);
+				var newLeft = Math.max(
+					truePosition.x + (props.mouseX - startPos.x) / props.canvSize.x,
+					0.01
+				);
+				if (newLeft > 0.95) {
+					console.log("delete");
+					props.deleteItem(props.id);
+					return;
+				}
+			} else {
+				// console.log("NOT DRAGGING ", props.id);
+			}
 			setThisComponent(false);
 		}
 		if (props.isDragging && thisComponent) {
@@ -561,14 +604,15 @@ function RealItem(props) {
 	}, [thisComponent, props.mouseX, props.mouseY, props.isDragging]);
 
 	function endDrag(e) {
-		console.log("END DRAGGING");
+		console.log("END DRAGGING ", props.id);
 		props.setIsDragging(false);
 		setThisComponent(false);
 		var newLeft = Math.max(
 			truePosition.x + (props.mouseX - startPos.x) / props.canvSize.x,
 			0.01
 		);
-		var newLeft = Math.min(newLeft, 0.99);
+
+		var newLeft = Math.min(newLeft, 0.85);
 		var newTop = Math.max(
 			truePosition.y + (props.mouseY - startPos.y) / props.canvSize.y,
 			0.01
@@ -576,6 +620,15 @@ function RealItem(props) {
 		var newTop = Math.min(newTop, 0.99);
 
 		setTruePosition({ x: newLeft, y: newTop });
+
+		// save to local storage
+		DBManager.getInstance().setItem(props.id, {
+			id: props.id,
+			left: newLeft,
+			top: newTop,
+			numInputs: props.numInputs,
+			numOutputs: props.numOutputs,
+		});
 	}
 
 	function moving(e) {
@@ -602,7 +655,7 @@ function RealItem(props) {
 						})
 					}
 				</div>
-				<div className="real-component-content">{props.children}</div>
+				<div className="real-component-content">{props.children}{props.id}</div>
 				<div className="outputs">
 					{
 						// loop for numOutputs
