@@ -9,8 +9,8 @@ export default function Canvas(props) {
             // draw a grid of dots on the canvas element
             const ctx = canvas.current.getContext('2d');
 
-            const r = 2.5;
-            const dist = 50;
+            const r = 1;
+            const dist = 20;
             const w = canvas.current.width * 5;
             const h = canvas.current.height * 5;
 
@@ -36,6 +36,6 @@ export default function Canvas(props) {
     }
 
     return (
-        <canvas ref={canvas} className='canvas-elem' width={3000} height={3000} onDrag={preventDefault} />
+        <canvas ref={canvas} className='canvas-elem' width={props.size.x} height={props.size.y} onDrag={preventDefault} />
     )
 }

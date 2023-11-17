@@ -42,6 +42,9 @@ setDarkTheme(darkMode);
 
 document.documentElement.style.setProperty("--mouse-x", w + "%");
 
+const canvasSize = {x: 1500, y: 1500};
+const canvasSize2 = {x: 5000, y: 5000};
+
 function App() {
 	const [darkThemes, setDarkThemes] = React.useState(false);
 
@@ -101,10 +104,12 @@ function App() {
 		var newWidth = Math.max(
 			canvas.clientWidth,
 			(window.innerWidth * w) / 100 - 20
+			// 1
 		);
 		var newHeight = Math.max(
 			canvas.clientHeight,
 			(window.innerWidth * w) / 100 - 20
+			// 1
 		);
 
 		// resize the canvas element by the delta
@@ -243,7 +248,7 @@ function App() {
 
 	function zoomContainer(e) {
 		e.preventDefault();
-		console.log(e.clientX, e.clientY);
+		// console.log(e.clientX, e.clientY);
 		// zoom in where the mouse is
 		var mouseX =
 			e.clientX -
@@ -266,22 +271,26 @@ function App() {
 		// get the new width and height
 		var newWidth = Math.max(
 			canvas.clientWidth + delta,
-			(window.innerWidth * w) / 100 - 20
+			(window.innerWidth * w) / 300 - 20
+			// 1
 		);
 		var newHeight = Math.max(
 			canvas.clientHeight + delta,
-			(window.innerWidth * w) / 100 - 20
+			(window.innerWidth * w) / 300 - 20
+			// 1
 		);
 
+		console.log(newWidth, newHeight);
+
 		// set the new width and height
-		newWidth = Math.min(newWidth, 3000);
-		newHeight = Math.min(newHeight, 3000);
+		newWidth = Math.min(newWidth, canvasSize2.x);
+		newHeight = Math.min(newHeight, canvasSize2.y);
 
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
 
-		if (delta > 0 && newWidth < 3000 && newHeight < 3000) {
+		if (delta > 0 && newWidth < canvasSize.x && newHeight < canvasSize.y) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
@@ -389,7 +398,7 @@ function App() {
 						</RealItem>
 					);
 				})}
-				<Canvas darkMode={darkThemes} />
+				<Canvas darkMode={darkThemes} size={canvasSize}  />
 
 				{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
 			</div>
