@@ -113,7 +113,18 @@ h6 {
   height: fit-content;
 }
 
+.none_pointer_events {
+  pointer-events: none;
+}
 
+.canvas-overlay {
+  position: absolute;
+  width: fit-content;
+  height: fit-content;
+  /* background-color: rgba(0, 0, 255, 0.177); */
+  pointer-events: none !important;
+  z-index: 1000;
+}
 
 .template-component {
   position: relative;
@@ -135,6 +146,7 @@ h6 {
 
 .template-component:hover {
   background-color: rgba(130, 130, 130, 0.066);
+  color: #fff;
 }
 
 .real-component {
@@ -199,12 +211,13 @@ h6 {
 
 .input,
 .output {
-  width: 5px;
-  height: 5px;
+  width: 10px;
+  height: 10px;
   /* background-color: white; */
   border: 1px solid white;
   border-radius: 100%;
   margin: 0.5rem;
+  cursor: pointer !important;
 }
 
 .input {

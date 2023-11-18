@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import ReactDOM from "react-dom";
 
-import Canvas from "./Canvas.js";
+import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
 import { DBManager } from "./component.js";
@@ -61,6 +61,8 @@ function App() {
 	const [panelContent, setPanelContent] = React.useState(<Tools />);
 	const [items, setItems] = React.useState(DBManager.getInstance().getItems());
 
+	const canvasOverlay = React.useRef(null);
+
 	function setMouseCoords(e) {
 		setMouseX(e.clientX);
 		setMouseY(e.clientY);
@@ -68,6 +70,16 @@ function App() {
 		mouseYext = e.clientY;
 		if (isResizing) {
 			resizeTools(e);
+		}
+
+		if (isDrawingLine) {
+			// set the line points to the relative mouse position to the canvas container element
+			setLinePts({
+				x1: linePts.x1,
+				y1: linePts.y1,
+				x2: e.clientX - canvasContainer.current.offsetLeft + canvasContainer.current.scrollLeft,
+				y2: e.clientY - canvasContainer.current.offsetTop + canvasContainer.current.scrollTop,
+			});
 		}
 	}
 
@@ -115,6 +127,10 @@ function App() {
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
+		if (canvasOverlay.current) {
+			canvasOverlay.current.style.width = newWidth + "px";
+			canvasOverlay.current.style.height = newHeight + "px";
+		}
 		setCanvSize({ x: newWidth, y: newHeight });
 
 		// save to local storage
@@ -271,12 +287,12 @@ function App() {
 		// get the new width and height
 		var newWidth = Math.max(
 			canvas.clientWidth + delta,
-			(window.innerWidth * w) / 300 - 20
+			(window.innerWidth * w) / 100 - 20
 			// 1
 		);
 		var newHeight = Math.max(
 			canvas.clientHeight + delta,
-			(window.innerWidth * w) / 300 - 20
+			(window.innerWidth * w) / 100 - 20
 			// 1
 		);
 
@@ -285,12 +301,13 @@ function App() {
 		// set the new width and height
 		newWidth = Math.min(newWidth, canvasSize2.x);
 		newHeight = Math.min(newHeight, canvasSize2.y);
+		
 
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
 
-		if (delta > 0 && newWidth < canvasSize.x && newHeight < canvasSize.y) {
+		if (delta > 0) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
@@ -298,6 +315,11 @@ function App() {
 			// set the scroll position so that the mouse position is the same
 			// canvasContainer.current.scrollLeft -= (mouseX * delta) / newWidth;
 			// canvasContainer.current.scrollTop -= (mouseY * delta) / newHeight;
+		}
+
+		if (canvasOverlay.current) {
+			canvasOverlay.current.style.width = newWidth + "px";
+			canvasOverlay.current.style.height = newHeight + "px";
 		}
 
 		setCanvSize({ x: newWidth, y: newHeight });
@@ -360,6 +382,15 @@ function App() {
 		}
 	}, [panel]);
 
+	const [isDrawingLine, setIsDrawingLine] = React.useState(false);
+	const [linePts, setLinePts] = React.useState(null);
+
+	function startLine(left, top) {
+		console.log("startLine");
+		setLinePts({ x1: left, y1: top, x2: left, y2: top });
+		setIsDrawingLine(true);
+	}
+
 	return (
 		<div
 			className="rows"
@@ -376,12 +407,13 @@ function App() {
 				}}
 				ref={canvasContainer}
 			>
+				<CanvasOverlay size={canvasSize} className={"none_pointer_events"} canvas={canvasOverlay} linePts={linePts} mouseX={mouseX} mouseY={mouseY} />
 				{Object.values(items).map((item, i) => {
 					return (
 						<RealItem
 							key={item.id}
 							id={item.id}
-							scale={canvSize.x / 1200}
+							scale={canvSize.x / 2000}
 							left={item.left}
 							top={item.top}
 							numInputs={item.numInputs}
@@ -393,6 +425,8 @@ function App() {
 							mouseX={mouseX}
 							mouseY={mouseY}
 							deleteItem={deleteItem}
+							startLine={startLine}
+							canvasContainer={canvasContainer}
 						>
 							Data
 						</RealItem>
@@ -548,6 +582,8 @@ function DraggableTemplate(props) {
 	);
 }
 
+
+
 function RealItem(props) {
 	const [thisComponent, setThisComponent] = React.useState(false);
 	const [truePosition, setTruePosition] = React.useState({ x: 0, y: 0 });
@@ -669,7 +705,17 @@ function RealItem(props) {
 					{
 						// loop for numOutputs
 						[...Array(props.numOutputs)].map((e, i) => {
-							return <div className="output" key={i} />;
+							return <div className="output" key={i} onClick={
+								(e) => {
+									// get left and top of e.target relative to the canvas container
+									var rect = e.target.getBoundingClientRect();
+									var x = rect.left - props.canvasContainer.current.offsetLeft + props.canvasContainer.current.scrollLeft;
+									var y = rect.top - props.canvasContainer.current.offsetTop + props.canvasContainer.current.scrollTop;
+									props.startLine(x, y);
+									// set id of the element to the id of the line
+									e.target.id = "startPoint";
+								}
+							} />;
 						})
 					}
 				</div>
