@@ -113,6 +113,18 @@ h6 {
   height: fit-content;
 }
 
+.canvas-elem-abs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* background-color: var(--canvas-color); */
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+  pointer-events: none;
+  width: fit-content;
+  height: fit-content;
+
+}
+
 .none_pointer_events {
   pointer-events: none;
 }
@@ -238,10 +250,13 @@ h6 {
 .tools {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   flex-grow: 1;
+  gap: 1rem;
   padding: 1rem;
+  flex-wrap: wrap;
+  overflow: hidden;
 }
 
 .draggable {

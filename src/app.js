@@ -42,8 +42,8 @@ setDarkTheme(darkMode);
 
 document.documentElement.style.setProperty("--mouse-x", w + "%");
 
-const canvasSize = {x: 1500, y: 1500};
-const canvasSize2 = {x: 5000, y: 5000};
+const canvasSize = {x: 3000, y: 3000};
+const canvasSize2 = {x: 2000, y: 2000};
 
 function App() {
 	const [darkThemes, setDarkThemes] = React.useState(false);
@@ -52,7 +52,6 @@ function App() {
 
 	const [mouseX, setMouseX] = React.useState(0);
 	const [mouseY, setMouseY] = React.useState(0);
-	const [canvSize, setCanvSize] = React.useState({ x: 0, y: 0 });
 
 	const [panel, setPanel] = React.useState("tools");
 	const [isDragging, setIsDragging] = React.useState(false);
@@ -70,16 +69,6 @@ function App() {
 		mouseYext = e.clientY;
 		if (isResizing) {
 			resizeTools(e);
-		}
-
-		if (isDrawingLine) {
-			// set the line points to the relative mouse position to the canvas container element
-			setLinePts({
-				x1: linePts.x1,
-				y1: linePts.y1,
-				x2: e.clientX - canvasContainer.current.offsetLeft + canvasContainer.current.scrollLeft,
-				y2: e.clientY - canvasContainer.current.offsetTop + canvasContainer.current.scrollTop,
-			});
 		}
 	}
 
@@ -111,7 +100,7 @@ function App() {
 			canvasContainer.current.children[
 				canvasContainer.current.children.length - 1
 			];
-		// var canvas = canvasContainer.current.children[0];
+		var canvas2 = canvasContainer.current.children[0];
 
 		var newWidth = Math.max(
 			canvas.clientWidth,
@@ -127,11 +116,12 @@ function App() {
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
+		canvas2.style.width = newWidth + "px";
+		canvas2.style.height = newHeight + "px";
 		if (canvasOverlay.current) {
 			canvasOverlay.current.style.width = newWidth + "px";
 			canvasOverlay.current.style.height = newHeight + "px";
 		}
-		setCanvSize({ x: newWidth, y: newHeight });
 
 		// save to local storage
 		localStorage.setItem("canvasWidth", newWidth);
@@ -169,8 +159,8 @@ function App() {
 		}
 
 		if (w > 80 + 20 / 2) {
-			document.documentElement.style.setProperty("--mouse-x", 100 + "%");
-			w = 100;
+			document.documentElement.style.setProperty("--mouse-x", 99.99 + "%");
+			w = 99.99;
 		} else if (w > 80) {
 			document.documentElement.style.setProperty("--mouse-x", 80 + "%");
 			w = 80;
@@ -219,7 +209,7 @@ function App() {
 			canvasContainer.current.children[
 				canvasContainer.current.children.length - 1
 			];
-		// const canvas = canvasContainer.current.children[0];
+		const canvas2 = canvasContainer.current.children[0];
 
 		if (localStorage.getItem("canvasWidth") === null) {
 			localStorage.setItem("canvasWidth", canvas.clientWidth);
@@ -232,6 +222,8 @@ function App() {
 		console.log("canvasWidth", localStorage.getItem("canvasWidth"));
 		canvas.style.width = localStorage.getItem("canvasWidth") + "px";
 		canvas.style.height = localStorage.getItem("canvasHeight") + "px";
+		canvas2.style.width = localStorage.getItem("canvasWidth") + "px";
+		canvas2.style.height = localStorage.getItem("canvasHeight") + "px";
 
 		// set the canvasContainer scroll position
 		canvasContainer.current.scrollLeft = localStorage.getItem("scrollX") || 0;
@@ -282,7 +274,7 @@ function App() {
 			canvasContainer.current.children[
 				canvasContainer.current.children.length - 1
 			];
-		// var canvas = canvasContainer.current.children[0];
+		var canvas2 = canvasContainer.current.children[0];
 
 		// get the new width and height
 		var newWidth = Math.max(
@@ -306,6 +298,8 @@ function App() {
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
+		canvas2.style.width = newWidth + "px";
+		canvas2.style.height = newHeight + "px";
 
 		if (delta > 0) {
 			// set the scroll position so that the mouse position is the same
@@ -321,42 +315,15 @@ function App() {
 			canvasOverlay.current.style.width = newWidth + "px";
 			canvasOverlay.current.style.height = newHeight + "px";
 		}
-
-		setCanvSize({ x: newWidth, y: newHeight });
 		refreshCanvasWidth();
 	}
 
-	function createItem() {
-		var leftRelativeToCanvas =
-			mouseX -
-			canvasContainer.current.offsetLeft +
-			canvasContainer.current.scrollLeft;
-		var topRelativeToCanvas =
-			mouseY -
-			canvasContainer.current.offsetTop +
-			canvasContainer.current.scrollTop;
-		var id = getNewId();
+	const [canvasMouseUp, setCanvasMouseUp] = React.useState([-1,-1]);
 
-		var newItem = {
-			left: Math.min(leftRelativeToCanvas / canvSize.x, 0.85),
-			top: topRelativeToCanvas / canvSize.y,
-			numInputs: 1,
-			numOutputs: 1,
-			id: id,
-		};
-		var tempItems = items;
-		tempItems[id] = newItem;
-
-		DBManager.getInstance().setItem(id, newItem);
-
-		setItems(tempItems);
-	}
-
-	function deleteItem(id) {
-		var tempItems = items;
-		delete tempItems[id];
-		setItems(tempItems);
-		DBManager.getInstance().removeItem(id);
+	function createItem(ax, ay) {
+		if (isCreating) {
+			setCanvasMouseUp([ax, ay]);
+		}
 	}
 
 	function getNewId() {
@@ -382,57 +349,30 @@ function App() {
 		}
 	}, [panel]);
 
-	const [isDrawingLine, setIsDrawingLine] = React.useState(false);
-	const [linePts, setLinePts] = React.useState(null);
-
-	function startLine(left, top) {
-		console.log("startLine");
-		setLinePts({ x1: left, y1: top, x2: left, y2: top });
-		setIsDrawingLine(true);
-	}
+	
 
 	return (
 		<div
 			className="rows"
 			id="parent"
 			onMouseMove={setMouseCoords}
-			onMouseUp={mouseUp}
+			onMouseUp={(e) => {
+				createItem(e.clientX, e.clientY);
+				mouseUp(e);
+				
+			}}
 		>
 			<div
 				className="canvas"
-				onMouseMove={panCanvas}
-				onKeyDown={onKeyPressed}
-				onMouseDown={(e) => {
-					setIsPanning(true);
-				}}
+				// onMouseMove={panCanvas}
+				// onKeyDown={onKeyPressed}
+				// onMouseDown={(e) => {
+					// setIsPanning(true);
+				// }}
 				ref={canvasContainer}
 			>
-				<CanvasOverlay size={canvasSize} className={"none_pointer_events"} canvas={canvasOverlay} linePts={linePts} mouseX={mouseX} mouseY={mouseY} />
-				{Object.values(items).map((item, i) => {
-					return (
-						<RealItem
-							key={item.id}
-							id={item.id}
-							scale={canvSize.x / 2000}
-							left={item.left}
-							top={item.top}
-							numInputs={item.numInputs}
-							numOutputs={item.numOutputs}
-							canvSize={canvSize}
-							setIsDragging={setIsDragging}
-							isDragging={isDragging}
-							setMouseCoords={setMouseCoords}
-							mouseX={mouseX}
-							mouseY={mouseY}
-							deleteItem={deleteItem}
-							startLine={startLine}
-							canvasContainer={canvasContainer}
-						>
-							Data
-						</RealItem>
-					);
-				})}
-				<Canvas darkMode={darkThemes} size={canvasSize}  />
+				
+				<Canvas darkMode={darkThemes} size={canvasSize} mouseUp={canvasMouseUp}  />
 
 				{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
 			</div>
@@ -485,6 +425,15 @@ function App() {
 							setIsCreating={setIsCreating}
 						>
 							Data
+						</DraggableTemplate>
+						<DraggableTemplate
+							mouseX={mouseX}
+							mouseY={mouseY}
+							isDragging={isDragging}
+							setIsDragging={setIsDragging}
+							setIsCreating={setIsCreating}
+						>
+							Permutation
 						</DraggableTemplate>
 					</div>
 				) : (
@@ -583,146 +532,6 @@ function DraggableTemplate(props) {
 }
 
 
-
-function RealItem(props) {
-	const [thisComponent, setThisComponent] = React.useState(false);
-	const [truePosition, setTruePosition] = React.useState({ x: 0, y: 0 });
-	const ref = React.useRef(null);
-	const realItem = React.useRef(null);
-	const [startPos, setStartPos] = React.useState({ x: 0, y: 0 });
-
-	function mouseDown(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		setStartPos({ x: e.clientX, y: e.clientY });
-		setThisComponent(true);
-		props.setIsDragging(true);
-		console.log("START DRAGGING ", props.id);
-	}
-
-	useEffect(() => {
-		if (realItem.current) {
-			setTruePosition({ x: props.left, y: props.top });
-		}
-	}, []);
-
-	useEffect(() => {
-		if (
-			!props.isDragging &&
-			realItem.current &&
-			truePosition.x != 0 &&
-			truePosition.y != 0
-		) {
-			console.log("setting position!!!");
-			realItem.current.style.left = truePosition.x * props.canvSize.x + "px";
-			realItem.current.style.top = truePosition.y * props.canvSize.y + "px";
-			realItem.current.style.transform = "scale(" + props.scale + ")";
-		}
-	}, [props.canvSize.x, truePosition.x, truePosition.y]);
-
-	useEffect(() => {
-		if (!props.isDragging) {
-			if (thisComponent) {
-				console.log("ERROR STOP ", props.id);
-				var newLeft = Math.max(
-					truePosition.x + (props.mouseX - startPos.x) / props.canvSize.x,
-					0.01
-				);
-				if (newLeft > 0.95) {
-					console.log("delete");
-					props.deleteItem(props.id);
-					return;
-				}
-			} else {
-				// console.log("NOT DRAGGING ", props.id);
-			}
-			setThisComponent(false);
-		}
-		if (props.isDragging && thisComponent) {
-			console.log("dragging!!!");
-			realItem.current.style.left =
-				truePosition.x * props.canvSize.x + (props.mouseX - startPos.x) + "px";
-			realItem.current.style.top =
-				truePosition.y * props.canvSize.y + (props.mouseY - startPos.y) + "px";
-			console.log(props.mouseX - startPos.x);
-		}
-	}, [thisComponent, props.mouseX, props.mouseY, props.isDragging]);
-
-	function endDrag(e) {
-		console.log("END DRAGGING ", props.id);
-		props.setIsDragging(false);
-		setThisComponent(false);
-		var newLeft = Math.max(
-			truePosition.x + (props.mouseX - startPos.x) / props.canvSize.x,
-			0.01
-		);
-
-		var newLeft = Math.min(newLeft, 0.85);
-		var newTop = Math.max(
-			truePosition.y + (props.mouseY - startPos.y) / props.canvSize.y,
-			0.01
-		);
-		var newTop = Math.min(newTop, 0.99);
-
-		setTruePosition({ x: newLeft, y: newTop });
-
-		// save to local storage
-		DBManager.getInstance().setItem(props.id, {
-			id: props.id,
-			left: newLeft,
-			top: newTop,
-			numInputs: props.numInputs,
-			numOutputs: props.numOutputs,
-		});
-	}
-
-	function moving(e) {
-		console.log("moving");
-		props.setMouseCoords(e);
-	}
-
-	return (
-		<>
-			<div
-				className={
-					thisComponent ? "draggable real-component" : "real-component"
-				}
-				onMouseDown={mouseDown}
-				onMouseMove={moving}
-				onMouseUp={endDrag}
-				ref={realItem}
-			>
-				<div className="inputs">
-					{
-						// loop for numOutputs
-						[...Array(props.numInputs)].map((e, i) => {
-							return <div className="input" key={i} />;
-						})
-					}
-				</div>
-				<div className="real-component-content">{props.children}{props.id}</div>
-				<div className="outputs">
-					{
-						// loop for numOutputs
-						[...Array(props.numOutputs)].map((e, i) => {
-							return <div className="output" key={i} onClick={
-								(e) => {
-									// get left and top of e.target relative to the canvas container
-									var rect = e.target.getBoundingClientRect();
-									var x = rect.left - props.canvasContainer.current.offsetLeft + props.canvasContainer.current.scrollLeft;
-									var y = rect.top - props.canvasContainer.current.offsetTop + props.canvasContainer.current.scrollTop;
-									props.startLine(x, y);
-									// set id of the element to the id of the line
-									e.target.id = "startPoint";
-								}
-							} />;
-						})
-					}
-				</div>
-			</div>
-		</>
-	);
-}
 
 // render the app component
 ReactDOM.render(<App />, document.getElementById("root"));
