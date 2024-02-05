@@ -6,6 +6,8 @@ var x,
 
 var elementsList = [];
 
+var timer = null;
+
 export default function Canvas(props) {
 	const canvas = React.useRef(null);
 	const canvas2 = React.useRef(null);
@@ -14,12 +16,13 @@ export default function Canvas(props) {
 	const [dragging, setDragging] = React.useState(false);
 	const [lining, setLining] = React.useState(false);
 	const [selectedElement, setSelectedElement] = React.useState(null);
+	const [isPanning, setIsPanning] = React.useState(false);
 
 	React.useEffect(() => {
 		if (canvas) {
 			redrawCanvas();
 			const ctx2 = canvas2.current.getContext("2d");
-			drawGrid(ctx2)
+			drawGrid(ctx2);
 		}
 	}, [props.size, props.darkMode]);
 
@@ -90,6 +93,8 @@ export default function Canvas(props) {
 		e.preventDefault();
 	}
 
+	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
+
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
 		var rect = canvas.current.getBoundingClientRect();
@@ -103,18 +108,31 @@ export default function Canvas(props) {
 				elements[i].lining = true;
 				canvas.current.style.cursor = "crosshair";
 				setSelectedElement(elements[i]);
+				props.selectElement(elements[i]);
 				setLining(true);
 				redrawCanvas();
 				return;
 			} else if (elements[i].isDragging(x, y)) {
-				elements[i].dragging = true;
-				canvas.current.style.cursor = "grabbing";
+
+				if (oldSelectedElement) {
+					oldSelectedElement.dragging = false;
+				}
+
 				setSelectedElement(elements[i]);
-				setDragging(true);
-				redrawCanvas();
+				props.selectElement(elements[i]);
+				elements[i].dragging = true;
+				timer = setTimeout(() => {
+					canvas.current.style.cursor = "grabbing";
+					setDragging(true);
+					redrawCanvas();
+					clearTimeout(timer);
+					timer = null;
+				}, 250);
 				return;
 			}
 		}
+		canvas.current.style.cursor = "grabbing";
+		setIsPanning(true);
 	}
 
 	useEffect(() => {
@@ -128,12 +146,30 @@ export default function Canvas(props) {
 		tx = (tx - rect.left) * (canvas.current.width / rect.width);
 		ty = (ty - rect.top) * (canvas.current.height / rect.height);
 
-		var element = new Element(tx, ty, 100, 100, "#ff0000");
+		var element = new Element(
+			tx,
+			ty,
+			100,
+			100,
+			"#ff0000",
+			props.currentComponent
+		);
 		setElements([...elements, element]);
 		elementsList = elements;
+		setIsPanning(false);
 	}, [props.mouseUp]);
 
 	function onMouseUpCanvas(e) {
+
+		if (timer) {
+			clearTimeout(timer);
+			timer = null;
+			selectedElement.dragging = true;
+			setOldSelectedElement(selectedElement);
+			redrawCanvas();
+			return;
+		}
+
 		if (lining) {
 			var didLine = false;
 			for (var i = 0; i < elements.length; i++) {
@@ -156,6 +192,7 @@ export default function Canvas(props) {
 			selectedElement.lineToY = -1;
 			canvas.current.style.cursor = "default";
 			setSelectedElement(null);
+			props.selectElement(null);
 			setLining(false);
 			redrawCanvas();
 		}
@@ -164,8 +201,10 @@ export default function Canvas(props) {
 		if (selectedElement) selectedElement.dragging = false;
 		canvas.current.style.cursor = "default";
 		setSelectedElement(null);
+		props.selectElement(null);
 		setDragging(false);
 		redrawCanvas();
+		setIsPanning(false);
 	}
 
 	function dragElement(e) {
@@ -185,6 +224,9 @@ export default function Canvas(props) {
 
 			x = tx;
 			y = ty;
+		} else if (isPanning) {
+			props.setIsPanning(true);
+			props.panCanvas(e);
 		}
 	}
 
@@ -210,90 +252,37 @@ export default function Canvas(props) {
 }
 
 export function CanvasOverlay(props) {
-	// make a transparent canvas that covers the entire canvas area and is used to draw lines
-	// const canvas = React.useRef(null);
+	// overlays a modal that describes the current component
+	const [component, setComponent] = React.useState(null);
+	const [active, setActive] = React.useState(false);
 
-	// React.useEffect(() => {
-	//     if (props.canvas) {
-	//         const ctx = props.canvas.current.getContext('2d');
-	//         ctx.clearRect(0, 0, props.canvas.current.width, props.canvas.current.height);
-
-	//     }
-	// }, [props]);
-
-	// pts look like [{x1: 0, y1: 0, x2: 0, y2: 0}]
 	React.useEffect(() => {
-		if (props.canvas) {
-			if (!props.linePts) return;
-
-			var startPoint = document.getElementById("startPoint");
-			// get the position of the start point relative to the canvas
-			var rect = startPoint.getBoundingClientRect();
-			var x = rect.left;
-			var y = rect.top;
-
-			console.log("DRAWING LINES", props.linePts);
-			const ctx = props.canvas.current.getContext("2d");
-			ctx.clearRect(
-				0,
-				0,
-				props.canvas.current.width,
-				props.canvas.current.height
-			);
-			console.log(
-				"CANVAS",
-				props.canvas.current.width,
-				props.canvas.current.height
-			);
-			ctx.strokeStyle = "#fff";
-			ctx.lineWidth = 2;
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-			// console.log("DRAWING LINE", props.linePts[i])
-			ctx.beginPath();
-			ctx.moveTo(x, y);
-			ctx.lineTo(
-				props.linePts.x2 / props.canvas.current.offsetWidth,
-				props.linePts.y2 / props.canvas.current.offsetHeight
-			);
-			ctx.stroke();
+		if (props.selectedElement) {
+			setComponent(props.selectedElement.component);
+			setActive(true);
+		} else {
+			setActive(false);
 		}
-	}, [props.linePts]);
-
-	useEffect(() => {
-		if (props.canvas) {
-			// // draw a line across the canvas
-			// const ctx = props.canvas.current.getContext('2d');
-			// // fill the entire canvas with a blue rectangle
-			// // draw a line across the canvas
-			// ctx.strokeStyle = '#fff';
-			// ctx.lineWidth = 100;
-			// ctx.lineCap = 'round';
-			// ctx.lineJoin = 'round';
-			// ctx.beginPath();
-			// ctx.moveTo(0, 0);
-			// ctx.lineTo(props.canvas.current.width, props.canvas.current.height);
-			// ctx.stroke();
-		}
-	}, []);
-
-	function preventDefault(e) {
-		e.preventDefault();
-	}
+	}, [props.selectedElement]);
 
 	return (
-		<canvas
-			ref={props.canvas}
-			className="canvas-elem canvas-overlay none_pointer_events"
-			width={props.size.x}
-			height={props.size.y}
-			onDrag={preventDefault}
-		/>
+		<>
+			{" "}
+			{component && (
+				<div className={active ? "canvas-overlay active" : "canvas-overlay"}>
+					<div className="canvas-overlay-content">
+						<h4>{component.name}</h4>
+						<p>{component.description}</p>
+						
+					</div>
+				</div>
+			)}
+		</>
 	);
 }
 
 class Element {
-	constructor(x, y, w, h, color) {
+	constructor(x, y, w, h, color, component = null) {
 		this.x = x - w / 2;
 		this.y = y - h / 2;
 		this.w = w;
@@ -304,6 +293,12 @@ class Element {
 		this.dragging = false;
 		this.color = color;
 		this.dragColor = "#00ff00";
+		this.component = component || { name: "Test", inputs: [], outputs: [] };
+		this.text = this.component.name;
+
+		if (this.text.length > 5) {
+			this.w = Math.max(this.text.length * 20, this.w);
+		}
 	}
 
 	draw(ctx) {
@@ -333,24 +328,39 @@ class Element {
 		// draw a small rectangle at the right center of the element
 		ctx.fillStyle = "#fff";
 		ctx.fillRect(this.x + this.w - 10, this.y + this.h / 2 - 10, 20, 20);
+		ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
+
+		// draw the text
+		ctx.fillStyle = "#fff";
+		ctx.font = "20px Arial";
+		ctx.textAlign = "center";
+		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2 + 10);
 	}
 
 	drawLines(ctx) {
 		if (this.element) {
-			this.lineToX =
-				elementsList[this.element].x + elementsList[this.element].w / 2;
+			this.lineToX = elementsList[this.element].x;
 			this.lineToY =
 				elementsList[this.element].y + elementsList[this.element].h / 2;
 		}
 
 		if (this.lineToX >= 0 && this.lineToY >= 0) {
+			// draw a line with bezier curves
+
 			ctx.strokeStyle = "#fff";
-			ctx.lineWidth = 2;
+			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
 			ctx.beginPath();
 			ctx.moveTo(this.x + this.w, this.y + this.h / 2);
-			ctx.lineTo(this.lineToX, this.lineToY);
+			ctx.bezierCurveTo(
+				this.x + this.w + 200,
+				this.y + this.h / 2,
+				this.lineToX - 200,
+				this.lineToY,
+				this.lineToX,
+				this.lineToY
+			);
 			ctx.stroke();
 		}
 	}
@@ -366,6 +376,16 @@ class Element {
 		return (
 			x >= this.x + this.w - 5 &&
 			x <= this.x + this.w + 15 &&
+			y >= this.y + this.h / 2 - 5 &&
+			y <= this.y + this.h / 2 + 15
+		);
+	}
+
+	isLiningEnd(x, y) {
+		// check if the mouse is over the small rectangle at the left center of the element
+		return (
+			x >= this.x - 5 &&
+			x <= this.x + 15 &&
 			y >= this.y + this.h / 2 - 5 &&
 			y <= this.y + this.h / 2 + 15
 		);

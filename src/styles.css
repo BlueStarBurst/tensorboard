@@ -130,12 +130,49 @@ h6 {
 }
 
 .canvas-overlay {
-  position: absolute;
-  width: fit-content;
-  height: fit-content;
+  position: fixed;
+  width: var(--mouse-x);
+  height: 200px;
+  bottom: 0;
+  left: 0;
   /* background-color: rgba(0, 0, 255, 0.177); */
   pointer-events: none !important;
   z-index: 1000;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  transform: translateY(100%);
+  transition: transform 0.5s ease-in-out;
+  animation: up 0.5s ease-in-out;
+}
+
+@keyframes up {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+  
+}
+
+.active {
+  transform: translateY(0);
+  transition: transform 0.5s ease-in-out;
+}
+
+.canvas-overlay-content {
+  pointer-events: all !important;
+  position: relative;
+  width: 500px;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-radius: 1rem;
+  padding: 1rem;
 }
 
 .template-component {

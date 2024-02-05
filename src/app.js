@@ -42,8 +42,8 @@ setDarkTheme(darkMode);
 
 document.documentElement.style.setProperty("--mouse-x", w + "%");
 
-const canvasSize = {x: 3000, y: 3000};
-const canvasSize2 = {x: 2000, y: 2000};
+const canvasSize = { x: 3000, y: 3000 };
+const canvasSize2 = { x: 2000, y: 2000 };
 
 function App() {
 	const [darkThemes, setDarkThemes] = React.useState(false);
@@ -59,6 +59,16 @@ function App() {
 
 	const [panelContent, setPanelContent] = React.useState(<Tools />);
 	const [items, setItems] = React.useState(DBManager.getInstance().getItems());
+	const [currentComponent, setCurrentComponent] = React.useState(null);
+
+	const [components, setComponents] = React.useState({
+		Data: {
+			name: "Data",
+		},
+		Normalize: {
+			name: "Normalize",
+		},
+	});
 
 	const canvasOverlay = React.useRef(null);
 
@@ -293,7 +303,6 @@ function App() {
 		// set the new width and height
 		newWidth = Math.min(newWidth, canvasSize2.x);
 		newHeight = Math.min(newHeight, canvasSize2.y);
-		
 
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
@@ -318,7 +327,7 @@ function App() {
 		refreshCanvasWidth();
 	}
 
-	const [canvasMouseUp, setCanvasMouseUp] = React.useState([-1,-1]);
+	const [canvasMouseUp, setCanvasMouseUp] = React.useState([-1, -1]);
 
 	function createItem(ax, ay) {
 		if (isCreating) {
@@ -349,7 +358,10 @@ function App() {
 		}
 	}, [panel]);
 
-	
+	const [selectedElement, setSelectedElement] = React.useState(null);
+	function selectElement(element) {
+		setSelectedElement(element);
+	}
 
 	return (
 		<div
@@ -359,20 +371,27 @@ function App() {
 			onMouseUp={(e) => {
 				createItem(e.clientX, e.clientY);
 				mouseUp(e);
-				
 			}}
 		>
+			<CanvasOverlay selectedElement={selectedElement} />
 			<div
 				className="canvas"
 				// onMouseMove={panCanvas}
 				// onKeyDown={onKeyPressed}
 				// onMouseDown={(e) => {
-					// setIsPanning(true);
+				// setIsPanning(true);
 				// }}
 				ref={canvasContainer}
 			>
-				
-				<Canvas darkMode={darkThemes} size={canvasSize} mouseUp={canvasMouseUp}  />
+				<Canvas
+					darkMode={darkThemes}
+					size={canvasSize}
+					mouseUp={canvasMouseUp}
+					panCanvas={panCanvas}
+					setIsPanning={setIsPanning}
+					currentComponent={currentComponent}
+					selectElement={selectElement}
+				/>
 
 				{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
 			</div>
@@ -417,24 +436,23 @@ function App() {
 
 				{panel == "tools" ? (
 					<div className="tools">
-						<DraggableTemplate
-							mouseX={mouseX}
-							mouseY={mouseY}
-							isDragging={isDragging}
-							setIsDragging={setIsDragging}
-							setIsCreating={setIsCreating}
-						>
-							Data
-						</DraggableTemplate>
-						<DraggableTemplate
-							mouseX={mouseX}
-							mouseY={mouseY}
-							isDragging={isDragging}
-							setIsDragging={setIsDragging}
-							setIsCreating={setIsCreating}
-						>
-							Permutation
-						</DraggableTemplate>
+						{/* <p>Components</p> */}
+						{Object.keys(components).map((key, index) => {
+							return (
+								<DraggableTemplate
+									key={index}
+									mouseX={mouseX}
+									mouseY={mouseY}
+									isDragging={isDragging}
+									setIsDragging={setIsDragging}
+									setIsCreating={setIsCreating}
+									setCurrentComponent={setCurrentComponent}
+									component={components[key]}
+								>
+									{components[key].name}
+								</DraggableTemplate>
+							);
+						})}
 					</div>
 				) : (
 					panelContent
@@ -463,6 +481,7 @@ function DraggableTemplate(props) {
 		setThisComponent(true);
 		props.setIsDragging(true);
 		props.setIsCreating(true);
+		props.setCurrentComponent(props.component);
 	}
 
 	useEffect(() => {
@@ -530,8 +549,6 @@ function DraggableTemplate(props) {
 		</>
 	);
 }
-
-
 
 // render the app component
 ReactDOM.render(<App />, document.getElementById("root"));
