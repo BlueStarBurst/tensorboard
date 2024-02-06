@@ -17,6 +17,7 @@ var x,
 var elementsList = [];
 
 var timer = null;
+var busy = false;
 
 export default function Canvas(props) {
 	const canvas = React.useRef(null);
@@ -83,7 +84,7 @@ export default function Canvas(props) {
 
 	function redrawCanvas() {
 		// draw the background grid
-		console.log(elementsList, elements);
+		// console.log(elementsList, elements);
 		elementsList = elements;
 		const ctx = canvas.current.getContext("2d");
 		const w = canvas.current.width * 5;
@@ -104,6 +105,8 @@ export default function Canvas(props) {
 	}
 
 	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
+	const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+	
 
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
@@ -111,9 +114,11 @@ export default function Canvas(props) {
 		console.log("CLICK", e.clientX, e.clientY, rect.left, rect.top);
 		x = (e.clientX - rect.left) * (canvas.current.width / rect.width);
 		y = (e.clientY - rect.top) * (canvas.current.height / rect.height);
+		setLastMousePos({ x: x, y: y });
 
 		for (var i = 0; i < elements.length; i++) {
 			if (elements[i].isLining(x, y)) {
+				busy = true;
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
 				}
@@ -128,6 +133,7 @@ export default function Canvas(props) {
 				redrawCanvas();
 				return;
 			} else if (elements[i].isDragging(x, y)) {
+				busy = true;
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
 				}
@@ -146,6 +152,7 @@ export default function Canvas(props) {
 			}
 		}
 
+		busy = false;
 		timer = setTimeout(() => {
 			clearTimeout(timer);
 			timer = null;
@@ -180,6 +187,7 @@ export default function Canvas(props) {
 
 	function onMouseUpCanvas(e) {
 		if (timer) {
+			setDragging(false);
 			clearTimeout(timer);
 			timer = null;
 			if (isPanning) {
@@ -243,6 +251,29 @@ export default function Canvas(props) {
 	}
 
 	function dragElement(e) {
+		if (timer && busy == true) {
+			
+			var rect = canvas.current.getBoundingClientRect();
+			var tx = (e.clientX - rect.left) * (canvas.current.width / rect.width);
+			var ty = (e.clientY - rect.top) * (canvas.current.height / rect.height);
+			x = tx;
+			y = ty;
+
+			var dist = Math.sqrt(
+				(x - lastMousePos.x) ** 2 + (y - lastMousePos.y) ** 2
+			);
+			if (dist > 10) {
+				console.log("TIMER");
+				canvas.current.style.cursor = "grabbing";
+				setDragging(true);
+				redrawCanvas();
+				clearTimeout(timer);
+				timer = null;
+				return;
+			}
+			return;
+		}
+
 		if (dragging) {
 			// move the element that is being dragged
 			var rect = canvas.current.getBoundingClientRect();

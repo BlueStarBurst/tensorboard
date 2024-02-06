@@ -2,6 +2,12 @@ import React, { useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import ReactDOM from "react-dom";
 
+import hljs from "highlight.js/lib/core";
+import python from "highlight.js/lib/languages/python";
+hljs.registerLanguage("python", python);
+
+import "highlight.js/styles/tokyo-night-dark.css";
+
 import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
@@ -20,7 +26,7 @@ const darkTheme = createTheme({
 // get local storage for dark mode
 var darkMode = localStorage.getItem("darkMode");
 if (darkMode === null) {
-	darkMode = false;
+	darkMode = true;
 	localStorage.setItem("darkMode", darkMode);
 } else {
 	darkMode = darkMode === "true";
@@ -68,6 +74,8 @@ function App() {
 	const [items, setItems] = React.useState(DBManager.getInstance().getItems());
 	const [currentComponent, setCurrentComponent] = React.useState(null);
 
+	const [webPointer, setWebPointer] = React.useState(false);
+
 	const [components, setComponents] = React.useState({
 		Data: {
 			name: "Data",
@@ -85,7 +93,7 @@ function App() {
 				},
 			},
 			transpile: function () {
-				return `print('Downloading data from ${this.data.URL.value}')`;
+				return `print('Downloading data from ${this.data.URL.value}')\nprint("hello")\nfor i in range(10):\n\tprint(i)`;
 			},
 		},
 		Normalize: {
@@ -190,6 +198,7 @@ function App() {
 	function mouseUp(e) {
 		console.log("mouseUp");
 		setIsResizing(false);
+		setWebPointer(false);
 		setIsPanning(false);
 		setIsDragging(false);
 		// save w and h to local storage
@@ -206,9 +215,9 @@ function App() {
 		} else if (w > 80) {
 			document.documentElement.style.setProperty("--mouse-x", 80 + "%");
 			w = 80;
-		// } else if (w < 60 && w > 40) {
-		// 	document.documentElement.style.setProperty("--mouse-x", 60 + "%");
-		// 	w = 60;
+			// } else if (w < 60 && w > 40) {
+			// 	document.documentElement.style.setProperty("--mouse-x", 60 + "%");
+			// 	w = 60;
 		} else if (w < 20) {
 			document.documentElement.style.setProperty("--mouse-x", 20 + "%");
 			w = 20;
@@ -378,7 +387,17 @@ function App() {
 		return id;
 	}
 
+	const [cells, setCells] = React.useState([]);
+
+	const [start, setStart] = React.useState(`{"cells": `);
+	const [end, setEnd] = React.useState(
+		`,"metadata": {"kernelspec": {"display_name": "Python 3","language": "python","name": "python3"},"language_info": {"codemirror_mode": {"name": "ipython","version": 3},"file_extension": ".py","mimetype": "text/x-python","name": "python","nbconvert_exporter": "python","pygments_lexer": "ipython3","version": "3.10.13"},"colab": {"provenance": []}},"nbformat": 4,"nbformat_minor": 0}`
+	);
+
+	const [webSelected, setWebSelected] = React.useState(false);
+
 	useEffect(() => {
+		setWebSelected(false);
 		if (panel == "tools") {
 			setPanelContent(
 				<Tools
@@ -389,9 +408,14 @@ function App() {
 				/>
 			);
 		} else if (panel == "notebook") {
-			setPanelContent(<Notebook />);
+			setPanelContent(<Notebook cells={cells} />);
 		} else if (panel == "raw") {
-			setPanelContent(<Raw components={components}></Raw>);
+			setPanelContent(
+				<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
+			);
+		} else if (panel == "web") {
+			setPanelContent(<></>);
+			setWebSelected(true);
 		}
 	}, [panel]);
 
@@ -399,6 +423,30 @@ function App() {
 	function selectElement(element) {
 		setSelectedElement(element);
 	}
+
+	useEffect(() => {
+		// parse the components into JSON cells
+		var tcells = [];
+		Object.keys(components).map((key, index) => {
+			var raw_python = components[key].transpile();
+			// split by new line
+			raw_python = raw_python.split("\n");
+			// add a new line to the end of each line
+			raw_python = raw_python.map((line) => {
+				return line + "\n";
+			});
+
+			tcells.push({
+				cell_type: "code",
+				execution_count: 1,
+				metadata: {},
+				outputs: [],
+				source: raw_python,
+			});
+		});
+		console.log(tcells);
+		setCells(tcells);
+	}, [components]);
 
 	return (
 		<ThemeProvider theme={darkTheme}>
@@ -439,6 +487,7 @@ function App() {
 					onMouseDown={(e) => {
 						e.preventDefault();
 						setIsResizing(true);
+						setWebPointer(true);
 						var children = document.getElementById("parent").children;
 						for (var i = 0; i < children.length; i++) {
 							children[i].classList.remove("transition-width");
@@ -483,6 +532,18 @@ function App() {
 							<h5>Notebook</h5>
 						</div>
 
+						<div
+							className={
+								"right-panel-header-option " +
+								(panel == "web" ? "selected" : "")
+							}
+							onClick={(e) => {
+								setPanel("web");
+							}}
+						>
+							<h5>Web</h5>
+						</div>
+
 						<div className="filler" />
 					</div>
 
@@ -509,6 +570,9 @@ function App() {
 					) : (
 						panelContent
 					)}
+					<div className={webSelected ? (webPointer ? "web-container web-pointer" : "web-container" ) : "web-container web-hidden"} >
+						<Web />
+					</div>
 				</div>
 			</div>
 		</ThemeProvider>
@@ -521,6 +585,35 @@ function Tools(props) {
 
 function Notebook(props) {
 	return (
+		<>
+			{props.cells.map((cell, index) => {
+				if (index == props.cells.length - 1) {
+					setTimeout(() => {
+						hljs.highlightAll();
+					}, 1);
+				}
+
+				return (
+					<div key={index} className="cell">
+						<div className="cell-line" key={index}>
+							<p className="cell-index">[{index + 1}]: </p>
+							<pre style={{ width: "100%" }}>
+								<code>
+									{cell.source.map((line, i) => {
+										return <div className="cell-code">{line}</div>;
+									})}
+								</code>
+							</pre>
+						</div>
+					</div>
+				);
+			})}
+		</>
+	);
+}
+
+function Web(props) {
+	return (
 		<iframe
 			src="https://jupyterlite.github.io/demo/lab/index.html"
 			width="100%"
@@ -530,46 +623,19 @@ function Notebook(props) {
 }
 
 function Raw(props) {
-	const [start, setStart] = React.useState(`{"cells": `);
-	const [end, setEnd] = React.useState(`,"metadata": {"kernelspec": {"display_name": "Python 3","language": "python","name": "python3"},"language_info": {"codemirror_mode": {"name": "ipython","version": 3},"file_extension": ".py","mimetype": "text/x-python","name": "python","nbconvert_exporter": "python","pygments_lexer": "ipython3","version": "3.10.13"},"colab": {"provenance": []}},"nbformat": 4,"nbformat_minor": 0}`);
-
-	const [cells, setCells] = React.useState([]);
-
-	useEffect(() => {
-		// parse the components into JSON cells
-		var tcells = [];
-		Object.keys(props.components).map((key, index) => {
-			var raw_python = props.components[key].transpile();
-			// split by new line
-			raw_python = raw_python.split("\n");
-			// add a new line to the end of each line
-			raw_python = raw_python.map((line) => {
-				return line + "\n";
-			});
-
-			tcells.push({
-				cell_type: "code",
-				execution_count: 1,
-				metadata: {},
-				outputs: [],
-				source: raw_python,
-			});
-		});
-		console.log(tcells);
-		setCells(tcells);
-	}, [props.components]);
-
 	return (
 		<textarea
+			autoCorrect="off"
+			spellCheck="false"
 			style={{
 				width: "100%",
 				height: "100%",
 				backgroundColor: "transparent",
 				border: "none",
 				color: "white",
-				fontSize: "1.5em",
+				fontSize: "0.8em",
 			}}
-			value={start + JSON.stringify(cells, null, 4) + end}
+			value={props.value}
 		></textarea>
 	);
 }
