@@ -12,7 +12,7 @@ import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
 import { DBManager } from "./component.js";
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { Button, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 
 var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
@@ -107,7 +107,7 @@ function App() {
 			transpile: function () {
 				return `print('Normalizing data')`;
 			},
-		},
+		}
 	});
 
 	const canvasOverlay = React.useRef(null);
@@ -408,7 +408,7 @@ function App() {
 				/>
 			);
 		} else if (panel == "notebook") {
-			setPanelContent(<Notebook cells={cells} />);
+			setPanelContent(<Notebook cells={cells} start={start} end={end} />);
 		} else if (panel == "raw") {
 			setPanelContent(
 				<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
@@ -570,7 +570,15 @@ function App() {
 					) : (
 						panelContent
 					)}
-					<div className={webSelected ? (webPointer ? "web-container web-pointer" : "web-container" ) : "web-container web-hidden"} >
+					<div
+						className={
+							webSelected
+								? webPointer
+									? "web-container web-pointer"
+									: "web-container"
+								: "web-container web-hidden"
+						}
+					>
 						<Web />
 					</div>
 				</div>
@@ -585,30 +593,58 @@ function Tools(props) {
 
 function Notebook(props) {
 	return (
-		<>
-			{props.cells.map((cell, index) => {
-				if (index == props.cells.length - 1) {
-					setTimeout(() => {
-						hljs.highlightAll();
-					}, 1);
-				}
+		<div className="notebook-container">
+			<div className="cell-container">
+				{props.cells.map((cell, index) => {
+					if (index == props.cells.length - 1) {
+						setTimeout(() => {
+							hljs.highlightAll();
+						}, 1);
+					}
 
-				return (
-					<div key={index} className="cell">
-						<div className="cell-line" key={index}>
-							<p className="cell-index">[{index + 1}]: </p>
-							<pre style={{ width: "100%" }}>
-								<code>
-									{cell.source.map((line, i) => {
-										return <div className="cell-code">{line}</div>;
-									})}
-								</code>
-							</pre>
+					return (
+						<div key={index} className="cell">
+							<div className="cell-line" key={index}>
+								<p className="cell-index">[{index + 1}]: </p>
+								<pre style={{ width: "100%" }}>
+									<code>
+										{cell.source.map((line, i) => {
+											return <div className="cell-code">{line}</div>;
+										})}
+									</code>
+								</pre>
+							</div>
 						</div>
-					</div>
-				);
-			})}
-		</>
+					);
+				})}
+			</div>
+			<div className="notebook-footer">
+				<Button
+					variant="contained"
+					color="warning"
+					onClick={(e) => {
+						
+					}}
+				>
+					Save
+				</Button>
+				<Button
+					variant="contained"
+					color="primary"
+					onClick={(e) => {
+						var json = props.start + JSON.stringify(props.cells, null, 4) + props.end;
+						var blob = new Blob([json], { type: "application/json" });
+						var url = URL.createObjectURL(blob);
+						var a = document.createElement("a");
+						a.href = url;
+						a.download = "notebook.ipynb";
+						a.click();
+					}}
+				>
+					Download
+				</Button>
+			</div>
+		</div>
 	);
 }
 
