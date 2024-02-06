@@ -6,9 +6,16 @@ import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
 import { DBManager } from "./component.js";
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 
 var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
+
+const darkTheme = createTheme({
+	palette: {
+		mode: "dark",
+	},
+});
 
 // get local storage for dark mode
 var darkMode = localStorage.getItem("darkMode");
@@ -64,9 +71,34 @@ function App() {
 	const [components, setComponents] = React.useState({
 		Data: {
 			name: "Data",
+			description:
+				"This component is used to download data from a remote URL for model training",
+			data: {
+				Type: {
+					type: "radio",
+					options: ["HuggingFace", "Zip"],
+					value: "HuggingFace",
+				},
+				URL: {
+					type: "text",
+					value: "",
+				},
+			},
+			transpile: function () {
+				return `print('Downloading data from ${this.data.URL.value}')`;
+			},
 		},
 		Normalize: {
 			name: "Normalize",
+			data: {
+				Type: {
+					type: "text",
+					value: "",
+				},
+			},
+			transpile: function () {
+				return `print('Normalizing data')`;
+			},
 		},
 	});
 
@@ -174,9 +206,12 @@ function App() {
 		} else if (w > 80) {
 			document.documentElement.style.setProperty("--mouse-x", 80 + "%");
 			w = 80;
-		} else if (w < 60) {
-			document.documentElement.style.setProperty("--mouse-x", 60 + "%");
-			w = 60;
+		// } else if (w < 60 && w > 40) {
+		// 	document.documentElement.style.setProperty("--mouse-x", 60 + "%");
+		// 	w = 60;
+		} else if (w < 20) {
+			document.documentElement.style.setProperty("--mouse-x", 20 + "%");
+			w = 20;
 		}
 
 		localStorage.setItem("w", w);
@@ -355,6 +390,8 @@ function App() {
 			);
 		} else if (panel == "notebook") {
 			setPanelContent(<Notebook />);
+		} else if (panel == "raw") {
+			setPanelContent(<Raw components={components}></Raw>);
 		}
 	}, [panel]);
 
@@ -364,101 +401,117 @@ function App() {
 	}
 
 	return (
-		<div
-			className="rows"
-			id="parent"
-			onMouseMove={setMouseCoords}
-			onMouseUp={(e) => {
-				createItem(e.clientX, e.clientY);
-				mouseUp(e);
-			}}
-		>
-			<CanvasOverlay selectedElement={selectedElement} />
+		<ThemeProvider theme={darkTheme}>
+			<CssBaseline />
 			<div
-				className="canvas"
-				// onMouseMove={panCanvas}
-				// onKeyDown={onKeyPressed}
-				// onMouseDown={(e) => {
-				// setIsPanning(true);
-				// }}
-				ref={canvasContainer}
-			>
-				<Canvas
-					darkMode={darkThemes}
-					size={canvasSize}
-					mouseUp={canvasMouseUp}
-					panCanvas={panCanvas}
-					setIsPanning={setIsPanning}
-					currentComponent={currentComponent}
-					selectElement={selectElement}
-				/>
-
-				{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
-			</div>
-			<div
-				className="slider"
-				onMouseDown={(e) => {
-					e.preventDefault();
-					setIsResizing(true);
-					var children = document.getElementById("parent").children;
-					for (var i = 0; i < children.length; i++) {
-						children[i].classList.remove("transition-width");
-					}
+				className="rows"
+				id="parent"
+				onMouseMove={setMouseCoords}
+				onMouseUp={(e) => {
+					createItem(e.clientX, e.clientY);
+					mouseUp(e);
 				}}
-			></div>
-			<div className="right-panel">
-				<div className="right-panel-header">
-					<div
-						className={
-							"right-panel-header-option " +
-							(panel == "tools" ? "selected" : "")
-						}
-						onClick={(e) => {
-							setPanel("tools");
-						}}
-					>
-						<h5>Tools</h5>
-					</div>
-					<div
-						className={
-							"right-panel-header-option " +
-							(panel == "notebook" ? "selected" : "")
-						}
-						onClick={(e) => {
-							setPanel("notebook");
-						}}
-					>
-						<h5>Notebook</h5>
-					</div>
+			>
+				<CanvasOverlay selectedElement={selectedElement} />
+				<div
+					className="canvas"
+					// onMouseMove={panCanvas}
+					// onKeyDown={onKeyPressed}
+					// onMouseDown={(e) => {
+					// setIsPanning(true);
+					// }}
+					ref={canvasContainer}
+				>
+					<Canvas
+						darkMode={darkThemes}
+						size={canvasSize}
+						mouseUp={canvasMouseUp}
+						panCanvas={panCanvas}
+						setIsPanning={setIsPanning}
+						currentComponent={currentComponent}
+						selectElement={selectElement}
+					/>
 
-					<div className="filler" />
+					{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
 				</div>
+				<div
+					className="slider"
+					onMouseDown={(e) => {
+						e.preventDefault();
+						setIsResizing(true);
+						var children = document.getElementById("parent").children;
+						for (var i = 0; i < children.length; i++) {
+							children[i].classList.remove("transition-width");
+						}
+					}}
+				></div>
+				<div className="right-panel">
+					<div className="right-panel-header">
+						<div
+							className={
+								"right-panel-header-option " +
+								(panel == "tools" ? "selected" : "")
+							}
+							onClick={(e) => {
+								setPanel("tools");
+							}}
+						>
+							<h5>Tools</h5>
+						</div>
 
-				{panel == "tools" ? (
-					<div className="tools">
-						{/* <p>Components</p> */}
-						{Object.keys(components).map((key, index) => {
-							return (
-								<DraggableTemplate
-									key={index}
-									mouseX={mouseX}
-									mouseY={mouseY}
-									isDragging={isDragging}
-									setIsDragging={setIsDragging}
-									setIsCreating={setIsCreating}
-									setCurrentComponent={setCurrentComponent}
-									component={components[key]}
-								>
-									{components[key].name}
-								</DraggableTemplate>
-							);
-						})}
+						<div
+							className={
+								"right-panel-header-option " +
+								(panel == "raw" ? "selected" : "")
+							}
+							onClick={(e) => {
+								setPanel("raw");
+							}}
+						>
+							<h5>Raw</h5>
+						</div>
+
+						<div
+							className={
+								"right-panel-header-option " +
+								(panel == "notebook" ? "selected" : "")
+							}
+							onClick={(e) => {
+								setPanel("notebook");
+							}}
+						>
+							<h5>Notebook</h5>
+						</div>
+
+						<div className="filler" />
 					</div>
-				) : (
-					panelContent
-				)}
+
+					{panel == "tools" ? (
+						<div className="tools">
+							{/* <p>Components</p> */}
+							{Object.keys(components).map((key, index) => {
+								return (
+									<DraggableTemplate
+										key={index}
+										mouseX={mouseX}
+										mouseY={mouseY}
+										isDragging={isDragging}
+										setIsDragging={setIsDragging}
+										setIsCreating={setIsCreating}
+										setCurrentComponent={setCurrentComponent}
+										component={components[key]}
+									>
+										{components[key].name}
+									</DraggableTemplate>
+								);
+							})}
+						</div>
+					) : (
+						panelContent
+					)}
+				</div>
 			</div>
-		</div>
+		</ThemeProvider>
 	);
 }
 
@@ -467,7 +520,58 @@ function Tools(props) {
 }
 
 function Notebook(props) {
-	return null;
+	return (
+		<iframe
+			src="https://jupyterlite.github.io/demo/lab/index.html"
+			width="100%"
+			height="100%"
+		></iframe>
+	);
+}
+
+function Raw(props) {
+	const [start, setStart] = React.useState(`{"cells": `);
+	const [end, setEnd] = React.useState(`,"metadata": {"kernelspec": {"display_name": "Python 3","language": "python","name": "python3"},"language_info": {"codemirror_mode": {"name": "ipython","version": 3},"file_extension": ".py","mimetype": "text/x-python","name": "python","nbconvert_exporter": "python","pygments_lexer": "ipython3","version": "3.10.13"},"colab": {"provenance": []}},"nbformat": 4,"nbformat_minor": 0}`);
+
+	const [cells, setCells] = React.useState([]);
+
+	useEffect(() => {
+		// parse the components into JSON cells
+		var tcells = [];
+		Object.keys(props.components).map((key, index) => {
+			var raw_python = props.components[key].transpile();
+			// split by new line
+			raw_python = raw_python.split("\n");
+			// add a new line to the end of each line
+			raw_python = raw_python.map((line) => {
+				return line + "\n";
+			});
+
+			tcells.push({
+				cell_type: "code",
+				execution_count: 1,
+				metadata: {},
+				outputs: [],
+				source: raw_python,
+			});
+		});
+		console.log(tcells);
+		setCells(tcells);
+	}, [props.components]);
+
+	return (
+		<textarea
+			style={{
+				width: "100%",
+				height: "100%",
+				backgroundColor: "transparent",
+				border: "none",
+				color: "white",
+				fontSize: "1.5em",
+			}}
+			value={start + JSON.stringify(cells, null, 4) + end}
+		></textarea>
+	);
 }
 
 function DraggableTemplate(props) {

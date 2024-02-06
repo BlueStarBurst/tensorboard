@@ -1,4 +1,14 @@
 import React, { useEffect } from "react";
+import TextField from "@mui/material/TextField";
+import {
+	Checkbox,
+	FormControlLabel,
+	FormLabel,
+	InputLabel,
+	Radio,
+	RadioGroup,
+} from "@mui/material";
+import { InputGroup } from "react-bootstrap";
 
 var interval = null;
 var x,
@@ -104,6 +114,11 @@ export default function Canvas(props) {
 
 		for (var i = 0; i < elements.length; i++) {
 			if (elements[i].isLining(x, y)) {
+				if (oldSelectedElement) {
+					oldSelectedElement.dragging = false;
+				}
+
+				elements[i].dragging = true;
 				elements[i].element = null;
 				elements[i].lining = true;
 				canvas.current.style.cursor = "crosshair";
@@ -113,7 +128,6 @@ export default function Canvas(props) {
 				redrawCanvas();
 				return;
 			} else if (elements[i].isDragging(x, y)) {
-
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
 				}
@@ -131,6 +145,11 @@ export default function Canvas(props) {
 				return;
 			}
 		}
+
+		timer = setTimeout(() => {
+			clearTimeout(timer);
+			timer = null;
+		}, 250);
 		canvas.current.style.cursor = "grabbing";
 		setIsPanning(true);
 	}
@@ -160,12 +179,24 @@ export default function Canvas(props) {
 	}, [props.mouseUp]);
 
 	function onMouseUpCanvas(e) {
-
 		if (timer) {
 			clearTimeout(timer);
 			timer = null;
-			selectedElement.dragging = true;
-			setOldSelectedElement(selectedElement);
+			if (isPanning) {
+				if (selectedElement) {
+					selectedElement.dragging = false;
+				}
+				if (oldSelectedElement) {
+					oldSelectedElement.dragging = false;
+				}
+				setOldSelectedElement(null);
+				props.selectElement(null);
+				setIsPanning(false);
+				canvas.current.style.cursor = "default";
+			} else if (selectedElement) {
+				selectedElement.dragging = true;
+				setOldSelectedElement(selectedElement);
+			}
 			redrawCanvas();
 			return;
 		}
@@ -192,16 +223,20 @@ export default function Canvas(props) {
 			selectedElement.lineToY = -1;
 			canvas.current.style.cursor = "default";
 			setSelectedElement(null);
-			props.selectElement(null);
+
 			setLining(false);
 			redrawCanvas();
+		} else if (dragging) {
+		} else {
 		}
 
 		// stop dragging the element
-		if (selectedElement) selectedElement.dragging = false;
+		// if (selectedElement) selectedElement.dragging = false;
 		canvas.current.style.cursor = "default";
-		setSelectedElement(null);
-		props.selectElement(null);
+		setOldSelectedElement(selectedElement);
+		// setSelectedElement(null);
+
+		// props.selectElement(null);
 		setDragging(false);
 		redrawCanvas();
 		setIsPanning(false);
@@ -254,27 +289,97 @@ export default function Canvas(props) {
 export function CanvasOverlay(props) {
 	// overlays a modal that describes the current component
 	const [component, setComponent] = React.useState(null);
+	const [data, setData] = React.useState({});
 	const [active, setActive] = React.useState(false);
+
+	const [display, setDisplay] = React.useState(<></>);
 
 	React.useEffect(() => {
 		if (props.selectedElement) {
 			setComponent(props.selectedElement.component);
+			setData(props.selectedElement.component.data);
 			setActive(true);
 		} else {
 			setActive(false);
 		}
 	}, [props.selectedElement]);
 
+	React.useEffect(() => {
+		if (component) {
+			setDisplay(
+				<>
+					<h4>{component.name}</h4>
+					<p>{component.description}</p>
+					{Object.keys(data).map((key) => {
+						switch (data[key].type) {
+							case "radio":
+								console.log("RADIO");
+								return (
+									<RadioGroup
+										aria-labelledby="demo-radio-buttons-group-label"
+										defaultValue={data[key].value || ""}
+										name="radio-buttons-group"
+										onChange={(e) => {
+											updateData(e, key);
+										}}
+									>
+										{data[key].options.map((option) => {
+											return (
+												<FormControlLabel
+													value={option}
+													control={<Radio />}
+													label={option}
+												/>
+											);
+										})}
+									</RadioGroup>
+								);
+							case "checkbox":
+								console.log("CHECKBOX");
+								return (
+									<FormControlLabel
+										control={<Checkbox value={data[key].value} />}
+										label={key}
+									/>
+								);
+							case "text":
+							default:
+								return (
+									<TextField
+										autoComplete="off"
+										autoCorrect="off"
+										id="outlined-basic"
+										label={key}
+										value={data[key].value || ""}
+										variant="outlined"
+										fullWidth
+										onChange={(e) => {
+											updateData(e, key);
+										}}
+									/>
+								);
+						}
+					})}
+				</>
+			);
+		} else {
+			setDisplay(<></>);
+		}
+	}, [component, data]);
+
+	function updateData(e, key) {
+		var dat = data[key];
+		dat.value = e.target.value;
+
+		setData({ ...data, [key]: dat });
+	}
+
 	return (
 		<>
 			{" "}
 			{component && (
 				<div className={active ? "canvas-overlay active" : "canvas-overlay"}>
-					<div className="canvas-overlay-content">
-						<h4>{component.name}</h4>
-						<p>{component.description}</p>
-						
-					</div>
+					<div className="canvas-overlay-content">{display}</div>
 				</div>
 			)}
 		</>
