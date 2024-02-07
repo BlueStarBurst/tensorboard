@@ -2,20 +2,85 @@ import React, { useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import ReactDOM from "react-dom";
 
-import hljs from "highlight.js/lib/core";
-import python from "highlight.js/lib/languages/python";
-hljs.registerLanguage("python", python);
 
-import "highlight.js/styles/tokyo-night-dark.css";
 
 import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
 import { DBManager } from "./component.js";
 import { Button, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { Notebook, Raw, Web } from "./Pages.js";
 
 var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
+
+const components = {
+	Data: {
+		name: "Data",
+		description:
+			"This component is used to download data from a remote URL for model training",
+		id: -1,
+		data: {
+			Type: {
+				type: "radio",
+				options: ["HuggingFace", "Zip"],
+				value: "HuggingFace",
+				hidden: false,
+			},
+			URL: {
+				type: "text",
+				value: "",
+				hidden: true,
+			},
+			RepoID: {
+				type: "text",
+				value: "",
+				hidden: false,
+			},
+			FileName: {
+				type: "text",
+				value: "",
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			console.log("TRANSPILING", this.id, this.data);
+			if (this.data.Type.value == "HuggingFace") {
+				return `print('Downloading data from https://hugingface.com/${this.data.RepoID.value}')\nfrom huggingface_hub import hf_hub_download\nimport pandas as pd\ndataset = pd.read_csv(\n\thf_hub_download(repo_id="${this.data.RepoID.value}", filename="${this.data.FileName.value}", repo_type="dataset")\n)\nfor i in range(10):\n\tprint(i)`;
+			} else {
+				return `print('Downloading data from ${this.data.URL.value}')\n!wget -O dataset.zip ${this.data.URL.value}`;
+			}
+		},
+		reload: function () {
+			if (this.data.Type.value == "HuggingFace") {
+				this.data.RepoID.hidden = false;
+				this.data.FileName.hidden = false;
+				this.data.URL.hidden = true;
+			} else {
+				this.data.RepoID.hidden = true;
+				this.data.FileName.hidden = true;
+				this.data.URL.hidden = false;
+			}
+		},
+		outputs: [],
+		inputs: [],
+	},
+	Normalize: {
+		name: "Normalize",
+		data: {
+			Type: {
+				type: "text",
+				value: "",
+			},
+		},
+		transpile: function () {
+			return `print('Normalizing data')`;
+		},
+		reload: function () {},
+		outputs: [],
+		inputs: [],
+	},
+};
 
 const darkTheme = createTheme({
 	palette: {
@@ -70,45 +135,13 @@ function App() {
 	const [isDragging, setIsDragging] = React.useState(false);
 	const [isCreating, setIsCreating] = React.useState(false);
 
-	const [panelContent, setPanelContent] = React.useState(<Tools />);
+	const [panelContent, setPanelContent] = React.useState(null);
 	const [items, setItems] = React.useState(DBManager.getInstance().getItems());
 	const [currentComponent, setCurrentComponent] = React.useState(null);
 
 	const [webPointer, setWebPointer] = React.useState(false);
 
-	const [components, setComponents] = React.useState({
-		Data: {
-			name: "Data",
-			description:
-				"This component is used to download data from a remote URL for model training",
-			data: {
-				Type: {
-					type: "radio",
-					options: ["HuggingFace", "Zip"],
-					value: "HuggingFace",
-				},
-				URL: {
-					type: "text",
-					value: "",
-				},
-			},
-			transpile: function () {
-				return `print('Downloading data from ${this.data.URL.value}')\nprint("hello")\nfor i in range(10):\n\tprint(i)`;
-			},
-		},
-		Normalize: {
-			name: "Normalize",
-			data: {
-				Type: {
-					type: "text",
-					value: "",
-				},
-			},
-			transpile: function () {
-				return `print('Normalizing data')`;
-			},
-		}
-	});
+	const [currentElements, setCurrentElements] = React.useState([]);
 
 	const canvasOverlay = React.useRef(null);
 
@@ -185,12 +218,12 @@ function App() {
 	function onKeyPressed(e) {
 		// console.log('onKeyDown', e);
 		// get ig b is pressed
-		if (e.key === "b") {
-			console.log("b");
-			console.log(darkThemes);
-			setDarkThemes(!darkMode);
-			setDarkTheme(!darkMode);
-		}
+		// if (e.key === "b") {
+		// 	console.log("b");
+		// 	console.log(darkThemes);
+		// 	setDarkThemes(!darkMode);
+		// 	setDarkTheme(!darkMode);
+		// }
 	}
 
 	const canvasContainer = React.useRef(null);
@@ -379,11 +412,14 @@ function App() {
 		}
 	}
 
+	const [ids, setIds] = React.useState([]);
+
 	function getNewId() {
 		var id = Math.floor(Math.random() * 1000000000);
-		while (id in Object.keys(items)) {
+		while (id in ids) {
 			id = Math.floor(Math.random() * 1000000000);
 		}
+		setIds([...ids, id]);
 		return id;
 	}
 
@@ -397,25 +433,10 @@ function App() {
 	const [webSelected, setWebSelected] = React.useState(false);
 
 	useEffect(() => {
-		setWebSelected(false);
-		if (panel == "tools") {
-			setPanelContent(
-				<Tools
-					mouseX={mouseX}
-					mouseY={mouseY}
-					isDragging={isDragging}
-					setIsDragging={setIsDragging}
-				/>
-			);
-		} else if (panel == "notebook") {
-			setPanelContent(<Notebook cells={cells} start={start} end={end} />);
-		} else if (panel == "raw") {
-			setPanelContent(
-				<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
-			);
-		} else if (panel == "web") {
-			setPanelContent(<></>);
+		if (panel == "web") {
 			setWebSelected(true);
+		} else {
+			setWebSelected(false);
 		}
 	}, [panel]);
 
@@ -424,11 +445,65 @@ function App() {
 		setSelectedElement(element);
 	}
 
-	useEffect(() => {
+	function addChildrenToComponentList(component) {
+		console.log("Recursing");
+		var finArray = [component];
+		for (var i = 0; i < component.outputs.length; i++) {
+			console.log("CHILD!", component.outputs[i]);
+			var tempArr = addChildrenToComponentList(component.outputs[i]);
+			// add the arr to the finArray
+			finArray = finArray.concat(tempArr);
+		}
+		return finArray;
+	}
+
+	function updateNotebook(currentElements) {
+		var tcomponents = [];
+		var scomponents = [];
+		var fcomponents = [];
+
+		for (var i = 0; i < currentElements.length; i++) {
+			var element = currentElements[i];
+
+			console.log(currentElements);
+			tcomponents.push(element.component);
+		}
+		console.log("ELEMENTS", currentElements);
+
+		scomponents = [];
+		var counter = 0;
+		// get all components with no inputs
+		for (var i = 0; i < tcomponents.length; i++) {
+			var component = tcomponents[i];
+			console.log(component);
+			if (component.inputs.length == 0) {
+				console.log("NO INPUTS", i);
+				scomponents.push(component);
+				fcomponents.push(component);
+			}
+		}
+		console.log("COMPONENTS", scomponents);
+		// loop through all components with no inputs, adding their outputs to the inputs of other components
+		for (var i = 0; i < scomponents.length; i++) {
+			var children = scomponents[i].outputs;
+			console.log("CHILDREN", children);
+			for (var j = 0; j < children.length; j++) {
+				console.log("CHILD", children[j]);
+				// add the children to the components array
+				var tempArr = addChildrenToComponentList(children[j]);
+				console.log("TEMPARR", tempArr);
+				for (var k = 0; k < tempArr.length; k++) {
+					fcomponents.push(tempArr[k]);
+				}
+			}
+		}
+
+		// console.log(scomponents);
+
 		// parse the components into JSON cells
 		var tcells = [];
-		Object.keys(components).map((key, index) => {
-			var raw_python = components[key].transpile();
+		fcomponents.map((value, index) => {
+			var raw_python = value.transpile();
 			// split by new line
 			raw_python = raw_python.split("\n");
 			// add a new line to the end of each line
@@ -439,14 +514,18 @@ function App() {
 			tcells.push({
 				cell_type: "code",
 				execution_count: 1,
-				metadata: {},
+				metadata: {
+					id: value.id,
+				},
 				outputs: [],
 				source: raw_python,
 			});
 		});
 		console.log(tcells);
 		setCells(tcells);
-	}, [components]);
+	}
+
+	const [disableOverlay, setDisableOverlay] = React.useState(false);
 
 	return (
 		<ThemeProvider theme={darkTheme}>
@@ -460,7 +539,11 @@ function App() {
 					mouseUp(e);
 				}}
 			>
-				<CanvasOverlay selectedElement={selectedElement} />
+				<CanvasOverlay
+					selectedElement={selectedElement}
+					updateNotebook={updateNotebook}
+					pointer={disableOverlay}
+				/>
 				<div
 					className="canvas"
 					// onMouseMove={panCanvas}
@@ -478,6 +561,8 @@ function App() {
 						setIsPanning={setIsPanning}
 						currentComponent={currentComponent}
 						selectElement={selectElement}
+						updateNotebook={updateNotebook}
+						setDisableOverlay={setDisableOverlay}
 					/>
 
 					{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
@@ -561,15 +646,20 @@ function App() {
 										setIsCreating={setIsCreating}
 										setCurrentComponent={setCurrentComponent}
 										component={components[key]}
+										getNewId={getNewId}
 									>
 										{components[key].name}
 									</DraggableTemplate>
 								);
 							})}
 						</div>
-					) : (
-						panelContent
-					)}
+					) : panel == "raw" ? (
+						<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
+					) : panel == "notebook" ? (
+						<Notebook cells={cells} start={start} end={end} />
+					) : panel == "web" ? (
+						<Web />
+					) : null}
 					<div
 						className={
 							webSelected
@@ -587,94 +677,6 @@ function App() {
 	);
 }
 
-function Tools(props) {
-	return null;
-}
-
-function Notebook(props) {
-	return (
-		<div className="notebook-container">
-			<div className="cell-container">
-				{props.cells.map((cell, index) => {
-					if (index == props.cells.length - 1) {
-						setTimeout(() => {
-							hljs.highlightAll();
-						}, 1);
-					}
-
-					return (
-						<div key={index} className="cell">
-							<div className="cell-line" key={index}>
-								<p className="cell-index">[{index + 1}]: </p>
-								<pre style={{ width: "100%" }}>
-									<code>
-										{cell.source.map((line, i) => {
-											return <div className="cell-code">{line}</div>;
-										})}
-									</code>
-								</pre>
-							</div>
-						</div>
-					);
-				})}
-			</div>
-			<div className="notebook-footer">
-				<Button
-					variant="contained"
-					color="warning"
-					onClick={(e) => {
-						
-					}}
-				>
-					Save
-				</Button>
-				<Button
-					variant="contained"
-					color="primary"
-					onClick={(e) => {
-						var json = props.start + JSON.stringify(props.cells, null, 4) + props.end;
-						var blob = new Blob([json], { type: "application/json" });
-						var url = URL.createObjectURL(blob);
-						var a = document.createElement("a");
-						a.href = url;
-						a.download = "notebook.ipynb";
-						a.click();
-					}}
-				>
-					Download
-				</Button>
-			</div>
-		</div>
-	);
-}
-
-function Web(props) {
-	return (
-		<iframe
-			src="https://jupyterlite.github.io/demo/lab/index.html"
-			width="100%"
-			height="100%"
-		></iframe>
-	);
-}
-
-function Raw(props) {
-	return (
-		<textarea
-			autoCorrect="off"
-			spellCheck="false"
-			style={{
-				width: "100%",
-				height: "100%",
-				backgroundColor: "transparent",
-				border: "none",
-				color: "white",
-				fontSize: "0.8em",
-			}}
-			value={props.value}
-		></textarea>
-	);
-}
 
 function DraggableTemplate(props) {
 	const [thisComponent, setThisComponent] = React.useState(false);
@@ -687,7 +689,21 @@ function DraggableTemplate(props) {
 		setThisComponent(true);
 		props.setIsDragging(true);
 		props.setIsCreating(true);
-		props.setCurrentComponent(props.component);
+		// var newComponent = new Component(props.getNewId());
+		// newComponent.name = props.component.name;
+		// newComponent.description = props.component.description;
+		// newComponent.data = props.component.data;
+		// newComponent.inputs = [];
+		// newComponent.outputs = [];
+		// newComponent.transpile = props.component.transpile;
+		// newComponent.reload = props.component.reload;
+		var newComponent = Object.create(props.component);
+		newComponent.data = JSON.parse(JSON.stringify(props.component.data));
+		newComponent.inputs = [];
+		newComponent.outputs = [];
+
+		newComponent.id = props.getNewId();
+		props.setCurrentComponent(newComponent);
 	}
 
 	useEffect(() => {
@@ -754,6 +770,19 @@ function DraggableTemplate(props) {
 			</div>
 		</>
 	);
+}
+
+class Component {
+	constructor(id) {
+		this.name = "";
+		this.description = "";
+		this.data = {};
+		this.inputs = {};
+		this.outputs = {};
+		this.id = id;
+		this.reload = function () {};
+		this.transpile = function () {};
+	}
 }
 
 // render the app component

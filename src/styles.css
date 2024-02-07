@@ -59,6 +59,7 @@ h6 {
   min-height: 100vh !important;
   cursor: w-resize;
   background-color: var(--bg-color);
+  opacity: 0.95;
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
 }
 
@@ -89,6 +90,7 @@ h6 {
   position: relative;
   display: flex;
   height: 100vh;
+  max-height: 100vh;
   flex-direction: column;
   justify-content: start;
   align-items: center;
@@ -133,7 +135,7 @@ h6 {
 }
 
 .none_pointer_events {
-  pointer-events: none;
+  pointer-events: none !important
 }
 
 .canvas-overlay {
@@ -143,7 +145,7 @@ h6 {
   bottom: 0;
   left: 0;
   /* background-color: rgba(0, 0, 255, 0.177); */
-  pointer-events: none !important;
+  pointer-events: none;
   z-index: 1000;
   display: flex;
   flex-direction: row;
@@ -174,7 +176,7 @@ h6 {
 .canvas-overlay-content {
   display: flex;
   flex-direction: column;
-  pointer-events: all !important;
+  pointer-events: all;
   position: relative;
   width: 500px;
   height: min-content;
@@ -350,17 +352,18 @@ iframe {
   display: flex;
   flex-direction: column;
   padding-right: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .cell-index {
-  
   width: 2rem;
   margin: 0;
   margin-top: 0.8rem;
+  /* transform: translateX(-0.1rem); */
 }
 
 .cell-line {
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -410,6 +413,7 @@ iframe {
   position: relative;
   height: 100%;
   overflow: auto;
+  padding-top: 1rem;
 }
 
 .notebook-footer {
@@ -422,4 +426,41 @@ iframe {
   background-color: var(--bg-color);
   color: var(--text-color);
   gap: 1rem;
+}
+
+.cell-left {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  gap: 3.5rem;
+  width: 2rem;
+  /* height: 100%; */
+  margin-left: 0.25rem;
+  overflow: hidden;
+  
+  
+  
+}
+
+.cell-id {
+  position: absolute;
+  top: 0;
+  transform: rotate(90deg) translateY(0.4rem);
+  letter-spacing: 0.2rem;
+  margin: 0;
+  opacity: 0.5;
+  padding-left: 4rem;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.right-panel textarea {
+  opacity: 0.5;
+}
+
+pre {
+  margin-bottom: 0 !important;
+  tab-size: 4;
 }

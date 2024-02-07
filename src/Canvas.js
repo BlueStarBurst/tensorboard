@@ -106,7 +106,6 @@ export default function Canvas(props) {
 
 	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
 	const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
-	
 
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
@@ -116,6 +115,8 @@ export default function Canvas(props) {
 		y = (e.clientY - rect.top) * (canvas.current.height / rect.height);
 		setLastMousePos({ x: x, y: y });
 
+		props.setDisableOverlay(true);
+
 		for (var i = 0; i < elements.length; i++) {
 			if (elements[i].isLining(x, y)) {
 				busy = true;
@@ -124,6 +125,7 @@ export default function Canvas(props) {
 				}
 
 				elements[i].dragging = true;
+				elements[i].removeElement();
 				elements[i].element = null;
 				elements[i].lining = true;
 				canvas.current.style.cursor = "crosshair";
@@ -131,6 +133,7 @@ export default function Canvas(props) {
 				props.selectElement(elements[i]);
 				setLining(true);
 				redrawCanvas();
+				props.updateNotebook(elements);
 				return;
 			} else if (elements[i].isDragging(x, y)) {
 				busy = true;
@@ -165,8 +168,10 @@ export default function Canvas(props) {
 		var tx = props.mouseUp[0];
 		var ty = props.mouseUp[1];
 		console.log("TUP", tx, ty);
-		if (tx < 0 || ty < 0) return;
+		if (tx < 0 || ty < 0 || tx == undefined || ty == undefined) return;
 		console.log("TUP", tx, ty);
+
+		console.log("SUCCESS");
 
 		var rect = canvas.current.getBoundingClientRect();
 		tx = (tx - rect.left) * (canvas.current.width / rect.width);
@@ -181,7 +186,8 @@ export default function Canvas(props) {
 			props.currentComponent
 		);
 		setElements([...elements, element]);
-		elementsList = elements;
+		props.updateNotebook([...elements, element]);
+		elementsList = [...elements, element];
 		setIsPanning(false);
 	}, [props.mouseUp]);
 
@@ -206,6 +212,7 @@ export default function Canvas(props) {
 				setOldSelectedElement(selectedElement);
 			}
 			redrawCanvas();
+			props.setDisableOverlay(false);
 			return;
 		}
 
@@ -215,6 +222,7 @@ export default function Canvas(props) {
 				if (elements[i].isDragging(x, y)) {
 					// connect the line to the element
 					selectedElement.lineToElement(i);
+					props.updateNotebook(elements);
 					didLine = true;
 					break;
 				}
@@ -248,11 +256,11 @@ export default function Canvas(props) {
 		setDragging(false);
 		redrawCanvas();
 		setIsPanning(false);
+		props.setDisableOverlay(false);
 	}
 
 	function dragElement(e) {
 		if (timer && busy == true) {
-			
 			var rect = canvas.current.getBoundingClientRect();
 			var tx = (e.clientX - rect.left) * (canvas.current.width / rect.width);
 			var ty = (e.clientY - rect.top) * (canvas.current.height / rect.height);
@@ -337,11 +345,13 @@ export function CanvasOverlay(props) {
 
 	React.useEffect(() => {
 		if (component) {
+			
 			setDisplay(
 				<>
-					<h4>{component.name}</h4>
+					<h4>{component.name} - {component.id}</h4>
 					<p>{component.description}</p>
 					{Object.keys(data).map((key) => {
+						if (data[key].hidden) return (<></>);
 						switch (data[key].type) {
 							case "radio":
 								console.log("RADIO");
@@ -350,6 +360,8 @@ export function CanvasOverlay(props) {
 										aria-labelledby="demo-radio-buttons-group-label"
 										defaultValue={data[key].value || ""}
 										name="radio-buttons-group"
+										key = {key + "radio" + component.id}
+										id = {key + "radio" + component.id}
 										onChange={(e) => {
 											updateData(e, key);
 										}}
@@ -369,6 +381,8 @@ export function CanvasOverlay(props) {
 								console.log("CHECKBOX");
 								return (
 									<FormControlLabel
+										key={key + "checkbox" + component.id}
+										id="checkbox"
 										control={<Checkbox value={data[key].value} />}
 										label={key}
 									/>
@@ -379,6 +393,7 @@ export function CanvasOverlay(props) {
 									<TextField
 										autoComplete="off"
 										autoCorrect="off"
+										key={key + "text" + component.id}
 										id="outlined-basic"
 										label={key}
 										value={data[key].value || ""}
@@ -401,6 +416,9 @@ export function CanvasOverlay(props) {
 	function updateData(e, key) {
 		var dat = data[key];
 		dat.value = e.target.value;
+		component.data[key] = dat;
+		component.reload();
+		props.updateNotebook(elementsList);
 
 		setData({ ...data, [key]: dat });
 	}
@@ -410,7 +428,7 @@ export function CanvasOverlay(props) {
 			{" "}
 			{component && (
 				<div className={active ? "canvas-overlay active" : "canvas-overlay"}>
-					<div className="canvas-overlay-content">{display}</div>
+					<div className={props.pointer ? "canvas-overlay-content none_pointer_events" : "canvas-overlay-content"}>{display}</div>
 				</div>
 			)}
 		</>
@@ -431,6 +449,9 @@ class Element {
 		this.dragColor = "#00ff00";
 		this.component = component || { name: "Test", inputs: [], outputs: [] };
 		this.text = this.component.name;
+		this.id = this.component.id;
+
+		console.log("CREATED", this.component);
 
 		if (this.text.length > 5) {
 			this.w = Math.max(this.text.length * 20, this.w);
@@ -470,11 +491,17 @@ class Element {
 		ctx.fillStyle = "#fff";
 		ctx.font = "20px Arial";
 		ctx.textAlign = "center";
-		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2 + 10);
+		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2);
+
+		// draw the id
+		ctx.fillStyle = "#fff";	
+		ctx.font = "12px Arial";
+		ctx.textAlign = "center";
+		ctx.fillText(this.component.id, this.x + this.w / 2, this.y + this.h / 2 + 20);
 	}
 
 	drawLines(ctx) {
-		if (this.element) {
+		if (this.element != null) {
 			this.lineToX = elementsList[this.element].x;
 			this.lineToY =
 				elementsList[this.element].y + elementsList[this.element].h / 2;
@@ -550,6 +577,24 @@ class Element {
 	}
 
 	lineToElement(i) {
+		if (this.component in elementsList[i].component.outputs) {
+			console.log("ALREADY CONNECTED");
+			this.element = null;
+			this.lineToX = -1;
+			this.lineToY = -1;
+			return false;
+		}
+		console.log(this.component.id);
 		this.element = i;
+		this.component.outputs.push(elementsList[i].component);
+		elementsList[i].component.inputs.push(this.component);
+		return true;
+	}
+
+	removeElement() {
+		if (this.element != null) {
+			elementsList[this.element].component.inputs = [];
+			this.component.outputs = [];
+		}
 	}
 }
