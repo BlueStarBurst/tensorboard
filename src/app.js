@@ -12,6 +12,20 @@ import { Notebook, Raw, Web } from "./Pages.js";
 var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
 
+function isMobile() {
+	if ("maxTouchPoints" in navigator) return navigator.maxTouchPoints > 0;
+
+	const mQ = matchMedia?.("(pointer:coarse)");
+	if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
+
+	if ("orientation" in window) return true;
+
+	return (
+		/\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(navigator.userAgent) ||
+		/\b(Android|Windows Phone|iPad|iPod)\b/i.test(navigator.userAgent)
+	);
+}
+
 const components = {
 	Data: {
 		name: "Data",
@@ -418,7 +432,43 @@ function App() {
 		}
 	}
 
+	const [prevTouch, setPrevTouch] = React.useState([-1, -1]);
+	const [prevDistance, setPrevDistance] = React.useState(-1);
+
 	function setTouchCoords(e) {
+
+		// if two fingers are touching the screen, detect zoom and pan gestures
+		if (e.touches.length > 1 && prevDistance > -1 && prevTouch[0] > -1 && prevTouch[1] > -1) {
+			console.log("TWO TOUCHES");
+			// get the distance between the two fingers
+			var x1 = e.touches[0].clientX;
+			var y1 = e.touches[0].clientY;
+			var x2 = e.touches[1].clientX;
+			var y2 = e.touches[1].clientY;
+			var distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+			console.log(distance);
+			// if the distance is greater than the previous distance, zoom in
+			if (distance > prevDistance) {
+				zoomContainer({ deltaY: -1, clientX: (x1 + x2) / 2, clientY: (y1 + y2) / 2 });
+			} else {
+				zoomContainer({ deltaY: 1, clientX: (x1 + x2) / 2, clientY: (y1 + y2) / 2 });
+			}
+			setPrevDistance(distance);
+			setPrevTouch([x1, y1]);
+		} else if (e.touches.length > 1) {
+			console.log("TWO TOUCHES");
+			// if two fingers are touching the screen, set the distance and the first touch
+			var x1 = e.touches[0].clientX;
+			var y1 = e.touches[0].clientY;
+			var x2 = e.touches[1].clientX;
+			var y2 = e.touches[1].clientY;
+			var distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+			setPrevDistance(distance);
+			setPrevTouch([x1, y1]);
+		}
+
+
+
 		setMouseX(e.touches[0].clientX);
 		setMouseY(e.touches[0].clientY);
 		mouseXext = e.touches[0].clientX;
@@ -892,6 +942,15 @@ function App() {
 				<div
 					className="slider"
 					onMouseDown={(e) => {
+						e.preventDefault();
+						setIsResizing(true);
+						setWebPointer(true);
+						var children = document.getElementById("parent").children;
+						for (var i = 0; i < children.length; i++) {
+							children[i].classList.remove("transition-width");
+						}
+					}}
+					onTouchStart={(e) => {
 						e.preventDefault();
 						setIsResizing(true);
 						setWebPointer(true);
