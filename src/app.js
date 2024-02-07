@@ -13,17 +13,10 @@ var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
 
 function isMobile() {
-	if ("maxTouchPoints" in navigator) return navigator.maxTouchPoints > 0;
-
-	const mQ = matchMedia?.("(pointer:coarse)");
-	if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
-
-	if ("orientation" in window) return true;
-
-	return (
-		/\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(navigator.userAgent) ||
-		/\b(Android|Windows Phone|iPad|iPod)\b/i.test(navigator.userAgent)
-	);
+	if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){
+		return true;
+	}
+	return false;
 }
 
 const components = {
@@ -439,7 +432,12 @@ function App() {
 		// e.preventDefault();
 
 		// if two fingers are touching the screen, detect zoom and pan gestures
-		if (e.touches.length > 1 && prevDistance > -1 && prevTouch[0] > -1 && prevTouch[1] > -1) {
+		if (
+			e.touches.length > 1 &&
+			prevDistance > -1 &&
+			prevTouch[0] > -1 &&
+			prevTouch[1] > -1
+		) {
 			console.log("TWO TOUCHES");
 			// get the distance between the two fingers
 			var x1 = e.touches[0].clientX;
@@ -450,9 +448,17 @@ function App() {
 			console.log(distance);
 			// if the distance is greater than the previous distance, zoom in
 			if (distance > prevDistance) {
-				zoomContainer({ deltaY: -1, clientX: (x1 + x2) / 2, clientY: (y1 + y2) / 2 });
+				zoomContainer({
+					deltaY: -1,
+					clientX: (x1 + x2) / 2,
+					clientY: (y1 + y2) / 2,
+				});
 			} else {
-				zoomContainer({ deltaY: 1, clientX: (x1 + x2) / 2, clientY: (y1 + y2) / 2 });
+				zoomContainer({
+					deltaY: 1,
+					clientX: (x1 + x2) / 2,
+					clientY: (y1 + y2) / 2,
+				});
 			}
 			setPrevDistance(distance);
 			setPrevTouch([x1, y1]);
@@ -467,8 +473,6 @@ function App() {
 			setPrevDistance(distance);
 			setPrevTouch([x1, y1]);
 		}
-
-
 
 		setMouseX(e.touches[0].clientX);
 		setMouseY(e.touches[0].clientY);
@@ -680,13 +684,13 @@ function App() {
 		if (isMobile()) {
 			console.log("MOBILE");
 			// add event listeners for touch events
-			var div = document.createElement("div")
+			var div = document.createElement("div");
 
 			div.className = "fullscreen-button";
 
 			// add the div to the body
 			document.body.appendChild(div);
-			
+
 			div.addEventListener("click", function () {
 				// request full screen
 				console.log("FULLSCREEN");
@@ -699,7 +703,6 @@ function App() {
 			// div.click();
 
 			console.log(div);
-
 		}
 
 		return () => {
