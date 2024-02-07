@@ -696,7 +696,7 @@ function App() {
 			div.addEventListener("click", function () {
 				// request full screen
 				console.log("FULLSCREEN");
-				// document.documentElement.requestFullscreen();
+				document.documentElement.requestFullscreen();
 
 				// remove self
 				document.body.removeChild(div);
