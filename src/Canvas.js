@@ -7,6 +7,7 @@ import {
 	InputLabel,
 	Radio,
 	RadioGroup,
+	Slider,
 } from "@mui/material";
 import { InputGroup } from "react-bootstrap";
 
@@ -23,11 +24,59 @@ export default function Canvas(props) {
 	const canvas = React.useRef(null);
 	const canvas2 = React.useRef(null);
 
-	const [elements, setElements] = React.useState([]);
+	const [elements, setElements] = React.useState({});
 	const [dragging, setDragging] = React.useState(false);
 	const [lining, setLining] = React.useState(false);
 	const [selectedElement, setSelectedElement] = React.useState(null);
+	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
 	const [isPanning, setIsPanning] = React.useState(false);
+
+	function onKeyboard(e) {
+		console.log("KEY", e.key);
+		if (e.key == "Escape") {
+			if (selectedElement) {
+				selectedElement.dragging = false;
+			}
+			if (oldSelectedElement) {
+				oldSelectedElement.dragging = false;
+			}
+			setDragging(false);
+			setLining(false);
+			setSelectedElement(null);
+			setOldSelectedElement(null);
+			props.selectElement(null);
+			redrawCanvas();
+		} else if (e.key == "Delete") {
+			console.log("DELETE", selectedElement, oldSelectedElement);
+			if (selectedElement != null) {
+				selectedElement.removeElement();
+				var tempElems = elements;
+				delete tempElems[selectedElement.id];
+				console.log("DELETED", tempElems);
+				setElements(tempElems);
+				props.updateNotebook(tempElems);
+				elementsList = tempElems;
+				redrawCanvas();
+			} else if (oldSelectedElement != null) {
+				oldSelectedElement.removeElement();
+				var tempElems = elements;
+				delete tempElems[oldSelectedElement.id];
+				console.log("DELETED", tempElems);
+				setElements(tempElems);
+				props.updateNotebook(tempElems);
+				elementsList = tempElems;
+				redrawCanvas();
+			}
+			props.selectElement(null);
+		}
+		props.setKeyDown(null);
+	}
+
+	useEffect(() => {
+		if (props.keyDown != null) {
+			onKeyboard(props.keyDown);
+		}
+	}, [props.keyDown]);
 
 	React.useEffect(() => {
 		if (canvas) {
@@ -41,7 +90,7 @@ export default function Canvas(props) {
 		if (canvas) {
 			redrawCanvas();
 		}
-	}, [elements]);
+	}, [elements, selectedElement, oldSelectedElement]);
 
 	React.useEffect(() => {
 		if (dragging || lining) {
@@ -92,20 +141,25 @@ export default function Canvas(props) {
 
 		ctx.clearRect(0, 0, w, h);
 
-		for (var i = 0; i < elements.length; i++) {
-			elements[i].drawLines(ctx);
-		}
-		for (var i = 0; i < elements.length; i++) {
-			elements[i].draw(ctx);
-		}
+		Object.keys(elements).forEach((key) => {
+			elements[key].drawLines(ctx);
+		});
+		Object.keys(elements).forEach((key) => {
+			console.log("DRAWING", key);
+			elements[key].draw(ctx);
+		});
 	}
 
 	function preventDefault(e) {
 		e.preventDefault();
 	}
 
-	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
+	
 	const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+
+	function setBusy(b) {
+		busy = b;
+	}
 
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
@@ -117,33 +171,38 @@ export default function Canvas(props) {
 
 		props.setDisableOverlay(true);
 
-		for (var i = 0; i < elements.length; i++) {
-			if (elements[i].isLining(x, y)) {
+		busy = false;
+
+		Object.keys(elements).forEach((key) => {
+			var elem = elements[key];
+			if (elem.isLining(x, y)) {
 				busy = true;
+				setBusy(true);
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
 				}
 
-				elements[i].dragging = true;
-				elements[i].removeElement();
-				elements[i].element = null;
-				elements[i].lining = true;
+				elem.dragging = true;
+				elem.removeElement();
+				elem.element = null;
+				elem.lining = true;
 				canvas.current.style.cursor = "crosshair";
-				setSelectedElement(elements[i]);
-				props.selectElement(elements[i]);
+				setSelectedElement(elem);
+				props.selectElement(elem);
 				setLining(true);
 				redrawCanvas();
 				props.updateNotebook(elements);
 				return;
-			} else if (elements[i].isDragging(x, y)) {
+			} else if (elem.isDragging(x, y)) {
 				busy = true;
+				setBusy(true);
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
 				}
 
-				setSelectedElement(elements[i]);
-				props.selectElement(elements[i]);
-				elements[i].dragging = true;
+				setSelectedElement(elem);
+				props.selectElement(elem);
+				elem.dragging = true;
 				timer = setTimeout(() => {
 					canvas.current.style.cursor = "grabbing";
 					setDragging(true);
@@ -153,9 +212,10 @@ export default function Canvas(props) {
 				}, 250);
 				return;
 			}
-		}
+		});
 
-		busy = false;
+		if (busy) return;
+
 		timer = setTimeout(() => {
 			clearTimeout(timer);
 			timer = null;
@@ -180,15 +240,18 @@ export default function Canvas(props) {
 		var element = new Element(
 			tx,
 			ty,
-			100,
-			100,
+			150,
+			150,
 			"#ff0000",
 			props.currentComponent
 		);
-		setElements([...elements, element]);
-		props.updateNotebook([...elements, element]);
-		elementsList = [...elements, element];
+		var tempElements = elements;
+		tempElements[props.currentComponent.id] = element;
+		setElements(tempElements);
+		props.updateNotebook(tempElements);
+		elementsList = tempElements;
 		setIsPanning(false);
+		redrawCanvas();
 	}, [props.mouseUp]);
 
 	function onMouseUpCanvas(e) {
@@ -218,15 +281,14 @@ export default function Canvas(props) {
 
 		if (lining) {
 			var didLine = false;
-			for (var i = 0; i < elements.length; i++) {
-				if (elements[i].isDragging(x, y)) {
+			Object.keys(elements).forEach((key) => {
+				if (elements[key].isDragging(x, y)) {
 					// connect the line to the element
-					selectedElement.lineToElement(i);
+					selectedElement.lineToElement(key);
 					props.updateNotebook(elements);
 					didLine = true;
-					break;
 				}
-			}
+			});
 
 			// stop drawing the line
 			if (selectedElement) {
@@ -307,6 +369,8 @@ export default function Canvas(props) {
 	return (
 		<>
 			<canvas
+				onKeyDown={onKeyboard}
+				onKeyDownCapture={onKeyboard}
 				ref={canvas}
 				className="canvas-elem"
 				width={props.size.x}
@@ -316,6 +380,8 @@ export default function Canvas(props) {
 				onMouseMove={dragElement}
 			/>
 			<canvas
+				onKeyDown={onKeyboard}
+				onKeyDownCapture={onKeyboard}
 				ref={canvas2}
 				className="canvas-elem-abs"
 				width={props.size.x}
@@ -345,23 +411,25 @@ export function CanvasOverlay(props) {
 
 	React.useEffect(() => {
 		if (component) {
-			
 			setDisplay(
 				<>
-					<h4>{component.name} - {component.id}</h4>
+					<h4>
+						{component.name} - {component.id}
+					</h4>
 					<p>{component.description}</p>
 					{Object.keys(data).map((key) => {
-						if (data[key].hidden) return (<></>);
+						if (data[key].hidden) return <></>;
 						switch (data[key].type) {
 							case "radio":
 								console.log("RADIO");
 								return (
 									<RadioGroup
+										row
 										aria-labelledby="demo-radio-buttons-group-label"
 										defaultValue={data[key].value || ""}
 										name="radio-buttons-group"
-										key = {key + "radio" + component.id}
-										id = {key + "radio" + component.id}
+										key={key + "radio" + component.id}
+										id={key + "radio" + component.id}
 										onChange={(e) => {
 											updateData(e, key);
 										}}
@@ -383,9 +451,78 @@ export function CanvasOverlay(props) {
 									<FormControlLabel
 										key={key + "checkbox" + component.id}
 										id="checkbox"
-										control={<Checkbox value={data[key].value} />}
+										control={
+											<Checkbox
+												value={data[key].value == "True" ? true : false}
+												defaultChecked={
+													data[key].value == "True" ? true : false
+												}
+												defaultValue={data[key].value == "True" ? true : false}
+												onChange={(e) => {
+													data[key].value = e.target.checked ? "True" : "False";
+													component.data[key] = data[key];
+													component.reload();
+													props.updateNotebook(elementsList);
+													setData({ ...data, [key]: data[key] });
+												}}
+											/>
+										}
 										label={key}
 									/>
+								);
+							case "slider":
+								console.log("SLIDER");
+								return (
+									<InputGroup
+										className="row"
+										key={key + "slider" + component.id}
+									>
+										<TextField
+											autoComplete="off"
+											autoCorrect="off"
+											key={key + "text" + component.id}
+											id="outlined-basic"
+											label={key}
+											value={data[key].value || 0}
+											style={{ width: "20%" }}
+											variant="outlined"
+											onChange={(e) => {
+												// get only leading dashes, digits and dots
+												if (data[key].step == 1) {
+													e.target.value = e.target.value.replace(
+														/[^\d-]/g,
+														""
+													);
+												} else {
+													e.target.value = e.target.value.replace(
+														/[^\d.-]/g,
+														""
+													);
+												}
+												// remove leading zeros
+												e.target.value = e.target.value.replace(/^0+/, "");
+												updateData(e, key);
+											}}
+										/>
+										<Slider
+											key={key + "slider" + component.id}
+											aria-label="Default"
+											valueLabelDisplay="auto"
+											defaultValue={data[key].value || 0}
+											value={data[key].value || 0}
+											step={data[key].step || 1}
+											style={{ width: "75%" }}
+											min={data[key].min || -100}
+											max={data[key].max || 100}
+											onChange={(e, value) => {
+												data[key].value = value;
+												component.data[key] = data[key];
+												component.reload();
+												props.updateNotebook(elementsList);
+												setData({ ...data, [key]: data[key] });
+											}}
+										/>
+									</InputGroup>
 								);
 							case "text":
 							default:
@@ -398,6 +535,7 @@ export function CanvasOverlay(props) {
 										label={key}
 										value={data[key].value || ""}
 										variant="outlined"
+										disabled={data[key].readonly || false}
 										fullWidth
 										onChange={(e) => {
 											updateData(e, key);
@@ -428,7 +566,15 @@ export function CanvasOverlay(props) {
 			{" "}
 			{component && (
 				<div className={active ? "canvas-overlay active" : "canvas-overlay"}>
-					<div className={props.pointer ? "canvas-overlay-content none_pointer_events" : "canvas-overlay-content"}>{display}</div>
+					<div
+						className={
+							props.pointer
+								? "canvas-overlay-content none_pointer_events"
+								: "canvas-overlay-content"
+						}
+					>
+						{display}
+					</div>
 				</div>
 			)}
 		</>
@@ -444,17 +590,18 @@ class Element {
 		this.lineToX = -1;
 		this.lineToY = -1;
 		this.element = null;
+		this.elementId = null;
 		this.dragging = false;
 		this.color = color;
 		this.dragColor = "#00ff00";
-		this.component = component || { name: "Test", inputs: [], outputs: [] };
+		this.component = component || {};
 		this.text = this.component.name;
 		this.id = this.component.id;
 
 		console.log("CREATED", this.component);
 
 		if (this.text.length > 5) {
-			this.w = Math.max(this.text.length * 20, this.w);
+			this.w = Math.max(this.text.length * 25, this.w);
 		}
 	}
 
@@ -466,20 +613,20 @@ class Element {
 		}
 		// round the corners of the rectangle
 		ctx.beginPath();
-		ctx.moveTo(this.x + 10, this.y);
-		ctx.lineTo(this.x + this.w - 10, this.y);
-		ctx.quadraticCurveTo(this.x + this.w, this.y, this.x + this.w, this.y + 10);
-		ctx.lineTo(this.x + this.w, this.y + this.h - 10);
+		ctx.moveTo(this.x + 20, this.y);
+		ctx.lineTo(this.x + this.w - 20, this.y);
+		ctx.quadraticCurveTo(this.x + this.w, this.y, this.x + this.w, this.y + 20);
+		ctx.lineTo(this.x + this.w, this.y + this.h - 20);
 		ctx.quadraticCurveTo(
 			this.x + this.w,
 			this.y + this.h,
-			this.x + this.w - 10,
+			this.x + this.w - 20,
 			this.y + this.h
 		);
-		ctx.lineTo(this.x + 10, this.y + this.h);
-		ctx.quadraticCurveTo(this.x, this.y + this.h, this.x, this.y + this.h - 10);
-		ctx.lineTo(this.x, this.y + 10);
-		ctx.quadraticCurveTo(this.x, this.y, this.x + 10, this.y);
+		ctx.lineTo(this.x + 20, this.y + this.h);
+		ctx.quadraticCurveTo(this.x, this.y + this.h, this.x, this.y + this.h - 20);
+		ctx.lineTo(this.x, this.y + 20);
+		ctx.quadraticCurveTo(this.x, this.y, this.x + 20, this.y);
 		ctx.fill();
 
 		// draw a small rectangle at the right center of the element
@@ -489,15 +636,19 @@ class Element {
 
 		// draw the text
 		ctx.fillStyle = "#fff";
-		ctx.font = "20px Arial";
+		ctx.font = "25px Arial";
 		ctx.textAlign = "center";
 		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2);
 
 		// draw the id
-		ctx.fillStyle = "#fff";	
-		ctx.font = "12px Arial";
+		ctx.fillStyle = "#fff";
+		ctx.font = "18px Arial";
 		ctx.textAlign = "center";
-		ctx.fillText(this.component.id, this.x + this.w / 2, this.y + this.h / 2 + 20);
+		ctx.fillText(
+			this.component.id,
+			this.x + this.w / 2,
+			this.y + this.h / 2 + 20
+		);
 	}
 
 	drawLines(ctx) {
@@ -577,24 +728,26 @@ class Element {
 	}
 
 	lineToElement(i) {
-		if (this.component in elementsList[i].component.outputs) {
+		if (this.component.id in Object.keys(elementsList[i].component.outputs)) {
 			console.log("ALREADY CONNECTED");
 			this.element = null;
+			this.elementId = null;
 			this.lineToX = -1;
 			this.lineToY = -1;
 			return false;
 		}
 		console.log(this.component.id);
 		this.element = i;
-		this.component.outputs.push(elementsList[i].component);
-		elementsList[i].component.inputs.push(this.component);
+		this.elementId = elementsList[i].component.id;
+		this.component.outputs[this.elementId] = elementsList[i].component;
+		elementsList[i].component.inputs[this.component.id] = this.component;
 		return true;
 	}
 
 	removeElement() {
 		if (this.element != null) {
-			elementsList[this.element].component.inputs = [];
-			this.component.outputs = [];
+			delete elementsList[this.element].component.inputs[this.component.id];
+			delete this.component.outputs[this.elementId];
 		}
 	}
 }

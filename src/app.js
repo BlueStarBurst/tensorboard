@@ -2,8 +2,6 @@ import React, { useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import ReactDOM from "react-dom";
 
-
-
 import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
@@ -46,7 +44,11 @@ const components = {
 		transpile: function () {
 			console.log("TRANSPILING", this.id, this.data);
 			if (this.data.Type.value == "HuggingFace") {
-				return `print('Downloading data from https://hugingface.com/${this.data.RepoID.value}')\nfrom huggingface_hub import hf_hub_download\nimport pandas as pd\ndataset = pd.read_csv(\n\thf_hub_download(repo_id="${this.data.RepoID.value}", filename="${this.data.FileName.value}", repo_type="dataset")\n)\nfor i in range(10):\n\tprint(i)`;
+				return `from huggingface_hub import hf_hub_download\nimport pandas as pd\nprint('Downloading data from https://hugingface.com/${
+					this.data.RepoID.value
+				}')\n${this.getOutput()} = pd.read_csv(\n\thf_hub_download(repo_id="${
+					this.data.RepoID.value
+				}", filename="${this.data.FileName.value}", repo_type="dataset")\n)`;
 			} else {
 				return `print('Downloading data from ${this.data.URL.value}')\n!wget -O dataset.zip ${this.data.URL.value}`;
 			}
@@ -64,6 +66,10 @@ const components = {
 		},
 		outputs: [],
 		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "dataset",
 	},
 	Normalize: {
 		name: "Normalize",
@@ -79,6 +85,237 @@ const components = {
 		reload: function () {},
 		outputs: [],
 		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "norm",
+	},
+	Value: {
+		name: "Value",
+		data: {
+			Type: {
+				type: "radio",
+				options: ["Integer", "String", "Float", "Boolean"],
+				value: "Integer",
+				hidden: false,
+			},
+			Integer: {
+				type: "slider",
+				value: 0,
+				min: -100,
+				max: 100,
+				step: 1,
+				hidden: false,
+			},
+			String: {
+				type: "text",
+				value: "",
+				hidden: true,
+			},
+			Float: {
+				type: "slider",
+				value: 0.0,
+				min: -100,
+				max: 100,
+				step: 0.01,
+				hidden: true,
+			},
+			Boolean: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+		},
+		transpile: function () {
+			if (this.data.Type.value == "Integer") {
+				return `${this.getOutput()} = ${this.data.Integer.value}`;
+			} else if (this.data.Type.value == "String") {
+				return `${this.getOutput()} = "${this.data.String.value}"`;
+			} else if (this.data.Type.value == "Float") {
+				return `${this.getOutput()} = ${this.data.Float.value}`;
+			} else if (this.data.Type.value == "Boolean") {
+				return `${this.getOutput()} = ${this.data.Boolean.value}`;
+			}
+		},
+		reload: function () {
+			if (this.data.Type.value == "Integer") {
+				this.data.Integer.hidden = false;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+			} else if (this.data.Type.value == "String") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = false;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+			} else if (this.data.Type.value == "Float") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = false;
+				this.data.Boolean.hidden = true;
+			} else if (this.data.Type.value == "Boolean") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = false;
+			}
+		},
+		outputs: [],
+		inputs: [],
+		getOutput: function () {
+			return this.data.Type.value.toLowerCase() + this.id;
+		},
+		getValue: function () {
+			if (this.data.Type.value == "Integer") {
+				return this.data.Integer.value;
+			} else if (this.data.Type.value == "String") {
+				return this.data.String.value;
+			} else if (this.data.Type.value == "Float") {
+				return this.data.Float.value;
+			} else if (this.data.Type.value == "Boolean") {
+				return this.data.Boolean.value;
+			}
+		},
+		output: "value",
+	},
+	Library: {
+		name: "Install",
+		data: {
+			UseVersion: {
+				type: "checkbox",
+				value: "False",
+				hidden: false,
+			},
+			Library: {
+				type: "text",
+				value: "",
+				hidden: false,
+			},
+			Version: {
+				type: "text",
+				value: "",
+				hidden: true,
+			},
+		},
+		transpile: function () {
+			if (this.data.Version.value) {
+				return `%pip install ${this.data.Library.value}==${this.data.Version.value}`;
+			}
+			return `%pip install ${this.data.Library.value}`;
+		},
+		reload: function () {
+			if (this.data.UseVersion.value == "True") {
+				this.data.Version.hidden = false;
+			} else {
+				this.data.Version.hidden = true;
+			}
+		},
+		outputs: [],
+		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "library",
+	},
+	Import: {
+		name: "Import",
+		data: {
+			from: {
+				type: "text",
+				value: "",
+			},
+			import: {
+				type: "text",
+				value: "",
+			},
+		},
+		transpile: function () {
+			return `from ${this.data.from.value} import ${this.data.import.value}`;
+		},
+		reload: function () {},
+		outputs: [],
+		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "import",
+	},
+	Array: {
+		name: "Array",
+		description: "Use Values as inputs to create an array of values",
+		data: {
+			Data: {
+				type: "text",
+				value: "text",
+				readonly: true,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			// get the outputs of the inputs
+
+			var vals = [];
+			var outputs = Object.keys(this.inputs).map((key, index) => {
+				var input = this.inputs[key];
+				if (input.getValue) {
+					vals.push(input.getValue());
+				}
+				return input.getOutput();
+			});
+			console.log(outputs);
+
+			this.data.Data.value = `[${vals.join(", ")}]`;
+
+			// return an array of the outputs
+			return `${this.getOutput()} = [${outputs.join(", ")}]`;
+		},
+		reload: function () {},
+		getOutput: function () {
+			return "array" + this.id;
+		},
+		getValue: function () {
+			return this.data.Data.value;
+		}
+	},
+	Print: {
+		name: "Print",
+		data: {
+			Data: {
+				type: "text",
+				value: "",
+				readonly: false,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			// if there is an input, print the input
+			if (Object.keys(this.inputs).length > 0) {
+				// print all the inputs
+				
+				var outputs = Object.keys(this.inputs).map((key, index) => {
+					if (this.inputs[key].getValue) {
+						return this.inputs[key].getValue();
+					}
+				});
+				this.data.Data.value = outputs.join(", ");
+				this.data.Data.readonly = true;
+
+				var trueOutputs = Object.keys(this.inputs).map((key, index) => {
+					return this.inputs[key].getOutput();
+				});
+
+				return `print(${trueOutputs.join(", ")})`;
+			} else {
+				// print the value
+				this.data.Data.readonly = false;
+				return `print("${this.data.Data.value}")`;
+			}
+		},
+		reload: function () {},
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "print",
 	},
 };
 
@@ -216,6 +453,7 @@ function App() {
 	}
 
 	function onKeyPressed(e) {
+		
 		// console.log('onKeyDown', e);
 		// get ig b is pressed
 		// if (e.key === "b") {
@@ -285,7 +523,7 @@ function App() {
 	}
 
 	useEffect(() => {
-		document.addEventListener("keydown", onKeyPressed);
+		document.addEventListener("keydown", onKeyboardDown);
 
 		// prevent wheel scrolling on the canvasContainer element
 		canvasContainer.current.addEventListener("wheel", zoomContainer, {
@@ -415,9 +653,9 @@ function App() {
 	const [ids, setIds] = React.useState([]);
 
 	function getNewId() {
-		var id = Math.floor(Math.random() * 1000000000);
+		var id = Math.floor(Math.random() * 100000);
 		while (id in ids) {
-			id = Math.floor(Math.random() * 1000000000);
+			id = Math.floor(Math.random() * 100000);
 		}
 		setIds([...ids, id]);
 		return id;
@@ -447,54 +685,67 @@ function App() {
 
 	function addChildrenToComponentList(component) {
 		console.log("Recursing");
-		var finArray = [component];
-		for (var i = 0; i < component.outputs.length; i++) {
-			console.log("CHILD!", component.outputs[i]);
-			var tempArr = addChildrenToComponentList(component.outputs[i]);
+		var finArray = [component.id];
+		// loop through keys of component outputs {id : component}
+		Object.keys(component.outputs).map((key, index) => {
+			console.log("CHILD!", component.outputs[key]);
+			var tempArr = addChildrenToComponentList(component.outputs[key]);
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
-		}
+		});
 		return finArray;
 	}
 
 	function updateNotebook(currentElements) {
 		var tcomponents = [];
-		var scomponents = [];
+		var scomponents = {};
+		var rootComponents = [];
+		var keyList = [];
 		var fcomponents = [];
+
+		currentElements = Object.values(currentElements);
 
 		for (var i = 0; i < currentElements.length; i++) {
 			var element = currentElements[i];
 
 			console.log(currentElements);
 			tcomponents.push(element.component);
+			scomponents[element.component.id] = element.component;
 		}
 		console.log("ELEMENTS", currentElements);
 
-		scomponents = [];
-		var counter = 0;
 		// get all components with no inputs
 		for (var i = 0; i < tcomponents.length; i++) {
 			var component = tcomponents[i];
 			console.log(component);
-			if (component.inputs.length == 0) {
+			if (Object.keys(component.inputs).length == 0) {
 				console.log("NO INPUTS", i);
-				scomponents.push(component);
-				fcomponents.push(component);
+
+				keyList.push(component.id);
+				rootComponents.push(component);
 			}
 		}
-		console.log("COMPONENTS", scomponents);
+		console.log("ROOT COMPONENTS", rootComponents);
 		// loop through all components with no inputs, adding their outputs to the inputs of other components
-		for (var i = 0; i < scomponents.length; i++) {
-			var children = scomponents[i].outputs;
+		for (var i = 0; i < rootComponents.length; i++) {
+			var children = rootComponents[i].outputs;
 			console.log("CHILDREN", children);
-			for (var j = 0; j < children.length; j++) {
-				console.log("CHILD", children[j]);
+			Object.keys(children).map((key, index) => {
+				console.log("CHILD", children[key]);
 				// add the children to the components array
-				var tempArr = addChildrenToComponentList(children[j]);
+				var tempArr = addChildrenToComponentList(children[key]);
 				console.log("TEMPARR", tempArr);
-				for (var k = 0; k < tempArr.length; k++) {
-					fcomponents.push(tempArr[k]);
-				}
+				keyList = keyList.concat(tempArr);
+			});
+		}
+
+		// loop backwards through the keyList, keeping only the unique keys
+		var uniqueKeyList = [];
+		for (var i = keyList.length - 1; i >= 0; i--) {
+			if (!uniqueKeyList.includes(keyList[i])) {
+				// add to front of array
+				uniqueKeyList.push(keyList[i]);
+				fcomponents.unshift(scomponents[keyList[i]]);
 			}
 		}
 
@@ -527,6 +778,13 @@ function App() {
 
 	const [disableOverlay, setDisableOverlay] = React.useState(false);
 
+	const [keyDown, setKeyDown] = React.useState(null);
+
+	function onKeyboardDown(e) {
+		console.log("onKeyboardDown", e);
+		setKeyDown(e);
+	}
+
 	return (
 		<ThemeProvider theme={darkTheme}>
 			<CssBaseline />
@@ -538,6 +796,8 @@ function App() {
 					createItem(e.clientX, e.clientY);
 					mouseUp(e);
 				}}
+				onKeyDown={onKeyboardDown}
+
 			>
 				<CanvasOverlay
 					selectedElement={selectedElement}
@@ -547,7 +807,7 @@ function App() {
 				<div
 					className="canvas"
 					// onMouseMove={panCanvas}
-					// onKeyDown={onKeyPressed}
+					
 					// onMouseDown={(e) => {
 					// setIsPanning(true);
 					// }}
@@ -563,6 +823,8 @@ function App() {
 						selectElement={selectElement}
 						updateNotebook={updateNotebook}
 						setDisableOverlay={setDisableOverlay}
+						keyDown={keyDown}
+						setKeyDown={setKeyDown}
 					/>
 
 					{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
@@ -677,7 +939,6 @@ function App() {
 	);
 }
 
-
 function DraggableTemplate(props) {
 	const [thisComponent, setThisComponent] = React.useState(false);
 	const ref = React.useRef(null);
@@ -699,8 +960,8 @@ function DraggableTemplate(props) {
 		// newComponent.reload = props.component.reload;
 		var newComponent = Object.create(props.component);
 		newComponent.data = JSON.parse(JSON.stringify(props.component.data));
-		newComponent.inputs = [];
-		newComponent.outputs = [];
+		newComponent.inputs = {};
+		newComponent.outputs = {};
 
 		newComponent.id = props.getNewId();
 		props.setCurrentComponent(newComponent);

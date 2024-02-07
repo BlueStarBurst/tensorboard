@@ -26,7 +26,7 @@ export function Notebook(props) {
 			console.log("highlighting");
 			setTimeout(() => {
 				hljs.highlightAll();
-			}, 1);
+			}, 0.01);
 		}
 	}, [ready]);
 
@@ -34,7 +34,7 @@ export function Notebook(props) {
 		<div className="notebook-container">
 			{ready ? (
 				<>
-					<div className="cell-container">
+					<div className="cell-container" key={"1"} id="1"> 
 						{cells.map((cell, index) => {
 							return (
 								<div key={index} className="cell">
@@ -81,7 +81,56 @@ export function Notebook(props) {
 						</Button>
 					</div>
 				</>
-			) : null}
+			) : (
+				<>
+					<div className="cell-container" key={"2"} id="2">
+						{cells.map((cell, index) => {
+							return (
+								<div key={index} className="cell">
+									<div className="cell-line" key={index}>
+										<div className="cell-left">
+											<p className="cell-index">[{index + 1}]:</p>
+											<p className="cell-id">{cell.metadata.id}</p>
+										</div>
+										<pre style={{ width: "100%" }}>
+											<code id={JSON.stringify(cell)} className="python">
+												{cell.source.map((line, i) => {
+													return (
+														<div key={i} className="cell-code">
+															{line}
+														</div>
+													);
+												})}
+											</code>
+										</pre>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+					<div className="notebook-footer">
+						<Button variant="contained" color="warning" onClick={(e) => {}}>
+							Save
+						</Button>
+						<Button
+							variant="contained"
+							color="primary"
+							onClick={(e) => {
+								var json =
+									props.start + JSON.stringify(cells, null, 4) + props.end;
+								var blob = new Blob([json], { type: "application/json" });
+								var url = URL.createObjectURL(blob);
+								var a = document.createElement("a");
+								a.href = url;
+								a.download = "notebook.ipynb";
+								a.click();
+							}}
+						>
+							Download
+						</Button>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }

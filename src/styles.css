@@ -53,6 +53,15 @@ h6 {
   width: 100vw !important;
 }
 
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+}
+
 .slider {
   min-width: 10px !important;
   /* background-color: black; */
@@ -185,6 +194,8 @@ h6 {
   border-radius: 1rem;
   padding: 1rem;
   gap: 1rem;
+  justify-content: start;
+  align-items: start;
 }
 
 .canvas-overlay-content p {
