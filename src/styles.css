@@ -481,7 +481,7 @@ pre {
 
 @media screen and (max-height: 768px) {
   .slider {
-    width: 1rem;
+    width: 2rem;
   }
 
   .draggable {
