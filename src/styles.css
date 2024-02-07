@@ -478,3 +478,13 @@ pre {
   margin-bottom: 0 !important;
   tab-size: 4;
 }
+
+@media screen and (max-height: 768px) {
+  .slider {
+    width: 1rem;
+  }
+
+  .draggable {
+    pointer-events: none;
+  }
+}

@@ -418,6 +418,16 @@ function App() {
 		}
 	}
 
+	function setTouchCoords(e) {
+		setMouseX(e.touches[0].clientX);
+		setMouseY(e.touches[0].clientY);
+		mouseXext = e.touches[0].clientX;
+		mouseYext = e.touches[0].clientY;
+		if (isResizing) {
+			mobileResizeTools(e);
+		}
+	}
+
 	function resizeTools(e) {
 		// set css variable --mouse-x to the mouse x position
 		// console.log(e);
@@ -434,6 +444,29 @@ function App() {
 		document.documentElement.style.setProperty(
 			"--mouse-y",
 			(e.clientY / parentHeight) * 100 + "%"
+		);
+		// setCanvasWidth(e.clientX);
+		// setCanvasHeight(canvasContainer.current.clientHeight);
+
+		refreshCanvasWidth();
+	}
+
+	function mobileResizeTools(e) {
+		// set css variable --mouse-x to the mouse x position
+		// console.log(e);
+		pixelL = e.touches[0].clientX;
+		var parentWidth = e.target.parentElement.clientWidth;
+		var parentHeight = e.target.parentElement.clientHeight;
+		console.log((e.touches[0].clientX / parentWidth) * 100);
+		w = (e.touches[0].clientX / parentWidth) * 100;
+		document.documentElement.style.setProperty("--pointer-events", "none");
+		document.documentElement.style.setProperty(
+			"--mouse-x",
+			(e.touches[0].clientX / parentWidth) * 100 + "%"
+		);
+		document.documentElement.style.setProperty(
+			"--mouse-y",
+			(e.touches[0].clientY / parentHeight) * 100 + "%"
 		);
 		// setCanvasWidth(e.clientX);
 		// setCanvasHeight(canvasContainer.current.clientHeight);
@@ -819,6 +852,7 @@ function App() {
 				className="rows"
 				id="parent"
 				onMouseMove={setMouseCoords}
+				onTouchMove={setTouchCoords}
 				onMouseUp={(e) => {
 					createItem(e.clientX, e.clientY);
 					mouseUp(e);
@@ -1013,7 +1047,14 @@ function DraggableTemplate(props) {
 						props.setIsDragging(false);
 						setThisComponent(false);
 					}}
+					onTouchEnd={(e) => {
+						props.setIsDragging(false);
+						setThisComponent(false);
+					}}
 					onMouseMove={(e) => {
+						console.log("dragging");
+					}}
+					onTouchMove={(e) => {
 						console.log("dragging");
 					}}
 				>
@@ -1039,6 +1080,7 @@ function DraggableTemplate(props) {
 			<div
 				className="template-component"
 				onMouseDown={mouseDown}
+				onTouchStart={mouseDown}
 				style={{ backgroundColor: props.component.color }}
 			>
 				<div className="inputs">
