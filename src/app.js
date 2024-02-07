@@ -543,12 +543,12 @@ function App() {
 			// 1
 		);
 
-		var newWidth = Math.min(
+		newWidth = Math.min(
 			newWidth,
 			canvasSize
 			// 1
 		);
-		var newHeight = Math.min(
+		newHeight = Math.min(
 			newHeight,
 			canvasSize
 			// 1
