@@ -907,6 +907,11 @@ function App() {
 					createItem(e.clientX, e.clientY);
 					mouseUp(e);
 				}}
+				onTouchEnd={(e) => {
+					console.log("TOUCH END", e);
+					createItem(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+					mouseUp(e);
+				}}
 				onKeyDown={onKeyboardDown}
 			>
 				<CanvasOverlay
