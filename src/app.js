@@ -436,6 +436,7 @@ function App() {
 	const [prevDistance, setPrevDistance] = React.useState(-1);
 
 	function setTouchCoords(e) {
+		e.preventDefault();
 
 		// if two fingers are touching the screen, detect zoom and pan gestures
 		if (e.touches.length > 1 && prevDistance > -1 && prevTouch[0] > -1 && prevTouch[1] > -1) {
@@ -664,6 +665,11 @@ function App() {
 
 		// setCanvasWidth(localStorage.getItem('canvasWidth') || 300);
 		// setCanvasHeight(canvasContainer.current.clientHeight);
+
+		if (isMobile()) {
+			// add event listeners for touch events
+			
+		}
 
 		return () => {
 			document.removeEventListener("keydown", onKeyPressed);
