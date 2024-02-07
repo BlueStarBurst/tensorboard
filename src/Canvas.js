@@ -373,6 +373,7 @@ export default function Canvas(props) {
 	}
 
 	function touchDragElement(e) {
+		e.preventDefault();
 		console.log("TOUCHMOVEMENT", e);
 		if (touchX == -1 && touchY == -1) {
 			touchX = e.touches[0].clientX;
