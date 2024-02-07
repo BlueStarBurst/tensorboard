@@ -678,15 +678,27 @@ function App() {
 		// setCanvasHeight(canvasContainer.current.clientHeight);
 
 		if (isMobile()) {
+			console.log("MOBILE");
 			// add event listeners for touch events
 			var div = document.createElement("div")
+
+			div.className = "fullscreen-button";
+
+			// add the div to the body
+			document.body.appendChild(div);
 			
-			div.addEventListener("touchstart", function () {
+			div.addEventListener("click", function () {
 				// request full screen
+				console.log("FULLSCREEN");
 				document.documentElement.requestFullscreen();
+
+				// remove self
+				document.body.removeChild(div);
 			});
 			// emulate click event
-			div.click();
+			// div.click();
+
+			console.log(div);
 
 		}
 
