@@ -15,6 +15,8 @@ var h = localStorage.getItem("h") || 0;
 const components = {
 	Data: {
 		name: "Data",
+		// color: "#F1AB86",
+		color: "#9e6649",
 		description:
 			"This component is used to download data from a remote URL for model training",
 		id: -1,
@@ -73,6 +75,8 @@ const components = {
 	},
 	Normalize: {
 		name: "Normalize",
+		description: "Normalizes the input data",
+		color: "#6A2E35",
 		data: {
 			Type: {
 				type: "text",
@@ -92,6 +96,8 @@ const components = {
 	},
 	Value: {
 		name: "Value",
+		description: "Create variables of different types",
+		color: "#943854",
 		data: {
 			Type: {
 				type: "radio",
@@ -179,7 +185,9 @@ const components = {
 		output: "value",
 	},
 	Library: {
-		name: "Install",
+		name: "Library",
+		description: "Install a library from pip",
+		color: "#403e9c",
 		data: {
 			UseVersion: {
 				type: "checkbox",
@@ -219,6 +227,8 @@ const components = {
 	},
 	Import: {
 		name: "Import",
+		description: "Import a library or module",
+		color: "#7f538c",
 		data: {
 			from: {
 				type: "text",
@@ -228,9 +238,22 @@ const components = {
 				type: "text",
 				value: "",
 			},
+			as: {
+				type: "text",
+				value: "",
+			},
 		},
 		transpile: function () {
-			return `from ${this.data.from.value} import ${this.data.import.value}`;
+			var output = "";
+			if (this.data.from.value) {
+				output += `from ${this.data.from.value} `;
+			}
+			if (this.data.as.value) {
+				return (
+					output + `import ${this.data.import.value} as ${this.data.as.value}`
+				);
+			}
+			return output + `import ${this.data.import.value}`;
 		},
 		reload: function () {},
 		outputs: [],
@@ -242,6 +265,7 @@ const components = {
 	},
 	Array: {
 		name: "Array",
+		color: "#0c6fab",
 		description: "Use Values as inputs to create an array of values",
 		data: {
 			Data: {
@@ -275,10 +299,12 @@ const components = {
 		},
 		getValue: function () {
 			return this.data.Data.value;
-		}
+		},
 	},
 	Print: {
 		name: "Print",
+		description: "Print a value to the console",
+		color: "#4a8260",
 		data: {
 			Data: {
 				type: "text",
@@ -291,7 +317,7 @@ const components = {
 			// if there is an input, print the input
 			if (Object.keys(this.inputs).length > 0) {
 				// print all the inputs
-				
+
 				var outputs = Object.keys(this.inputs).map((key, index) => {
 					if (this.inputs[key].getValue) {
 						return this.inputs[key].getValue();
@@ -453,7 +479,6 @@ function App() {
 	}
 
 	function onKeyPressed(e) {
-		
 		// console.log('onKeyDown', e);
 		// get ig b is pressed
 		// if (e.key === "b") {
@@ -754,23 +779,25 @@ function App() {
 		// parse the components into JSON cells
 		var tcells = [];
 		fcomponents.map((value, index) => {
-			var raw_python = value.transpile();
-			// split by new line
-			raw_python = raw_python.split("\n");
-			// add a new line to the end of each line
-			raw_python = raw_python.map((line) => {
-				return line + "\n";
-			});
+			if (value && value.transpile) {
+				var raw_python = value.transpile();
+				// split by new line
+				raw_python = raw_python.split("\n");
+				// add a new line to the end of each line
+				raw_python = raw_python.map((line) => {
+					return line + "\n";
+				});
 
-			tcells.push({
-				cell_type: "code",
-				execution_count: 1,
-				metadata: {
-					id: value.id,
-				},
-				outputs: [],
-				source: raw_python,
-			});
+				tcells.push({
+					cell_type: "code",
+					execution_count: 1,
+					metadata: {
+						id: value.id,
+					},
+					outputs: [],
+					source: raw_python,
+				});
+			}
 		});
 		console.log(tcells);
 		setCells(tcells);
@@ -797,7 +824,6 @@ function App() {
 					mouseUp(e);
 				}}
 				onKeyDown={onKeyboardDown}
-
 			>
 				<CanvasOverlay
 					selectedElement={selectedElement}
@@ -807,7 +833,7 @@ function App() {
 				<div
 					className="canvas"
 					// onMouseMove={panCanvas}
-					
+
 					// onMouseDown={(e) => {
 					// setIsPanning(true);
 					// }}
@@ -1010,7 +1036,11 @@ function DraggableTemplate(props) {
 					</div>
 				</div>
 			) : null}
-			<div className="template-component" onMouseDown={mouseDown}>
+			<div
+				className="template-component"
+				onMouseDown={mouseDown}
+				style={{ backgroundColor: props.component.color }}
+			>
 				<div className="inputs">
 					{
 						// loop for numOutputs

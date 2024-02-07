@@ -49,7 +49,8 @@ export default function Canvas(props) {
 		} else if (e.key == "Delete") {
 			console.log("DELETE", selectedElement, oldSelectedElement);
 			if (selectedElement != null) {
-				selectedElement.removeElement();
+				selectedElement.deleteSelf();
+				// selectedElement.removeElement();
 				var tempElems = elements;
 				delete tempElems[selectedElement.id];
 				console.log("DELETED", tempElems);
@@ -58,7 +59,8 @@ export default function Canvas(props) {
 				elementsList = tempElems;
 				redrawCanvas();
 			} else if (oldSelectedElement != null) {
-				oldSelectedElement.removeElement();
+				oldSelectedElement.deleteSelf();
+				// oldSelectedElement.removeElement();
 				var tempElems = elements;
 				delete tempElems[oldSelectedElement.id];
 				console.log("DELETED", tempElems);
@@ -154,7 +156,6 @@ export default function Canvas(props) {
 		e.preventDefault();
 	}
 
-	
 	const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
 
 	function setBusy(b) {
@@ -237,14 +238,7 @@ export default function Canvas(props) {
 		tx = (tx - rect.left) * (canvas.current.width / rect.width);
 		ty = (ty - rect.top) * (canvas.current.height / rect.height);
 
-		var element = new Element(
-			tx,
-			ty,
-			150,
-			150,
-			"#ff0000",
-			props.currentComponent
-		);
+		var element = new Element(tx, ty, 150, 150, props.currentComponent);
 		var tempElements = elements;
 		tempElements[props.currentComponent.id] = element;
 		setElements(tempElements);
@@ -414,7 +408,7 @@ export function CanvasOverlay(props) {
 			setDisplay(
 				<>
 					<h4>
-						{component.name} - {component.id}
+						{component.name} ({component.id})
 					</h4>
 					<p>{component.description}</p>
 					{Object.keys(data).map((key) => {
@@ -582,7 +576,7 @@ export function CanvasOverlay(props) {
 }
 
 class Element {
-	constructor(x, y, w, h, color, component = null) {
+	constructor(x, y, w, h, component = null) {
 		this.x = x - w / 2;
 		this.y = y - h / 2;
 		this.w = w;
@@ -592,8 +586,8 @@ class Element {
 		this.element = null;
 		this.elementId = null;
 		this.dragging = false;
-		this.color = color;
-		this.dragColor = "#00ff00";
+		this.color = component.color || "#ff0000";
+		this.dragColor = "#fff";
 		this.component = component || {};
 		this.text = this.component.name;
 		this.id = this.component.id;
@@ -630,18 +624,30 @@ class Element {
 		ctx.fill();
 
 		// draw a small rectangle at the right center of the element
-		ctx.fillStyle = "#fff";
+		if (this.dragging) {
+			ctx.fillStyle = this.color;
+		} else {
+			ctx.fillStyle = "#fff";
+		}
 		ctx.fillRect(this.x + this.w - 10, this.y + this.h / 2 - 10, 20, 20);
 		ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
 
 		// draw the text
-		ctx.fillStyle = "#fff";
+		if (this.dragging) {
+			ctx.fillStyle = "#000";
+		} else {
+			ctx.fillStyle = "#fff";
+		}
 		ctx.font = "25px Arial";
 		ctx.textAlign = "center";
 		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2);
 
 		// draw the id
-		ctx.fillStyle = "#fff";
+		if (this.dragging) {
+			ctx.fillStyle = "#000";
+		} else {
+			ctx.fillStyle = "#fff";
+		}
 		ctx.font = "18px Arial";
 		ctx.textAlign = "center";
 		ctx.fillText(
@@ -749,5 +755,20 @@ class Element {
 			delete elementsList[this.element].component.inputs[this.component.id];
 			delete this.component.outputs[this.elementId];
 		}
+	}
+
+	deleteSelf() {
+		var inputs = this.component.inputs;
+		var outputs = this.component.outputs;
+		Object.keys(inputs).forEach((key) => {
+			elementsList[key].element = null;
+			elementsList[key].elementId = null;
+			elementsList[key].lineToX = -1;
+			elementsList[key].lineToY = -1;
+			delete inputs[key].outputs[this.component.id];
+		});
+		Object.keys(outputs).forEach((key) => {
+			delete outputs[key].inputs[this.component.id];
+		});
 	}
 }

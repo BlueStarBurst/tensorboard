@@ -212,18 +212,21 @@ h6 {
   justify-content: space-between;
   align-items: center;
   /* background-color: var(--canvas-color); */
-  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, opacity 0.2s ease-in-out;
   padding: 2rem;
   border-radius: 1rem;
   background-color: rgba(0, 0, 0, 0.237);
   cursor: grab;
   user-select: none;
+  opacity: 0.75;
+  color: white;
   /* pointer-events: none; */
 }
 
 .template-component:hover {
   background-color: rgba(130, 130, 130, 0.066);
   color: #fff;
+  opacity: 1;
 }
 
 .real-component {
