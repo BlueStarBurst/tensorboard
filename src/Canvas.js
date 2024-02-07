@@ -15,6 +15,9 @@ var interval = null;
 var x,
 	y = 0;
 
+var touchX,
+	touchY = -1;
+
 var elementsList = [];
 
 var timer = null;
@@ -360,6 +363,41 @@ export default function Canvas(props) {
 		}
 	}
 
+	function onTouchStartCanvas(e) {
+		var newE = {
+			clientX: e.touches[0].clientX,
+			clientY: e.touches[0].clientY,
+		};
+		console.log("TOUCHADASF", newE);
+		onMouseDownCanvas(newE);
+	}
+
+	function touchDragElement(e) {
+		console.log("TOUCHMOVEMENT", e);
+		if (touchX == -1 && touchY == -1) {
+			touchX = e.touches[0].clientX;
+			touchY = e.touches[0].clientY;
+			return;
+		}
+		var newE = {
+			clientX: e.touches[0].clientX,
+			clientY: e.touches[0].clientY,
+			movementX: e.touches[0].clientX - touchX,
+			movementY: e.touches[0].clientY - touchY,
+		};
+		touchX = e.touches[0].clientX;
+		touchY = e.touches[0].clientY;
+		dragElement(newE);
+	}
+
+	function onTouchEndCanvas(e) {
+		var newE = {
+			clientX: e.changedTouches[0].clientX,
+			clientY: e.changedTouches[0].clientY,
+		};
+		onMouseUpCanvas(newE);
+	}
+
 	return (
 		<>
 			<canvas
@@ -370,8 +408,11 @@ export default function Canvas(props) {
 				width={props.size.x}
 				height={props.size.y}
 				onMouseDown={onMouseDownCanvas}
+				onTouchStart={onTouchStartCanvas}
 				onMouseUp={onMouseUpCanvas}
+				onTouchEnd={onTouchEndCanvas}
 				onMouseMove={dragElement}
+				onTouchMove={touchDragElement}
 			/>
 			<canvas
 				onKeyDown={onKeyboard}

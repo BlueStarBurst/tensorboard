@@ -431,6 +431,8 @@ function App() {
 	function setTouchCoords(e) {
 		// e.preventDefault();
 
+		console.log(e.touches.length);
+
 		// if two fingers are touching the screen, detect zoom and pan gestures
 		if (
 			e.touches.length > 1 &&
@@ -694,7 +696,7 @@ function App() {
 			div.addEventListener("click", function () {
 				// request full screen
 				console.log("FULLSCREEN");
-				document.documentElement.requestFullscreen();
+				// document.documentElement.requestFullscreen();
 
 				// remove self
 				document.body.removeChild(div);
@@ -966,6 +968,7 @@ function App() {
 					// onMouseDown={(e) => {
 					// setIsPanning(true);
 					// }}
+					
 					ref={canvasContainer}
 				>
 					<Canvas
