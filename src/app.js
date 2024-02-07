@@ -543,6 +543,17 @@ function App() {
 			// 1
 		);
 
+		var newWidth = Math.min(
+			newWidth,
+			canvasSize
+			// 1
+		);
+		var newHeight = Math.min(
+			newHeight,
+			canvasSize
+			// 1
+		);
+
 		// resize the canvas element by the delta
 		canvas.style.width = newWidth + "px";
 		canvas.style.height = newHeight + "px";
