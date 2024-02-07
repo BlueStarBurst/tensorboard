@@ -683,29 +683,29 @@ function App() {
 		// setCanvasWidth(localStorage.getItem('canvasWidth') || 300);
 		// setCanvasHeight(canvasContainer.current.clientHeight);
 
-		if (isMobile()) {
-			console.log("MOBILE");
-			// add event listeners for touch events
-			var div = document.createElement("div");
+		// if (isMobile()) {
+		// 	console.log("MOBILE");
+		// 	// add event listeners for touch events
+		// 	var div = document.createElement("div");
 
-			div.className = "fullscreen-button";
+		// 	div.className = "fullscreen-button";
 
-			// add the div to the body
-			document.body.appendChild(div);
+		// 	// add the div to the body
+		// 	document.body.appendChild(div);
 
-			div.addEventListener("click", function () {
-				// request full screen
-				console.log("FULLSCREEN");
-				document.documentElement.requestFullscreen();
+		// 	div.addEventListener("click", function () {
+		// 		// request full screen
+		// 		console.log("FULLSCREEN");
+		// 		document.documentElement.requestFullscreen();
 
-				// remove self
-				document.body.removeChild(div);
-			});
-			// emulate click event
-			// div.click();
+		// 		// remove self
+		// 		document.body.removeChild(div);
+		// 	});
+		// 	// emulate click event
+		// 	// div.click();
 
-			console.log(div);
-		}
+		// 	console.log(div);
+		// }
 
 		return () => {
 			document.removeEventListener("keydown", onKeyPressed);
