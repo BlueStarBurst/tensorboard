@@ -436,7 +436,7 @@ function App() {
 	const [prevDistance, setPrevDistance] = React.useState(-1);
 
 	function setTouchCoords(e) {
-		e.preventDefault();
+		// e.preventDefault();
 
 		// if two fingers are touching the screen, detect zoom and pan gestures
 		if (e.touches.length > 1 && prevDistance > -1 && prevTouch[0] > -1 && prevTouch[1] > -1) {
@@ -679,7 +679,15 @@ function App() {
 
 		if (isMobile()) {
 			// add event listeners for touch events
+			var div = document.createElement("div")
 			
+			div.addEventListener("touchstart", function () {
+				// request full screen
+				document.documentElement.requestFullscreen();
+			});
+			// emulate click event
+			div.click();
+
 		}
 
 		return () => {
