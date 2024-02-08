@@ -27,6 +27,8 @@ export const components = {
 		description:
 			"This component is used to download data from a remote URL for model training",
 		id: -1,
+		numInputs: 0,
+		numOutputs: -1,
 		data: {
 			Type: {
 				type: "radio",
@@ -83,6 +85,8 @@ export const components = {
 	Normalize: {
 		name: "Normalize",
 		description: "Normalizes the input data",
+		numInputs: 1,
+		numOutputs: -1,
 		color: "#6A2E35",
 		data: {
 			Range: {
@@ -111,6 +115,8 @@ export const components = {
 		name: "Value",
 		description: "Create variables of different types",
 		color: "#943854",
+		numInputs: 0,
+		numOutputs: -1,
 		data: {
 			Type: {
 				type: "radio",
@@ -201,6 +207,8 @@ export const components = {
 		name: "Library",
 		description: "Install a library from pip",
 		color: "#403e9c",
+		numInputs: 0,
+		numOutputs: -1,
 		data: {
 			UseVersion: {
 				type: "checkbox",
@@ -242,6 +250,8 @@ export const components = {
 		name: "Import",
 		description: "Import a library or module",
 		color: "#7f538c",
+		numInputs: 1,
+		numOutputs: -1,
 		data: {
 			from: {
 				type: "text",
@@ -279,6 +289,8 @@ export const components = {
 	Array: {
 		name: "Array",
 		color: "#0c6fab",
+		numInputs: -1,
+		numOutputs: -1,
 		description: "Use Values as inputs to create an array of values",
 		data: {
 			Data: {
@@ -318,8 +330,10 @@ export const components = {
 		name: "Print",
 		description: "Print a value to the console",
 		color: "#4a8260",
+		numInputs: 1,
+		numOutputs: 0,
 		data: {
-			Data: {
+			Output: {
 				type: "text",
 				value: "",
 				readonly: false,
@@ -336,8 +350,8 @@ export const components = {
 						return this.inputs[key].getValue();
 					}
 				});
-				this.data.Data.value = outputs.join(", ");
-				this.data.Data.readonly = true;
+				this.data.Output.value = outputs.join(", ");
+				this.data.Output.readonly = true;
 
 				var trueOutputs = Object.keys(this.inputs).map((key, index) => {
 					return this.inputs[key].getOutput();
@@ -346,8 +360,8 @@ export const components = {
 				return `print(${trueOutputs.join(", ")})`;
 			} else {
 				// print the value
-				this.data.Data.readonly = false;
-				return `print("${this.data.Data.value}")`;
+				this.data.Output.readonly = false;
+				return `print("${this.data.Output.value}")`;
 			}
 		},
 		reload: function () {},
@@ -439,8 +453,6 @@ function App() {
 	function setTouchCoords(e) {
 		// e.preventDefault();
 
-		console.log(e.touches.length);
-
 		// if two fingers are touching the screen, detect zoom and pan gestures
 		if (
 			e.touches.length > 1 &&
@@ -448,14 +460,12 @@ function App() {
 			prevTouch[0] > -1 &&
 			prevTouch[1] > -1
 		) {
-			console.log("TWO TOUCHES");
 			// get the distance between the two fingers
 			var x1 = e.touches[0].clientX;
 			var y1 = e.touches[0].clientY;
 			var x2 = e.touches[1].clientX;
 			var y2 = e.touches[1].clientY;
 			var distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-			console.log(distance);
 			// if the distance is greater than the previous distance, zoom in
 			if (distance > prevDistance) {
 				zoomContainer({
@@ -475,7 +485,6 @@ function App() {
 			setPrevDistance(distance);
 			setPrevTouch([x1, y1]);
 		} else if (e.touches.length > 1) {
-			console.log("TWO TOUCHES");
 			// if two fingers are touching the screen, set the distance and the first touch
 			var x1 = e.touches[0].clientX;
 			var y1 = e.touches[0].clientY;
@@ -497,7 +506,6 @@ function App() {
 
 	function resizeTools(e) {
 		// set css variable --mouse-x to the mouse x position
-		// console.log(e);
 		pixelL = e.clientX;
 		var parentWidth = e.target.parentElement.clientWidth;
 		var parentHeight = e.target.parentElement.clientHeight;

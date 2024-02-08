@@ -44,7 +44,7 @@ export default function Canvas(props) {
 
 		Object.keys(temp).forEach((key) => {
 			const proto = components[temp[key].component.name];
-			
+
 			var obj = Object.create(proto);
 			obj = Object.assign(obj, proto);
 
@@ -365,7 +365,7 @@ export default function Canvas(props) {
 		if (lining) {
 			var didLine = false;
 			Object.keys(elements).forEach((key) => {
-				if (elements[key].isDragging(x, y)) {
+				if (elements[key].isLineEnd(x, y)) {
 					// connect the line to the element
 					selectedElement.lineToElement(key);
 					props.updateNotebook(elements);
@@ -763,9 +763,12 @@ class Element {
 		} else {
 			ctx.fillStyle = "#fff";
 		}
-		ctx.fillRect(this.x + this.w - 10, this.y + this.h / 2 - 10, 20, 20);
-		ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
-
+		if (this.component.numOutputs != 0) {
+			ctx.fillRect(this.x + this.w - 10, this.y + this.h / 2 - 10, 20, 20);
+		}
+		if (this.component.numInputs != 0) {
+			ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
+		}
 		// draw the text
 		if (this.dragging) {
 			ctx.fillStyle = "#000";
@@ -774,21 +777,25 @@ class Element {
 		}
 		ctx.font = "25px Arial";
 		ctx.textAlign = "center";
-		ctx.fillText(this.text, this.x + this.w / 2, this.y + this.h / 2);
+		ctx.fillText(
+			this.text,
+			this.x + this.w / 2,
+			this.y + this.h / 2 + (this.dragging ? 0 : 8)
+		);
 
 		// draw the id
 		if (this.dragging) {
 			ctx.fillStyle = "#000";
+			ctx.font = "18px Arial";
+			ctx.textAlign = "center";
+			ctx.fillText(
+				this.component.id,
+				this.x + this.w / 2,
+				this.y + this.h / 2 + 20
+			);
 		} else {
 			ctx.fillStyle = "#fff";
 		}
-		ctx.font = "18px Arial";
-		ctx.textAlign = "center";
-		ctx.fillText(
-			this.component.id,
-			this.x + this.w / 2,
-			this.y + this.h / 2 + 20
-		);
 	}
 
 	drawLines(ctx) {
@@ -821,7 +828,7 @@ class Element {
 			ctx.stroke();
 
 			var midX = (this.x + this.w + this.lineToX) / 2;
-			var midY = (this.y + this.h/2 + this.lineToY) / 2;
+			var midY = (this.y + this.h / 2 + this.lineToY) / 2;
 			var radius = 7.5;
 			// draw a small circle at the middle of the line
 			if (this.lineSelected) {
@@ -832,7 +839,6 @@ class Element {
 			ctx.beginPath();
 			ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
 			ctx.fill();
-
 		}
 	}
 
@@ -842,7 +848,17 @@ class Element {
 		);
 	}
 
+	isLineEnd(x, y) {
+		if (this.component.numInputs == 0) return false;
+
+		return (
+			x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h
+		);
+	}
+
 	isLining(x, y) {
+		if (this.component.numOutputs == 0) return false;
+
 		// check if the mouse is over the small rectangle at the right center of the element
 		return (
 			x >= this.x + this.w - 5 &&
