@@ -31,10 +31,14 @@ export default function Canvas(props) {
 
 	const [elements, setElements] = React.useState({});
 	const [dragging, setDragging] = React.useState(false);
+	const [multiDrag, setMultiDrag] = React.useState(false);
 	const [lining, setLining] = React.useState(false);
 	const [selectedElement, setSelectedElement] = React.useState(null);
 	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
 	const [isPanning, setIsPanning] = React.useState(false);
+
+	const [selectBox, setSelectBox] = React.useState(null);
+	const [selectedElems, setSelectedElems] = React.useState([]);
 
 	useEffect(() => {
 		elementsList = {};
@@ -131,6 +135,16 @@ export default function Canvas(props) {
 				props.updateNotebook(tempElems);
 				elementsList = tempElems;
 				redrawCanvas();
+			} else if (selectedElems.length > 0) {
+				var tempElems = elements;
+				selectedElems.forEach((elem) => {
+					elem.deleteSelf();
+					delete tempElems[elem.id];
+					delete elementsList[elem.id];
+				});
+				props.updateNotebook(elementsList);
+				setElements(tempElems);
+				redrawCanvas();
 			}
 			props.selectElement(null);
 		}
@@ -155,7 +169,7 @@ export default function Canvas(props) {
 		if (canvas) {
 			redrawCanvas();
 		}
-	}, [elements, selectedElement, oldSelectedElement]);
+	}, [elements, selectedElement, oldSelectedElement, selectBox]);
 
 	React.useEffect(() => {
 		if (dragging || lining) {
@@ -213,6 +227,24 @@ export default function Canvas(props) {
 			// console.log("DRAWING", key);
 			elements[key].draw(ctx);
 		});
+
+		if (selectBox != null) {
+			ctx.strokeStyle = "#fff";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(
+				selectBox.x1,
+				selectBox.y1,
+				selectBox.x2 - selectBox.x1,
+				selectBox.y2 - selectBox.y1
+			);
+			ctx.fillStyle = "#ffffff25";
+			ctx.fillRect(
+				selectBox.x1,
+				selectBox.y1,
+				selectBox.x2 - selectBox.x1,
+				selectBox.y2 - selectBox.y1
+			);
+		}
 	}
 
 	function preventDefault(e) {
@@ -224,6 +256,8 @@ export default function Canvas(props) {
 	function setBusy(b) {
 		busy = b;
 	}
+
+	const [relativePos, setRelativePos] = React.useState({});
 
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
@@ -244,9 +278,47 @@ export default function Canvas(props) {
 			oldSelectedElement.selectedLine = null;
 		}
 
+		// if right click, start the select box
+		if (e.button == 2) {
+			props.selectElement(null);
+			setSelectBox({ x1: x, y1: y, x2: x, y2: y });
+			return;
+		}
+
+		var found = false;
+		if (selectedElems.length > 0) {
+			// loop through selected elements and check if the mouse is over one of them
+			
+			var tempRelPos = {};
+			for (var i = 0; i < selectedElems.length; i++) {
+				if (selectedElems[i].isDragging(x, y)) {
+					// get relative position of the mouse to the element
+					tempRelPos[selectedElems[i].id] = {
+						x: x - selectedElems[i].x,
+						y: y - selectedElems[i].y,
+					};
+					found = true;
+					break;
+				}
+			}
+			if (found) {
+				setRelativePos(tempRelPos);
+				setMultiDrag(true);
+				canvas.current.style.cursor = "grabbing";
+				return;
+			}
+		}
+
 		Object.keys(elements).forEach((key) => {
 			var elem = elements[key];
 			if (elem.isLining(x, y)) {
+				if (!found) {
+					// unselect all elements
+					for (var i = 0; i < selectedElems.length; i++) {
+						selectedElems[i].dragging = false;
+					}
+					setSelectedElems([]);
+				}
 				busy = true;
 				setBusy(true);
 				if (oldSelectedElement) {
@@ -268,6 +340,13 @@ export default function Canvas(props) {
 				props.updateNotebook(elements);
 				return;
 			} else if (elem.isDragging(x, y)) {
+				if (!found) {
+					// unselect all elements
+					for (var i = 0; i < selectedElems.length; i++) {
+						selectedElems[i].dragging = false;
+					}
+					setSelectedElems([]);
+				}
 				busy = true;
 				setBusy(true);
 				if (oldSelectedElement) {
@@ -286,6 +365,13 @@ export default function Canvas(props) {
 				}, 250);
 				return;
 			} else if (elem.isLineSelected(x, y)) {
+				if (!found) {
+					// unselect all elements
+					for (var i = 0; i < selectedElems.length; i++) {
+						selectedElems[i].dragging = false;
+					}
+					setSelectedElems([]);
+				}
 				console.log("LINESELECTED");
 				busy = true;
 				setBusy(true);
@@ -339,7 +425,13 @@ export default function Canvas(props) {
 
 	function onMouseUpCanvas(e) {
 		if (timer) {
+			// unselect all elements
+			for (var i = 0; i < selectedElems.length; i++) {
+				selectedElems[i].dragging = false;
+			}
+			setSelectedElems([]);
 			setDragging(false);
+			
 			clearTimeout(timer);
 			timer = null;
 			if (isPanning) {
@@ -365,7 +457,13 @@ export default function Canvas(props) {
 		if (lining) {
 			var didLine = false;
 			Object.keys(elements).forEach((key) => {
-				if (elements[key].isLineEnd(x, y, selectedElement.component.name == "Connector")) {
+				if (
+					elements[key].isLineEnd(
+						x,
+						y,
+						selectedElement.component.name == "Connector"
+					)
+				) {
 					// connect the line to the element
 					selectedElement.lineToElement(key);
 					props.updateNotebook(elements);
@@ -389,7 +487,13 @@ export default function Canvas(props) {
 			redrawCanvas();
 		} else if (dragging) {
 			props.updateNotebook(elements);
-		} else {
+		} else if (selectBox != null) {
+			setSelectBox(null);
+		} else if (multiDrag) {
+			setMultiDrag(false);
+			props.updateNotebook(elements);
+			canvas.current.style.cursor = "default";
+			return;
 		}
 
 		// stop dragging the element
@@ -451,6 +555,46 @@ export default function Canvas(props) {
 
 			props.setIsPanning(true);
 			props.panCanvas(e);
+		} else if (selectBox != null) {
+			var rect = canvas.current.getBoundingClientRect();
+			var tx = (e.clientX - rect.left) * (canvas.current.width / rect.width);
+			var ty = (e.clientY - rect.top) * (canvas.current.height / rect.height);
+			setSelectBox({ ...selectBox, x2: tx, y2: ty });
+			Object.keys(elements).forEach((key) => {
+				var elem = elements[key];
+				if (
+					elem.isInBounds(selectBox.x1, selectBox.y1, selectBox.x2, selectBox.y2)
+				) {
+					elem.dragging = true;
+					// if not in the selected elements, add it
+					if (!selectedElems.includes(elem)) {
+						var tempselectedElems = selectedElems;
+						tempselectedElems.push(elem);
+						setSelectedElems(tempselectedElems);
+					}
+				} else {
+					elem.dragging = false;
+					// if in the selected elements, remove it
+					if (selectedElems.includes(elem)) {
+						var tempselectedElems = selectedElems;
+						tempselectedElems.splice(tempselectedElems.indexOf(elem), 1);
+						setSelectedElems(tempselectedElems);
+					}
+				}
+			});
+		} else if (multiDrag) {
+			// move all selected elements
+			var rect = canvas.current.getBoundingClientRect();
+			var tx = (e.clientX - rect.left) * (canvas.current.width / rect.width);
+			var ty = (e.clientY - rect.top) * (canvas.current.height / rect.height);
+			var dx = tx - x;
+			var dy = ty - y;
+			x = tx;
+			y = ty;
+			selectedElems.forEach((elem) => {
+				elem.move(dx, dy);
+			});
+			redrawCanvas();
 		}
 	}
 
@@ -505,6 +649,9 @@ export default function Canvas(props) {
 				onTouchEnd={onTouchEndCanvas}
 				onMouseMove={dragElement}
 				onTouchMove={touchDragElement}
+				onContextMenu={(e) => {
+					e.preventDefault();
+				}}
 			/>
 			<canvas
 				onKeyDown={onKeyboard}
@@ -801,6 +948,10 @@ class Element {
 	drawLines(ctx) {
 		for (var i = 0; i < this.elements.length; i++) {
 			var elem = elementsList[this.elements[i]];
+			if (elem == null) {
+				this.elements.splice(i, 1);
+				continue;
+			}
 			var tlineToX = elem.x;
 			var tlineToY = elem.y + elem.h / 2;
 
@@ -897,7 +1048,7 @@ class Element {
 			// check if mouse is near the middle of the line
 			var midX = (this.x + this.w + tlineToX) / 2;
 			var midY = (this.y + this.h / 2 + tlineToY) / 2;
-			var tolerance = 10;
+			var tolerance = 20;
 			if (
 				x >= midX - tolerance &&
 				x <= midX + tolerance &&
@@ -911,14 +1062,38 @@ class Element {
 		return false;
 	}
 
-	isLiningEnd(x, y) {
-		// check if the mouse is over the small rectangle at the left center of the element
-		return (
-			x >= this.x - 5 &&
-			x <= this.x + 15 &&
-			y >= this.y + this.h / 2 - 5 &&
-			y <= this.y + this.h / 2 + 15
-		);
+	isInBounds(x1, y1, x2, y2) {
+		// if any of the corners of the element are in the bounds, return true
+		var tx, ty = -1;
+		if (x1 > x2) {
+			tx = x1;
+			x1 = x2;
+			x2 = tx;
+		}
+		if (y1 > y2) {
+			ty = y1;
+			y1 = y2;
+			y2 = ty;
+		}
+
+		if (
+			(this.x >= x1 && this.x <= x2 && this.y >= y1 && this.y <= y2) ||
+			(this.x + this.w >= x1 &&
+				this.x + this.w <= x2 &&
+				this.y >= y1 &&
+				this.y <= y2) ||
+			(this.x >= x1 &&
+				this.x <= x2 &&
+				this.y + this.h >= y1 &&
+				this.y + this.h <= y2) ||
+			(this.x + this.w >= x1 &&
+				this.x + this.w <= x2 &&
+				this.y + this.h >= y1 &&
+				this.y + this.h <= y2)
+		) {
+			return true;
+		}
+		
 	}
 
 	move(dx, dy) {
@@ -944,8 +1119,12 @@ class Element {
 	}
 
 	fixLines() {
-		if (this.element != null) {
-			this.lineToElement(this.element);
+		for (var i = 0; i < this.elements.length; i++) {
+			// if not in component outputs, add it
+			this.component.outputs[this.elements[i]] =
+				elementsList[this.elements[i]].component;
+			elementsList[this.elements[i]].component.inputs[this.component.id] =
+				this.component;
 		}
 	}
 
@@ -987,9 +1166,13 @@ class Element {
 
 	disconnectOutput() {
 		if (this.elements.length > 0) {
-			delete elementsList[this.selectedLine].component.inputs[this.component.id];
+			delete elementsList[this.selectedLine].component.inputs[
+				this.component.id
+			];
 			delete this.component.outputs[this.selectedLine];
-			this.elements = this.elements.filter((item) => item !== this.selectedLine);
+			this.elements = this.elements.filter(
+				(item) => item !== this.selectedLine
+			);
 			this.lineToX = -1;
 			this.lineToY = -1;
 			this.selectedLine = null;

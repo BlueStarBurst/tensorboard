@@ -372,7 +372,7 @@ export const components = {
 	},
 	Connector: {
 		name: "Connector",
-		description: "Connects multiple components together to help manage the flow of the notebook. It can connect to blocks that don't have any inputs.",
+		description: "Connects multiple components together to help manage the flow of the notebook. It can also connect to blocks that don't have any inputs.",
 		color: "#424651",
 		numInputs: -1,
 		numOutputs: -1,
@@ -949,7 +949,7 @@ function App() {
 		// loop backwards through the keyList, keeping only the unique keys
 		var uniqueKeyList = [];
 		for (var i = keyList.length - 1; i >= 0; i--) {
-			if (!uniqueKeyList.includes(keyList[i])) {
+			if (!uniqueKeyList.includes(keyList[i]) && scomponents[keyList[i]].name != "Connector") {
 				// add to front of array
 				uniqueKeyList.push(keyList[i]);
 				fcomponents.unshift(scomponents[keyList[i]]);
