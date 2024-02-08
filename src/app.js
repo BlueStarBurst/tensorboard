@@ -389,6 +389,39 @@ export const components = {
 		},
 		output: "connector",
 	},
+	CustomCode: {
+		name: "CustomCode",
+		description: "Write custom code!",
+		color: "#3d3d3d",
+		numInputs: -1,
+		numOutputs: -1,
+		data: {
+			Type: {
+				type: "radio",
+				options: ["Snippet", "Function", "Class"],
+				value: "Snippet",
+				hidden: false,
+			},
+			Code: {
+				type: "text",
+				value:
+					'# This is a code snippet!\nprint("Hello World!")\nfor i in range(0,4)\n\tprint(i)',
+				multiline: true,
+				rows: 5,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			return this.data.Code.value;
+		},
+		reload: function () {},
+		outputs: [],
+		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "custom",
+	},
 };
 
 const darkTheme = createTheme({

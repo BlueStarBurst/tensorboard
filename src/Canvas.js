@@ -13,6 +13,10 @@ import { InputGroup } from "react-bootstrap";
 import { DBManager } from "./DB";
 import { components } from "./app";
 
+import hljs from "highlight.js/lib/core";
+import python from "highlight.js/lib/languages/python";
+hljs.registerLanguage("python", python);
+
 var interval = null;
 var x,
 	y = 0;
@@ -288,7 +292,7 @@ export default function Canvas(props) {
 		var found = false;
 		if (selectedElems.length > 0) {
 			// loop through selected elements and check if the mouse is over one of them
-			
+
 			var tempRelPos = {};
 			for (var i = 0; i < selectedElems.length; i++) {
 				if (selectedElems[i].isDragging(x, y)) {
@@ -431,7 +435,7 @@ export default function Canvas(props) {
 			}
 			setSelectedElems([]);
 			setDragging(false);
-			
+
 			clearTimeout(timer);
 			timer = null;
 			if (isPanning) {
@@ -563,7 +567,12 @@ export default function Canvas(props) {
 			Object.keys(elements).forEach((key) => {
 				var elem = elements[key];
 				if (
-					elem.isInBounds(selectBox.x1, selectBox.y1, selectBox.x2, selectBox.y2)
+					elem.isInBounds(
+						selectBox.x1,
+						selectBox.y1,
+						selectBox.x2,
+						selectBox.y2
+					)
 				) {
 					elem.dragging = true;
 					// if not in the selected elements, add it
@@ -801,20 +810,41 @@ export function CanvasOverlay(props) {
 							case "text":
 							default:
 								return (
-									<TextField
-										autoComplete="off"
-										autoCorrect="off"
-										key={key + "text" + component.id}
-										id="outlined-basic"
-										label={key}
-										value={data[key].value || ""}
-										variant="outlined"
-										disabled={data[key].readonly || false}
-										fullWidth
-										onChange={(e) => {
-											updateData(e, key);
-										}}
-									/>
+									<>
+										<TextField
+											autoComplete="off"
+											autoCorrect="off"
+											key={key + "text" + component.id}
+											id="outlined-basic"
+											label={key}
+											value={data[key].value || ""}
+											variant="outlined"
+											disabled={data[key].readonly || false}
+											fullWidth
+											multiline={data[key].multiline || false}
+											maxRows={data[key].rows || 1}
+											onChange={(e) => {
+												updateData(e, key);
+											}}
+											onKeyDown={(e) => {
+												e.stopPropagation();
+												if (e.key == "Tab") {
+													e.preventDefault();
+													e.target.value += "\t";
+													updateData(e, key);
+												}
+											}}
+										/>
+										<pre style={{ width: "100%" }}>
+											<code
+												className="python"
+												class="python"
+												id={component.id + "code"}
+											>
+												<p>{data[key].value || ""}</p>
+											</code>
+										</pre>
+									</>
 								);
 						}
 					})}
@@ -825,13 +855,26 @@ export function CanvasOverlay(props) {
 		}
 	}, [component, data]);
 
+	useEffect(() => {
+		if (component) {
+			if (document.getElementById(component.id + "code")) {
+				// destroy and rehighlight the code
+				var code = document.getElementById(component.id + "code");
+				if (code.attributes.getNamedItem("data-highlighted")) {
+					code.attributes.removeNamedItem("data-highlighted");
+				}
+				code.innerHTML = "<p>" + data["Code"].value + "</p>";
+				hljs.highlightAll();
+			}
+		}
+	}, [display]);
+
 	function updateData(e, key) {
 		var dat = data[key];
 		dat.value = e.target.value;
 		component.data[key] = dat;
 		component.reload();
 		props.updateNotebook(elementsList);
-
 		setData({ ...data, [key]: dat });
 	}
 
@@ -1064,7 +1107,8 @@ class Element {
 
 	isInBounds(x1, y1, x2, y2) {
 		// if any of the corners of the element are in the bounds, return true
-		var tx, ty = -1;
+		var tx,
+			ty = -1;
 		if (x1 > x2) {
 			tx = x1;
 			x1 = x2;
@@ -1093,7 +1137,6 @@ class Element {
 		) {
 			return true;
 		}
-		
 	}
 
 	move(dx, dy) {
@@ -1129,7 +1172,12 @@ class Element {
 	}
 
 	findSelf(component) {
-		console.log("CHECKING LOOP", component.id, this.component.id, this.component.id + "" == component.id + "");
+		console.log(
+			"CHECKING LOOP",
+			component.id,
+			this.component.id,
+			this.component.id + "" == component.id + ""
+		);
 		if (component == null) return false;
 		if (this.component.id + "" == component.id + "") return true;
 
@@ -1144,9 +1192,11 @@ class Element {
 	}
 
 	lineToElement(i) {
-
 		console.log("LINE TO", i);
-		if (i == this.id || this.component.id in Object.keys(elementsList[i].component.outputs)) {
+		if (
+			i == this.id ||
+			this.component.id in Object.keys(elementsList[i].component.outputs)
+		) {
 			console.log("ALREADY CONNECTED");
 			this.lineToX = -1;
 			this.lineToY = -1;
