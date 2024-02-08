@@ -1128,14 +1128,40 @@ class Element {
 		}
 	}
 
+	findSelf(component) {
+		console.log("CHECKING LOOP", component.id, this.component.id, this.component.id + "" == component.id + "");
+		if (component == null) return false;
+		if (this.component.id + "" == component.id + "") return true;
+
+		var flip = false;
+		Object.keys(component.outputs).forEach((key) => {
+			if (this.findSelf(component.outputs[key])) {
+				flip = true;
+			}
+		});
+		if (flip) return true;
+		return false;
+	}
+
 	lineToElement(i) {
+
 		console.log("LINE TO", i);
-		if (this.component.id in Object.keys(elementsList[i].component.outputs)) {
+		if (i == this.id || this.component.id in Object.keys(elementsList[i].component.outputs)) {
 			console.log("ALREADY CONNECTED");
 			this.lineToX = -1;
 			this.lineToY = -1;
 			return false;
 		}
+
+		// prevent loop by recursing through the outputs
+		var temp = elementsList[i].component;
+		if (this.findSelf(temp)) {
+			console.log("LOOP");
+			this.lineToX = -1;
+			this.lineToY = -1;
+			return false;
+		}
+
 		console.log(this.component.id);
 		this.elements.push(i);
 		this.component.outputs[i] = elementsList[i].component;
