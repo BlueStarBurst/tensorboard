@@ -6,6 +6,7 @@ import python from "highlight.js/lib/languages/python";
 hljs.registerLanguage("python", python);
 
 import "highlight.js/styles/tokyo-night-dark.css";
+import { DBManager } from "./DB";
 
 export function Notebook(props) {
 	const [cells, setCells] = React.useState([]);
@@ -34,7 +35,7 @@ export function Notebook(props) {
 		<div className="notebook-container">
 			{ready ? (
 				<>
-					<div className="cell-container" key={"1"} id="1"> 
+					<div className="cell-container" key={"1"} id="1">
 						{cells.map((cell, index) => {
 							return (
 								<div key={index} className="cell">
@@ -60,7 +61,44 @@ export function Notebook(props) {
 						})}
 					</div>
 					<div className="notebook-footer">
-						<Button variant="contained" color="warning" onClick={(e) => {}}>
+						<Button
+							variant="contained"
+							color="warning"
+							onClick={(e) => {
+								// upload the database
+								var input = document.createElement("input");
+								input.type = "file";
+								input.onchange = (e) => {
+                                    var file = e.target.files[0];
+                                    var reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        var text = e.target.result;
+                                        var temp = JSON.parse(text);
+                                        DBManager.getInstance().setItems(temp);
+                                        props.flop();
+                                    };
+                                    reader.readAsText(file);
+                                }
+								input.click();
+							}}
+						>
+							Upload
+						</Button>
+						<Button
+							variant="contained"
+							color="success"
+							onClick={(e) => {
+								// download the database
+								var temp = DBManager.getInstance().getItems();
+								var json = JSON.stringify(temp, null, 4);
+								var blob = new Blob([json], { type: "application/json" });
+								var url = URL.createObjectURL(blob);
+								var a = document.createElement("a");
+								a.href = url;
+								a.download = "notebook.tensorboard";
+								a.click();
+							}}
+						>
 							Save
 						</Button>
 						<Button
@@ -162,3 +200,4 @@ export function Raw(props) {
 		></textarea>
 	);
 }
+

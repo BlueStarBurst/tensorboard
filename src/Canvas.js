@@ -10,6 +10,8 @@ import {
 	Slider,
 } from "@mui/material";
 import { InputGroup } from "react-bootstrap";
+import { DBManager } from "./DB";
+import { components } from "./app";
 
 var interval = null;
 var x,
@@ -34,6 +36,50 @@ export default function Canvas(props) {
 	const [oldSelectedElement, setOldSelectedElement] = React.useState(null);
 	const [isPanning, setIsPanning] = React.useState(false);
 
+	useEffect(() => {
+		elementsList = {};
+		var temp = DBManager.getInstance().getItem("elements") || {};
+
+		console.log("TEMP", temp);
+
+		Object.keys(temp).forEach((key) => {
+			const proto = components[temp[key].component.name];
+			
+			var obj = Object.create(proto);
+			obj = Object.assign(obj, proto);
+
+			var tComp = temp[key].component;
+			obj = Object.assign(obj, tComp);
+
+			// get prototype of the component
+
+			console.log("OBJ", obj);
+			// assign the new object to the element
+			var elem = new Element(
+				temp[key].x,
+				temp[key].y,
+				temp[key].w,
+				temp[key].h,
+				obj
+			);
+			elem.fromJSON(temp[key]);
+			elementsList[temp[key].component.id] = elem;
+		});
+
+		console.log("ELEMS", elementsList);
+
+		// loop through the elements and fix the lines
+		Object.keys(elementsList).forEach((key) => {
+			elementsList[key].fixLines();
+		});
+
+		props.updateNotebook(elementsList);
+
+		setElements(elementsList);
+
+		redrawCanvas();
+	}, [props.components, props.flip]);
+
 	function onKeyboard(e) {
 		console.log("KEY", e.key);
 		if (e.key == "Escape") {
@@ -52,6 +98,13 @@ export default function Canvas(props) {
 		} else if (e.key == "Delete") {
 			console.log("DELETE", selectedElement, oldSelectedElement);
 			if (selectedElement != null) {
+				if (selectedElement.lineSelected) {
+					selectedElement.disconnectOutput();
+					setSelectedElement(null);
+					redrawCanvas();
+					return;
+				}
+
 				selectedElement.deleteSelf();
 				// selectedElement.removeElement();
 				var tempElems = elements;
@@ -62,6 +115,13 @@ export default function Canvas(props) {
 				elementsList = tempElems;
 				redrawCanvas();
 			} else if (oldSelectedElement != null) {
+				if (oldSelectedElement.lineSelected) {
+					oldSelectedElement.disconnectOutput();
+					setOldSelectedElement(null);
+					redrawCanvas();
+					return;
+				}
+
 				oldSelectedElement.deleteSelf();
 				// oldSelectedElement.removeElement();
 				var tempElems = elements;
@@ -150,7 +210,7 @@ export default function Canvas(props) {
 			elements[key].drawLines(ctx);
 		});
 		Object.keys(elements).forEach((key) => {
-			console.log("DRAWING", key);
+			// console.log("DRAWING", key);
 			elements[key].draw(ctx);
 		});
 	}
@@ -177,6 +237,13 @@ export default function Canvas(props) {
 
 		busy = false;
 
+		if (selectedElement) {
+			selectedElement.lineSelected = false;
+		}
+		if (oldSelectedElement) {
+			oldSelectedElement.lineSelected = false;
+		}
+
 		Object.keys(elements).forEach((key) => {
 			var elem = elements[key];
 			if (elem.isLining(x, y)) {
@@ -184,6 +251,9 @@ export default function Canvas(props) {
 				setBusy(true);
 				if (oldSelectedElement) {
 					oldSelectedElement.dragging = false;
+				}
+				if (selectedElement) {
+					selectedElement.dragging = false;
 				}
 
 				elem.dragging = true;
@@ -214,6 +284,22 @@ export default function Canvas(props) {
 					clearTimeout(timer);
 					timer = null;
 				}, 250);
+				return;
+			} else if (elem.isLineSelected(x, y)) {
+				console.log("LINESELECTED");
+				busy = true;
+				setBusy(true);
+				if (oldSelectedElement) {
+					oldSelectedElement.dragging = false;
+				}
+
+				setSelectedElement(elem);
+				props.selectElement(elem);
+				// elem.dragging = true;
+				elem.lining = true;
+				canvas.current.style.cursor = "pointer";
+				// setLining(true);
+				redrawCanvas();
 				return;
 			}
 		});
@@ -302,6 +388,7 @@ export default function Canvas(props) {
 			setLining(false);
 			redrawCanvas();
 		} else if (dragging) {
+			props.updateNotebook(elements);
 		} else {
 		}
 
@@ -358,6 +445,10 @@ export default function Canvas(props) {
 			x = tx;
 			y = ty;
 		} else if (isPanning) {
+			if (selectedElement && selectedElement.lineSelected) {
+				return;
+			}
+
 			props.setIsPanning(true);
 			props.panCanvas(e);
 		}
@@ -631,8 +722,9 @@ class Element {
 		this.color = component.color || "#ff0000";
 		this.dragColor = "#fff";
 		this.component = component || {};
-		this.text = this.component.name;
+		this.text = this.component.name || "Component";
 		this.id = this.component.id;
+		this.lineSelected = false;
 
 		console.log("CREATED", this.component);
 
@@ -708,8 +800,11 @@ class Element {
 
 		if (this.lineToX >= 0 && this.lineToY >= 0) {
 			// draw a line with bezier curves
-
-			ctx.strokeStyle = "#fff";
+			if (!this.lineSelected) {
+				ctx.strokeStyle = "#fff";
+			} else {
+				ctx.strokeStyle = this.color;
+			}
 			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
@@ -724,6 +819,20 @@ class Element {
 				this.lineToY
 			);
 			ctx.stroke();
+
+			var midX = (this.x + this.w + this.lineToX) / 2;
+			var midY = (this.y + this.h/2 + this.lineToY) / 2;
+			var radius = 7.5;
+			// draw a small circle at the middle of the line
+			if (this.lineSelected) {
+				ctx.fillStyle = this.color;
+			} else {
+				ctx.fillStyle = "#fff";
+			}
+			ctx.beginPath();
+			ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
+			ctx.fill();
+
 		}
 	}
 
@@ -741,6 +850,24 @@ class Element {
 			y >= this.y + this.h / 2 - 5 &&
 			y <= this.y + this.h / 2 + 15
 		);
+	}
+
+	isLineSelected(x, y) {
+		if (this.element == null) return false;
+		// check if mouse is near the middle of the line
+		var midX = (this.x + this.w + this.lineToX) / 2;
+		var midY = (this.y + this.h / 2 + this.lineToY) / 2;
+		var tolerance = 10;
+		if (
+			x >= midX - tolerance &&
+			x <= midX + tolerance &&
+			y >= midY - tolerance &&
+			y <= midY + tolerance
+		) {
+			this.lineSelected = true;
+			return true;
+		}
+		return false;
 	}
 
 	isLiningEnd(x, y) {
@@ -775,7 +902,14 @@ class Element {
 		this.lineToY = y;
 	}
 
+	fixLines() {
+		if (this.element != null) {
+			this.lineToElement(this.element);
+		}
+	}
+
 	lineToElement(i) {
+		console.log("LINE TO", i);
 		if (this.component.id in Object.keys(elementsList[i].component.outputs)) {
 			console.log("ALREADY CONNECTED");
 			this.element = null;
@@ -812,5 +946,52 @@ class Element {
 		Object.keys(outputs).forEach((key) => {
 			delete outputs[key].inputs[this.component.id];
 		});
+	}
+
+	disconnectOutput() {
+		if (this.element != null) {
+			delete elementsList[this.element].component.inputs[this.component.id];
+			delete this.component.outputs[this.elementId];
+			this.element = null;
+			this.elementId = null;
+			this.lineToX = -1;
+			this.lineToY = -1;
+			this.lineSelected = false;
+		}
+	}
+
+	// to json
+	toJSON() {
+		return {
+			x: this.x,
+			y: this.y,
+			w: this.w,
+			h: this.h,
+			component: {
+				id: this.component.id,
+				name: this.component.name,
+				description: this.component.description,
+				data: this.component.data,
+				inputs: {},
+				outputs: {},
+				color: this.component.color,
+			},
+			element: this.element,
+			elementId: this.elementId,
+			lineToX: this.lineToX,
+			lineToY: this.lineToY,
+		};
+	}
+
+	// from json
+	fromJSON(json) {
+		this.x = json.x;
+		this.y = json.y;
+		this.w = json.w;
+		this.h = json.h;
+		this.element = json.element;
+		this.elementId = json.elementId;
+		this.lineToX = json.lineToX;
+		this.lineToY = json.lineToY;
 	}
 }

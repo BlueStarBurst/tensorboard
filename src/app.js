@@ -5,7 +5,7 @@ import ReactDOM from "react-dom";
 import Canvas, { CanvasOverlay } from "./Canvas.js";
 
 import "./styles.css";
-import { DBManager } from "./component.js";
+import { DBManager } from "./DB.js";
 import { Button, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { Notebook, Raw, Web } from "./Pages.js";
 
@@ -13,13 +13,13 @@ var w = localStorage.getItem("w") || 50;
 var h = localStorage.getItem("h") || 0;
 
 function isMobile() {
-	if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){
+	if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
 		return true;
 	}
 	return false;
 }
 
-const components = {
+export const components = {
 	Data: {
 		name: "Data",
 		// color: "#F1AB86",
@@ -85,9 +85,15 @@ const components = {
 		description: "Normalizes the input data",
 		color: "#6A2E35",
 		data: {
-			Type: {
-				type: "text",
-				value: "",
+			Range: {
+				type: "slider",
+				value: 255.0,
+				step: 0.01,
+			},
+			Translate: {
+				type: "slider",
+				value: 0,
+				step: 0.01,
 			},
 		},
 		transpile: function () {
@@ -393,6 +399,8 @@ document.documentElement.style.setProperty("--mouse-x", w + "%");
 const canvasSize = { x: 3000, y: 3000 };
 const canvasSize2 = { x: 2000, y: 2000 };
 
+var keys = [];
+
 function App() {
 	const [darkThemes, setDarkThemes] = React.useState(false);
 
@@ -451,12 +459,14 @@ function App() {
 			// if the distance is greater than the previous distance, zoom in
 			if (distance > prevDistance) {
 				zoomContainer({
+					preventDefault: e.preventDefault,
 					deltaY: -1,
 					clientX: (x1 + x2) / 2,
 					clientY: (y1 + y2) / 2,
 				});
 			} else {
 				zoomContainer({
+					preventDefault: e.preventDefault,
 					deltaY: 1,
 					clientX: (x1 + x2) / 2,
 					clientY: (y1 + y2) / 2,
@@ -551,12 +561,12 @@ function App() {
 
 		newWidth = Math.min(
 			newWidth,
-			canvasSize
+			canvasSize.x
 			// 1
 		);
 		newHeight = Math.min(
 			newHeight,
-			canvasSize
+			canvasSize.y
 			// 1
 		);
 
@@ -650,6 +660,7 @@ function App() {
 
 	useEffect(() => {
 		document.addEventListener("keydown", onKeyboardDown);
+		document.addEventListener("keyup", onKeyboardUp);
 
 		// prevent wheel scrolling on the canvasContainer element
 		canvasContainer.current.addEventListener("wheel", zoomContainer, {
@@ -789,6 +800,7 @@ function App() {
 			canvasOverlay.current.style.width = newWidth + "px";
 			canvasOverlay.current.style.height = newHeight + "px";
 		}
+
 		refreshCanvasWidth();
 	}
 
@@ -833,20 +845,39 @@ function App() {
 		setSelectedElement(element);
 	}
 
-	function addChildrenToComponentList(component) {
+	function addChildrenToComponentList(component, idList = []) {
 		console.log("Recursing");
 		var finArray = [component.id];
+
+		if (idList.includes(component.id)) {
+			return [];
+		}
+		idList.push(component.id);
 		// loop through keys of component outputs {id : component}
 		Object.keys(component.outputs).map((key, index) => {
 			console.log("CHILD!", component.outputs[key]);
-			var tempArr = addChildrenToComponentList(component.outputs[key]);
+			var tempArr = addChildrenToComponentList(component.outputs[key], idList);
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
 		});
 		return finArray;
 	}
 
+	const [flip, setFlip] = React.useState(false);
+
+	function flop() {
+		setFlip(!flip);
+	}
+
 	function updateNotebook(currentElements) {
+		console.log("ELEMSNOTE", currentElements);
+
+		var saveElements = {};
+		Object.keys(currentElements).map((key, index) => {
+			saveElements[key] = currentElements[key].toJSON();
+		});
+		DBManager.getInstance().setItem("elements", saveElements);
+
 		var tcomponents = [];
 		var scomponents = {};
 		var rootComponents = [];
@@ -931,10 +962,38 @@ function App() {
 	const [disableOverlay, setDisableOverlay] = React.useState(false);
 
 	const [keyDown, setKeyDown] = React.useState(null);
+	// const [currentKeys, setCurrentKeys] = React.useState([]);
 
 	function onKeyboardDown(e) {
-		console.log("onKeyboardDown", e);
+		// console.log("onKeyboardDown", e);
 		setKeyDown(e);
+
+		// if key is in keys, return
+		if (keys.includes(e.key)) {
+			return;
+		}
+
+		keys.push(e.key);
+
+		console.log("KEYS", keys);
+
+		// if control z is pressed, undo
+		if (keys.includes("Control") && keys.includes("z")) {
+			console.log("UNDO");
+			DBManager.getInstance().undo();
+			flop();
+		} else if (keys.includes("Control") && keys.includes("y")) {
+			console.log("REDO");
+			DBManager.getInstance().redo();
+			flop();
+		}
+	}
+
+	function onKeyboardUp(e) {
+		console.log("onKeyboardUp", e);
+		// remove the key from keys
+		var temp = keys;
+		temp.splice(temp.indexOf(e.key), 1);
 	}
 
 	return (
@@ -955,6 +1014,7 @@ function App() {
 					mouseUp(e);
 				}}
 				onKeyDown={onKeyboardDown}
+				onKeyUp={onKeyboardUp}
 			>
 				<CanvasOverlay
 					selectedElement={selectedElement}
@@ -968,7 +1028,7 @@ function App() {
 					// onMouseDown={(e) => {
 					// setIsPanning(true);
 					// }}
-					
+
 					ref={canvasContainer}
 				>
 					<Canvas
@@ -983,6 +1043,8 @@ function App() {
 						setDisableOverlay={setDisableOverlay}
 						keyDown={keyDown}
 						setKeyDown={setKeyDown}
+						components={components}
+						flip={flip}
 					/>
 
 					{/* <Canvas canvasHeight={canvasHeight} canvasWidth={canvasWidth} isOverride={isResizing} /> */}
@@ -1085,7 +1147,7 @@ function App() {
 					) : panel == "raw" ? (
 						<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
 					) : panel == "notebook" ? (
-						<Notebook cells={cells} start={start} end={end} />
+						<Notebook cells={cells} start={start} end={end} flop={flop} />
 					) : panel == "web" ? (
 						<Web />
 					) : null}
