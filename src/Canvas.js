@@ -98,7 +98,7 @@ export default function Canvas(props) {
 		} else if (e.key == "Delete") {
 			console.log("DELETE", selectedElement, oldSelectedElement);
 			if (selectedElement != null) {
-				if (selectedElement.lineSelected) {
+				if (selectedElement.selectedLine != null) {
 					selectedElement.disconnectOutput();
 					setSelectedElement(null);
 					redrawCanvas();
@@ -115,7 +115,7 @@ export default function Canvas(props) {
 				elementsList = tempElems;
 				redrawCanvas();
 			} else if (oldSelectedElement != null) {
-				if (oldSelectedElement.lineSelected) {
+				if (oldSelectedElement.selectedLine != null) {
 					oldSelectedElement.disconnectOutput();
 					setOldSelectedElement(null);
 					redrawCanvas();
@@ -238,10 +238,10 @@ export default function Canvas(props) {
 		busy = false;
 
 		if (selectedElement) {
-			selectedElement.lineSelected = false;
+			selectedElement.selectedLine == null;
 		}
 		if (oldSelectedElement) {
-			oldSelectedElement.lineSelected = false;
+			oldSelectedElement.selectedLine = null;
 		}
 
 		Object.keys(elements).forEach((key) => {
@@ -257,7 +257,7 @@ export default function Canvas(props) {
 				}
 
 				elem.dragging = true;
-				elem.removeElement();
+				// elem.removeElement();
 				elem.element = null;
 				elem.lining = true;
 				canvas.current.style.cursor = "crosshair";
@@ -365,7 +365,7 @@ export default function Canvas(props) {
 		if (lining) {
 			var didLine = false;
 			Object.keys(elements).forEach((key) => {
-				if (elements[key].isLineEnd(x, y)) {
+				if (elements[key].isLineEnd(x, y, selectedElement.component.name == "Connector")) {
 					// connect the line to the element
 					selectedElement.lineToElement(key);
 					props.updateNotebook(elements);
@@ -445,7 +445,7 @@ export default function Canvas(props) {
 			x = tx;
 			y = ty;
 		} else if (isPanning) {
-			if (selectedElement && selectedElement.lineSelected) {
+			if (selectedElement && selectedElement.selectedLine != null) {
 				return;
 			}
 
@@ -716,15 +716,15 @@ class Element {
 		this.h = h;
 		this.lineToX = -1;
 		this.lineToY = -1;
-		this.element = null;
-		this.elementId = null;
+		this.lines = {};
+		this.elements = [];
 		this.dragging = false;
 		this.color = component.color || "#ff0000";
 		this.dragColor = "#fff";
 		this.component = component || {};
 		this.text = this.component.name || "Component";
 		this.id = this.component.id;
-		this.lineSelected = false;
+		this.selectedLine = null;
 
 		console.log("CREATED", this.component);
 
@@ -799,19 +799,51 @@ class Element {
 	}
 
 	drawLines(ctx) {
-		if (this.element != null) {
-			this.lineToX = elementsList[this.element].x;
-			this.lineToY =
-				elementsList[this.element].y + elementsList[this.element].h / 2;
+		for (var i = 0; i < this.elements.length; i++) {
+			var elem = elementsList[this.elements[i]];
+			var tlineToX = elem.x;
+			var tlineToY = elem.y + elem.h / 2;
+
+			if (tlineToX >= 0 && tlineToY >= 0) {
+				// draw a line with bezier curves
+				if (this.selectedLine != this.elements[i]) {
+					ctx.strokeStyle = "#fff";
+				} else {
+					ctx.strokeStyle = this.color;
+				}
+				ctx.lineWidth = 4;
+				ctx.lineCap = "round";
+				ctx.lineJoin = "round";
+				ctx.beginPath();
+				ctx.moveTo(this.x + this.w, this.y + this.h / 2);
+				ctx.bezierCurveTo(
+					this.x + this.w + 200,
+					this.y + this.h / 2,
+					tlineToX - 200,
+					tlineToY,
+					tlineToX,
+					tlineToY
+				);
+				ctx.stroke();
+
+				var midX = (this.x + this.w + tlineToX) / 2;
+				var midY = (this.y + this.h / 2 + tlineToY) / 2;
+				var radius = 7.5;
+				// draw a small circle at the middle of the line
+				if (this.selectedLine == this.elements[i]) {
+					ctx.fillStyle = this.color;
+				} else {
+					ctx.fillStyle = "#fff";
+				}
+				ctx.beginPath();
+				ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
+				ctx.fill();
+			}
 		}
 
 		if (this.lineToX >= 0 && this.lineToY >= 0) {
 			// draw a line with bezier curves
-			if (!this.lineSelected) {
-				ctx.strokeStyle = "#fff";
-			} else {
-				ctx.strokeStyle = this.color;
-			}
+			ctx.strokeStyle = "#fff";
 			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
@@ -826,19 +858,6 @@ class Element {
 				this.lineToY
 			);
 			ctx.stroke();
-
-			var midX = (this.x + this.w + this.lineToX) / 2;
-			var midY = (this.y + this.h / 2 + this.lineToY) / 2;
-			var radius = 7.5;
-			// draw a small circle at the middle of the line
-			if (this.lineSelected) {
-				ctx.fillStyle = this.color;
-			} else {
-				ctx.fillStyle = "#fff";
-			}
-			ctx.beginPath();
-			ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
-			ctx.fill();
 		}
 	}
 
@@ -848,8 +867,8 @@ class Element {
 		);
 	}
 
-	isLineEnd(x, y) {
-		if (this.component.numInputs == 0) return false;
+	isLineEnd(x, y, override = false) {
+		if (!override && this.component.numInputs == 0) return false;
 
 		return (
 			x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h
@@ -869,19 +888,25 @@ class Element {
 	}
 
 	isLineSelected(x, y) {
-		if (this.element == null) return false;
-		// check if mouse is near the middle of the line
-		var midX = (this.x + this.w + this.lineToX) / 2;
-		var midY = (this.y + this.h / 2 + this.lineToY) / 2;
-		var tolerance = 10;
-		if (
-			x >= midX - tolerance &&
-			x <= midX + tolerance &&
-			y >= midY - tolerance &&
-			y <= midY + tolerance
-		) {
-			this.lineSelected = true;
-			return true;
+		if (this.elements.length == 0) return false;
+		for (var i = 0; i < this.elements.length; i++) {
+			var elem = elementsList[this.elements[i]];
+			var tlineToX = elem.x;
+			var tlineToY = elem.y + elem.h / 2;
+
+			// check if mouse is near the middle of the line
+			var midX = (this.x + this.w + tlineToX) / 2;
+			var midY = (this.y + this.h / 2 + tlineToY) / 2;
+			var tolerance = 10;
+			if (
+				x >= midX - tolerance &&
+				x <= midX + tolerance &&
+				y >= midY - tolerance &&
+				y <= midY + tolerance
+			) {
+				this.selectedLine = this.elements[i];
+				return true;
+			}
 		}
 		return false;
 	}
@@ -928,24 +953,21 @@ class Element {
 		console.log("LINE TO", i);
 		if (this.component.id in Object.keys(elementsList[i].component.outputs)) {
 			console.log("ALREADY CONNECTED");
-			this.element = null;
-			this.elementId = null;
 			this.lineToX = -1;
 			this.lineToY = -1;
 			return false;
 		}
 		console.log(this.component.id);
-		this.element = i;
-		this.elementId = elementsList[i].component.id;
-		this.component.outputs[this.elementId] = elementsList[i].component;
+		this.elements.push(i);
+		this.component.outputs[i] = elementsList[i].component;
 		elementsList[i].component.inputs[this.component.id] = this.component;
 		return true;
 	}
 
 	removeElement() {
-		if (this.element != null) {
-			delete elementsList[this.element].component.inputs[this.component.id];
-			delete this.component.outputs[this.elementId];
+		for (var i = 0; i < this.elements.length; i++) {
+			delete elementsList[this.element[i]].component.inputs[this.component.id];
+			delete this.component.outputs[this.element[i]];
 		}
 	}
 
@@ -953,8 +975,7 @@ class Element {
 		var inputs = this.component.inputs;
 		var outputs = this.component.outputs;
 		Object.keys(inputs).forEach((key) => {
-			elementsList[key].element = null;
-			elementsList[key].elementId = null;
+			elementsList[key].element = [];
 			elementsList[key].lineToX = -1;
 			elementsList[key].lineToY = -1;
 			delete inputs[key].outputs[this.component.id];
@@ -965,14 +986,13 @@ class Element {
 	}
 
 	disconnectOutput() {
-		if (this.element != null) {
-			delete elementsList[this.element].component.inputs[this.component.id];
-			delete this.component.outputs[this.elementId];
-			this.element = null;
-			this.elementId = null;
+		if (this.elements.length > 0) {
+			delete elementsList[this.selectedLine].component.inputs[this.component.id];
+			delete this.component.outputs[this.selectedLine];
+			this.elements = this.elements.filter((item) => item !== this.selectedLine);
 			this.lineToX = -1;
 			this.lineToY = -1;
-			this.lineSelected = false;
+			this.selectedLine = null;
 		}
 	}
 
@@ -992,8 +1012,7 @@ class Element {
 				outputs: {},
 				color: this.component.color,
 			},
-			element: this.element,
-			elementId: this.elementId,
+			elements: this.elements,
 			lineToX: this.lineToX,
 			lineToY: this.lineToY,
 		};
@@ -1005,8 +1024,7 @@ class Element {
 		this.y = json.y;
 		this.w = json.w;
 		this.h = json.h;
-		this.element = json.element;
-		this.elementId = json.elementId;
+		this.elements = json.elements;
 		this.lineToX = json.lineToX;
 		this.lineToY = json.lineToY;
 	}

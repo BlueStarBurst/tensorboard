@@ -125,6 +125,8 @@ h6 {
 
 .canvas-elem {
   /* background-color: var(--canvas-color); */
+  position: relative;
+  z-index: 1;
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   pointer-events: var(--pointer-events);
   width: fit-content;
@@ -133,6 +135,7 @@ h6 {
 
 .canvas-elem-abs {
   position: absolute;
+  z-index: 2;
   top: 0;
   left: 0;
   /* background-color: var(--canvas-color); */

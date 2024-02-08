@@ -370,6 +370,24 @@ export const components = {
 		},
 		output: "print",
 	},
+	Connector: {
+		name: "Connector",
+		description: "Connects multiple components together to help manage the flow of the notebook. It can connect to blocks that don't have any inputs.",
+		color: "#424651",
+		numInputs: -1,
+		numOutputs: -1,
+		data: {},
+		transpile: function () {
+			return "";
+		},
+		reload: function () {},
+		outputs: [],
+		inputs: [],
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		output: "connector",
+	},
 };
 
 const darkTheme = createTheme({
