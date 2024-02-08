@@ -372,7 +372,8 @@ export const components = {
 	},
 	Connector: {
 		name: "Connector",
-		description: "Connects multiple components together to help manage the flow of the notebook. It can also connect to blocks that don't have any inputs.",
+		description:
+			"Connects multiple components together to help manage the flow of the notebook. It can also connect to blocks that don't have any inputs.",
 		color: "#424651",
 		numInputs: -1,
 		numOutputs: -1,
@@ -876,7 +877,11 @@ function App() {
 		var finArray = [component.id];
 
 		if (idList.includes(component.id)) {
-			return [];
+			// get index of id
+			var index = idList.indexOf(component.id);
+			if (idList[index - 1] == idList[idList.length - 1]) {
+				return [];
+			}
 		}
 		idList.push(component.id);
 		// loop through keys of component outputs {id : component}
@@ -949,7 +954,10 @@ function App() {
 		// loop backwards through the keyList, keeping only the unique keys
 		var uniqueKeyList = [];
 		for (var i = keyList.length - 1; i >= 0; i--) {
-			if (!uniqueKeyList.includes(keyList[i]) && scomponents[keyList[i]].name != "Connector") {
+			if (
+				!uniqueKeyList.includes(keyList[i]) &&
+				scomponents[keyList[i]].name != "Connector"
+			) {
 				// add to front of array
 				uniqueKeyList.push(keyList[i]);
 				fcomponents.unshift(scomponents[keyList[i]]);
