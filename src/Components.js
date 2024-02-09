@@ -418,7 +418,7 @@ export const components = {
 				// remove the last comma
 				params = params.slice(0, -2);
 
-				var head = `def ${this.getOutput()}(${params}):\n`;
+				var head = `def ${this.output + this.id}(${params}):\n`;
 				// add tabs to the code
 				var lines = this.data.Code.value.split("\n");
 				var body = lines.map((line) => {
