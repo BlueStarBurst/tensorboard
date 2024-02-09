@@ -835,6 +835,7 @@ export function CanvasOverlay(props) {
 												}
 											}}
 										/>
+										{key == "Code" && (
 										<pre style={{ width: "100%" }}>
 											<code
 												className="python"
@@ -843,7 +844,7 @@ export function CanvasOverlay(props) {
 											>
 												<p>{data[key].value || ""}</p>
 											</code>
-										</pre>
+										</pre>)}
 									</>
 								);
 						}
