@@ -447,6 +447,9 @@ export const components = {
 		outputs: [],
 		inputs: [],
 		getOutput: function () {
+            if (this.data.Type.value == "Class" || this.data.Type.value == "Function") {
+                return this.output + this.id + "()";
+            }
 			return this.output + this.id;
 		},
 		output: "custom",
