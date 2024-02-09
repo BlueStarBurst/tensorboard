@@ -25,17 +25,19 @@ export function Notebook(props) {
 			setTimeout(() => {
 				Object.keys(cells).forEach((key) => {
 					var code = document.getElementById(JSON.stringify(cells[key]));
-					if (code.attributes.getNamedItem("data-highlighted")) {
-						code.attributes.removeNamedItem("data-highlighted");
+					if (code) {
+						if (code.attributes.getNamedItem("data-highlighted")) {
+							code.attributes.removeNamedItem("data-highlighted");
+						}
+						var p = "<p>";
+						var cell = cells[key];
+						var source = cell.source;
+						for (var i = 0; i < source.length; i++) {
+							p += source[i];
+						}
+						p += "</p>";
+						code.innerHTML = p;
 					}
-					var p = "<p>";
-					var cell = cells[key];
-					var source = cell.source;
-					for (var i = 0; i < source.length; i++) {
-						p += source[i];
-					}
-					p += "</p>";
-					code.innerHTML = p;
 				});
 				hljs.highlightAll();
 				setReady(true);
@@ -49,9 +51,17 @@ export function Notebook(props) {
 		<div className="notebook-container">
 			<div className="cell-container" key={"1"} id="1">
 				{cells.map((cell, index) => {
+					console.log("SELECTED", cell.metadata.selected);
 					return (
 						<div key={index} className="cell">
-							<div className="cell-line" key={index}>
+							<div
+								className={
+									cell.metadata.selected
+										? "cell-line cell-selected"
+										: "cell-line"
+								}
+								key={index}
+							>
 								<div className="cell-left">
 									<p className="cell-index">[{index + 1}]:</p>
 									<p className="cell-id">{cell.metadata.id}</p>

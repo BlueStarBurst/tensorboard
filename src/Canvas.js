@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { InputGroup } from "react-bootstrap";
 import { DBManager } from "./DB";
-import { components } from "./app";
+import { components } from "./Components";
 
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
@@ -105,7 +105,17 @@ export default function Canvas(props) {
 			redrawCanvas();
 		} else if (e.key == "Delete") {
 			console.log("DELETE", selectedElement, oldSelectedElement);
-			if (selectedElement != null) {
+			if (selectedElems.length > 0) {
+				var tempElems = elements;
+				selectedElems.forEach((elem) => {
+					elem.deleteSelf();
+					delete tempElems[elem.id];
+					delete elementsList[elem.id];
+				});
+				props.updateNotebook(elementsList);
+				setElements(tempElems);
+				redrawCanvas();
+			} else if (selectedElement != null) {
 				if (selectedElement.selectedLine != null) {
 					selectedElement.disconnectOutput();
 					setSelectedElement(null);
@@ -139,17 +149,8 @@ export default function Canvas(props) {
 				props.updateNotebook(tempElems);
 				elementsList = tempElems;
 				redrawCanvas();
-			} else if (selectedElems.length > 0) {
-				var tempElems = elements;
-				selectedElems.forEach((elem) => {
-					elem.deleteSelf();
-					delete tempElems[elem.id];
-					delete elementsList[elem.id];
-				});
-				props.updateNotebook(elementsList);
-				setElements(tempElems);
-				redrawCanvas();
-			}
+			} 
+			
 			props.selectElement(null);
 		}
 		props.setKeyDown(null);
@@ -360,6 +361,7 @@ export default function Canvas(props) {
 				setSelectedElement(elem);
 				props.selectElement(elem);
 				elem.dragging = true;
+				props.updateNotebook(elements);
 				timer = setTimeout(() => {
 					canvas.current.style.cursor = "grabbing";
 					setDragging(true);
@@ -455,6 +457,7 @@ export default function Canvas(props) {
 			}
 			redrawCanvas();
 			props.setDisableOverlay(false);
+			props.updateNotebook(elements);
 			return;
 		}
 
@@ -575,6 +578,7 @@ export default function Canvas(props) {
 					)
 				) {
 					elem.dragging = true;
+					props.updateNotebook(elements);
 					// if not in the selected elements, add it
 					if (!selectedElems.includes(elem)) {
 						var tempselectedElems = selectedElems;
@@ -650,6 +654,7 @@ export default function Canvas(props) {
 				onKeyDownCapture={onKeyboard}
 				ref={canvas}
 				className="canvas-elem"
+				id="canvas"
 				width={props.size.x}
 				height={props.size.y}
 				onMouseDown={onMouseDownCanvas}
@@ -696,9 +701,11 @@ export function CanvasOverlay(props) {
 		if (component) {
 			setDisplay(
 				<>
-					<h4>
-						{component.name} ({component.id})
-					</h4>
+					<div className="canvas-overlay-header">
+						<h4>{component.name}</h4>
+						<h5>{component.id}</h5>
+					</div>
+
 					<p>{component.description}</p>
 					{Object.keys(data).map((key) => {
 						if (data[key].hidden) return <></>;
@@ -836,15 +843,16 @@ export function CanvasOverlay(props) {
 											}}
 										/>
 										{key == "Code" && (
-										<pre style={{ width: "100%" }}>
-											<code
-												className="python"
-												class="python"
-												id={component.id + "code"}
-											>
-												<p>{data[key].value || ""}</p>
-											</code>
-										</pre>)}
+											<pre style={{ width: "100%" }}>
+												<code
+													className="python"
+													class="python"
+													id={component.id + "code"}
+												>
+													<p>{data[key].value || ""}</p>
+												</code>
+											</pre>
+										)}
 									</>
 								);
 						}
