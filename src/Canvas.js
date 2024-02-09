@@ -152,6 +152,32 @@ export default function Canvas(props) {
 			} 
 			
 			props.selectElement(null);
+		} else if (e.key == "ArrowRight") {
+			if (selectedElement != null) {
+				var nextElem = selectedElement.getNext();
+				if (nextElem) {
+					nextElem = elementsList[nextElem];
+					selectedElement.dragging = false;
+					props.selectElement(nextElem);
+					setSelectedElement(nextElem);
+					props.updateNotebook(elementsList);
+					nextElem.dragging = true;
+					redrawCanvas();
+				}
+			}
+		} else if (e.key == "ArrowLeft") {
+			if (selectedElement != null) {
+				var prevElem = selectedElement.getPrev();
+				if (prevElem) {
+					prevElem = elementsList[prevElem];
+					selectedElement.dragging = false;
+					props.selectElement(prevElem);
+					setSelectedElement(prevElem);
+					props.updateNotebook(elementsList);
+					prevElem.dragging = true;
+					redrawCanvas();
+				}
+			}
 		}
 		props.setKeyDown(null);
 	}
@@ -1262,6 +1288,24 @@ class Element {
 			this.lineToY = -1;
 			this.selectedLine = null;
 		}
+	}
+
+	getNext() {
+		// get random next element id from component outputs
+		var keys = Object.keys(this.component.outputs);
+		if (keys.length == 0) return null;
+		var rand = Math.floor(Math.random() * keys.length);
+
+		return keys[rand];
+	}
+
+	getPrev() {
+		// get random prev element id from component inputs
+		var keys = Object.keys(this.component.inputs);
+		if (keys.length == 0) return null;
+		var rand = Math.floor(Math.random() * keys.length);
+
+		return keys[rand];
 	}
 
 	// to json
