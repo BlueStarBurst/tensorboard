@@ -802,8 +802,8 @@ export function CanvasOverlay(props) {
 											value={data[key].value || 0}
 											step={data[key].step || 1}
 											style={{ width: "75%" }}
-											min={data[key].min || -100}
-											max={data[key].max || 100}
+											min={data[key].min == null ? -100 : data[key].min}
+											max={data[key].max == null ? 100 : data[key].max}
 											onChange={(e, value) => {
 												data[key].value = value;
 												component.data[key] = data[key];
@@ -872,7 +872,7 @@ export function CanvasOverlay(props) {
 				if (code.attributes.getNamedItem("data-highlighted")) {
 					code.attributes.removeNamedItem("data-highlighted");
 				}
-				code.innerHTML = "<p>" + data["Code"].value + "</p>";
+				code.innerHTML = "<p>" + component.transpile() + "</p>";
 				hljs.highlightAll();
 			}
 		}

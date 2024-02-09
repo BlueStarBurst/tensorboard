@@ -186,7 +186,7 @@ export const components = {
 		name: "Library",
 		description: "Install a library from pip",
 		color: "#403e9c",
-        priority: 1,
+		priority: 1,
 		numInputs: 0,
 		numOutputs: -1,
 		data: {
@@ -230,7 +230,7 @@ export const components = {
 		name: "Import",
 		description: "Import a library or module",
 		color: "#7f538c",
-        priority: 2,
+		priority: 2,
 		numInputs: 1,
 		numOutputs: -1,
 		data: {
@@ -330,8 +330,8 @@ export const components = {
 					if (this.inputs[key].getValue) {
 						return this.inputs[key].getValue();
 					} else if (this.inputs[key].getOutput) {
-                        return this.inputs[key].getOutput();
-                    }
+						return this.inputs[key].getOutput();
+					}
 				});
 				this.data.Output.value = outputs.join(", ");
 				this.data.Output.readonly = true;
@@ -385,6 +385,13 @@ export const components = {
 				value: "Snippet",
 				hidden: false,
 			},
+			Parameters: {
+				type: "slider",
+				value: 3,
+				min: 0,
+				max: 10,
+				hidden: true,
+			},
 			Code: {
 				type: "text",
 				value:
@@ -395,9 +402,48 @@ export const components = {
 			},
 		},
 		transpile: function () {
-			return this.data.Code.value;
+			if (this.data.Type.value == "Snippet") {
+				return this.data.Code.value;
+			} else if (this.data.Type.value == "Function") {
+				var params = "";
+				// add the parameters starting from a to z
+				for (var i = 0; i < this.data.Parameters.value; i++) {
+					// if less than 26, add the letter
+					if (i < 26) {
+						params += String.fromCharCode(97 + i) + ", ";
+					} else {
+						params += "param" + (i - 25) + ", ";
+					}
+				}
+				// remove the last comma
+				params = params.slice(0, -2);
+
+				var head = `def ${this.getOutput()}(${params}):\n`;
+				// add tabs to the code
+				var lines = this.data.Code.value.split("\n");
+				var body = lines.map((line) => {
+					return "\t" + line;
+				});
+				return head + body.join("\n");
+			} else if (this.data.Type.value == "Class") {
+                var head = `class ${this.getOutput()}:\n`;
+                // add tabs to the code
+                var lines = this.data.Code.value.split("\n");
+                var body = lines.map((line) => {
+                    return "\t" + line;
+                });
+                return head + body.join("\n");
+            }
 		},
-		reload: function () {},
+		reload: function () {
+			if (this.data.Type.value == "Snippet") {
+				this.data.Parameters.hidden = true;
+			} else if (this.data.Type.value == "Function") {
+				this.data.Parameters.hidden = false;
+			} else if (this.data.Type.value == "Class") {
+				this.data.Parameters.hidden = true;
+			}
+		},
 		outputs: [],
 		inputs: [],
 		getOutput: function () {
