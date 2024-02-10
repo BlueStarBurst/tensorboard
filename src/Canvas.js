@@ -171,8 +171,9 @@ export default function Canvas(props) {
 					selectedElement.dragging = false;
 					props.selectElement(nextElem);
 					setSelectedElement(nextElem);
-					props.updateNotebook(elementsList);
 					nextElem.dragging = true;
+					props.updateNotebook(elementsList);
+					
 					redrawCanvas();
 				}
 			}
@@ -184,8 +185,37 @@ export default function Canvas(props) {
 					selectedElement.dragging = false;
 					props.selectElement(prevElem);
 					setSelectedElement(prevElem);
-					props.updateNotebook(elementsList);
 					prevElem.dragging = true;
+					props.updateNotebook(elementsList);
+					
+					redrawCanvas();
+				}
+			}
+		} else if (e.key == "ArrowUp") {
+			if (selectedElement != null) {
+				var nextElem = selectedElement.getTop();
+				if (nextElem) {
+					nextElem = elementsList[nextElem];
+					selectedElement.dragging = false;
+					props.selectElement(nextElem);
+					setSelectedElement(nextElem);
+					nextElem.dragging = true;
+					props.updateNotebook(elementsList);
+					
+					redrawCanvas();
+				}
+			}
+		} else if (e.key == "ArrowDown") {
+			if (selectedElement != null) {
+				var prevElem = selectedElement.getBot();
+				if (prevElem) {
+					prevElem = elementsList[prevElem];
+					selectedElement.dragging = false;
+					props.selectElement(prevElem);
+					setSelectedElement(prevElem);
+					prevElem.dragging = true;
+					props.updateNotebook(elementsList);
+					
 					redrawCanvas();
 				}
 			}
@@ -1541,6 +1571,24 @@ class Element {
 	getPrev() {
 		// get random prev element id from component inputs
 		var keys = Object.keys(this.component.inputs);
+		if (keys.length == 0) return null;
+		var rand = Math.floor(Math.random() * keys.length);
+
+		return keys[rand];
+	}
+
+	getBot() {
+		// get random prev element id from component inputs
+		var keys = Object.keys(this.component.topInputs);
+		if (keys.length == 0) return null;
+		var rand = Math.floor(Math.random() * keys.length);
+
+		return keys[rand];
+	}
+
+	getTop() {
+		// get random prev element id from component inputs
+		var keys = Object.keys(this.component.helpers);
 		if (keys.length == 0) return null;
 		var rand = Math.floor(Math.random() * keys.length);
 
