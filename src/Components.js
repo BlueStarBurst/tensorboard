@@ -32,7 +32,7 @@ export const components = {
 			},
 		},
 		transpile: function () {
-			console.log("TRANSPILING", this.id, this.data);
+			// console.log("TRANSPILING", this.id, this.data);
 			if (this.data.Type.value == "HuggingFace") {
 				return `from huggingface_hub import hf_hub_download\nimport pandas as pd\nprint('Downloading data from https://hugingface.com/${
 					this.data.RepoID.value
@@ -94,12 +94,12 @@ export const components = {
 		name: "Value",
 		description: "Create variables of different types",
 		color: "#943854",
-		numInputs: 0,
+		numInputs: 1,
 		numOutputs: -1,
 		data: {
 			Type: {
 				type: "radio",
-				options: ["Integer", "String", "Float", "Boolean"],
+				options: ["Integer", "String", "Float", "Boolean", "Other"],
 				value: "Integer",
 				hidden: false,
 			},
@@ -129,8 +129,26 @@ export const components = {
 				value: "False",
 				hidden: true,
 			},
+			Other: {
+				type: "text",
+				value: "",
+				readonly: true,
+				hidden: true,
+			},
 		},
 		transpile: function () {
+			// if this has an input, return the first input
+			if (Object.keys(this.inputs).length > 0) {
+				this.data.Type.value = "Other";
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = false;
+				this.data.Other.value = this.inputs[Object.keys(this.inputs)[0]].getOutput();
+				return `${this.getOutput()} = ${this.inputs[Object.keys(this.inputs)[0]].getOutput()}`;
+			}
+
 			if (this.data.Type.value == "Integer") {
 				return `${this.getOutput()} = ${this.data.Integer.value}`;
 			} else if (this.data.Type.value == "String") {
@@ -139,6 +157,8 @@ export const components = {
 				return `${this.getOutput()} = ${this.data.Float.value}`;
 			} else if (this.data.Type.value == "Boolean") {
 				return `${this.getOutput()} = ${this.data.Boolean.value}`;
+			} else {
+				return `${this.getOutput()} = ${this.data.Other.value}`;
 			}
 		},
 		reload: function () {
@@ -147,21 +167,31 @@ export const components = {
 				this.data.String.hidden = true;
 				this.data.Float.hidden = true;
 				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
 			} else if (this.data.Type.value == "String") {
 				this.data.Integer.hidden = true;
 				this.data.String.hidden = false;
 				this.data.Float.hidden = true;
 				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
 			} else if (this.data.Type.value == "Float") {
 				this.data.Integer.hidden = true;
 				this.data.String.hidden = true;
 				this.data.Float.hidden = false;
 				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
 			} else if (this.data.Type.value == "Boolean") {
 				this.data.Integer.hidden = true;
 				this.data.String.hidden = true;
 				this.data.Float.hidden = true;
 				this.data.Boolean.hidden = false;
+				this.data.Other.hidden = true;
+			} else {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = false;
 			}
 		},
 		outputs: [],
@@ -178,6 +208,8 @@ export const components = {
 				return this.data.Float.value;
 			} else if (this.data.Type.value == "Boolean") {
 				return this.data.Boolean.value;
+			} else {
+				return this.data.Other.value;
 			}
 		},
 		output: "value",
@@ -376,8 +408,9 @@ export const components = {
 		name: "CustomCode",
 		description: "Write custom code!",
 		color: "#3d3d3d",
-		numInputs: -1,
+		numInputs: 0,
 		numOutputs: -1,
+		bot: true,
 		data: {
 			Type: {
 				type: "radio",
@@ -402,22 +435,21 @@ export const components = {
 			},
 		},
 		transpile: function () {
+			var params = "";
+			// add the parameters starting from a to z
+			for (var i = 0; i < this.data.Parameters.value; i++) {
+				// if less than 26, add the letter
+				if (i < 26) {
+					params += String.fromCharCode(97 + i) + ", ";
+				} else {
+					params += "param" + (i - 25) + ", ";
+				}
+			}
+			// remove the last comma
+			params = params.slice(0, -2);
 			if (this.data.Type.value == "Snippet") {
 				return this.data.Code.value;
 			} else if (this.data.Type.value == "Function") {
-				var params = "";
-				// add the parameters starting from a to z
-				for (var i = 0; i < this.data.Parameters.value; i++) {
-					// if less than 26, add the letter
-					if (i < 26) {
-						params += String.fromCharCode(97 + i) + ", ";
-					} else {
-						params += "param" + (i - 25) + ", ";
-					}
-				}
-				// remove the last comma
-				params = params.slice(0, -2);
-
 				var head = `def ${this.output + this.id}(${params}):\n`;
 				// add tabs to the code
 				var lines = this.data.Code.value.split("\n");
@@ -426,14 +458,15 @@ export const components = {
 				});
 				return head + body.join("\n");
 			} else if (this.data.Type.value == "Class") {
-                var head = `class ${this.getOutput()}:\n`;
-                // add tabs to the code
-                var lines = this.data.Code.value.split("\n");
-                var body = lines.map((line) => {
-                    return "\t" + line;
-                });
-                return head + body.join("\n");
-            }
+				var head = `class ${this.getOutput()}:\n`;
+				var init = `\tdef __init__(self, ${params}):\n\t\t# this is the constructor!\n`;
+				// add tabs to the code
+				var lines = this.data.Code.value.split("\n");
+				var body = lines.map((line) => {
+					return "\t" + line;
+				});
+				return head + init + body.join("\n");
+			}
 		},
 		reload: function () {
 			if (this.data.Type.value == "Snippet") {
@@ -444,14 +477,114 @@ export const components = {
 				this.data.Parameters.hidden = true;
 			}
 		},
-		outputs: [],
-		inputs: [],
+		outputs: {},
+		inputs: {},
+		helpers: {},
+		priority: 3,
 		getOutput: function () {
-            if (this.data.Type.value == "Class" || this.data.Type.value == "Function") {
-                return this.output + this.id + "()";
-            }
+			if (
+				this.data.Type.value == "Class" ||
+				this.data.Type.value == "Function"
+			) {
+				return this.output + this.id + "()";
+			}
 			return this.output + this.id;
 		},
+		getHelp: function () {
+			if (this.data.Type.value == "Function") {
+				// return ["functionName(", "null", ")"];
+				var start = this.output + this.id + "(";
+				var end = ")";
+				var params = [];
+				for (var i = 0; i < this.data.Parameters.value; i++) {
+					params.push("null");
+					params.push(", ");
+				}
+				params.pop();
+				return [start].concat(params).concat([end]);
+			} else if (this.data.Type.value == "Class") {
+				var start = this.output + this.id + "(";
+				var end = ")";
+				var params = [];
+				for (var i = 0; i < this.data.Parameters.value; i++) {
+					params.push("null");
+					params.push(", ");
+				}
+				params.pop();
+				return [start].concat(params).concat([end]);
+			} else {
+				return [this.output + this.id];
+			}
+		},
 		output: "custom",
+	},
+	Helper: {
+		name: "Helper",
+		description: "A helper component to help manage the flow of the notebook",
+		color: "#3d3d3d",
+		numInputs: 1,
+		numOutputs: 1,
+		top: true,
+		bot: true,
+		data: {
+			Help: {
+				type: "text",
+				value: "",
+				readonly: true,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			var input = [];
+			var vals = [];
+			if (Object.keys(this.inputs).length > 0) {
+				input = Object.keys(this.inputs).map((key, index) => {
+					return this.inputs[key].getOutput();
+				});
+				vals = Object.keys(this.inputs).map((key, index) => {
+					if (this.inputs[key].getValue) return this.inputs[key].getValue();
+					else return this.inputs[key].getOutput();
+				});
+			}
+			console.log("RELOADING HELPER");
+			console.log(this.helpers);
+			if (Object.keys(this.helpers).length > 0) {
+				var helper = this.helpers[Object.keys(this.helpers)[0]];
+				var help = helper.getHelp();
+				var help2 = helper.getHelp();
+				// for every input, replace the @ with the input
+				for (var i = 0; i < input.length; i++) {
+					// find a null in the help
+					var index = help.indexOf("null");
+					if (index > -1) {
+						help[index] = input[i];
+						help2[index] = vals[i];
+					}
+				}
+				this.data.Help.value = help2.join("");
+				return this.getOutput() + " = " + help.join("");
+			}
+			return `print("Helper")`;
+		},
+		reload: function () {
+			return this.transpile();
+		},
+		getHelp: function () {
+			if (Object.keys(this.helpers).length > 0) {
+				var helper = this.helpers[Object.keys(this.helpers)[0]];
+				var help = helper.getHelp();
+				return help;
+			}
+		},
+		outputs: [],
+		inputs: [],
+		helpers: {},
+		getOutput: function () {
+			return this.output + this.id;
+		},
+		getValue: function () {
+			return this.data.Help.value;
+		},
+		output: "helper",
 	},
 };

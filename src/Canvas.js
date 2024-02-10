@@ -15,6 +15,10 @@ import { components } from "./Components";
 
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+
 hljs.registerLanguage("python", python);
 
 var interval = null;
@@ -48,8 +52,6 @@ export default function Canvas(props) {
 		elementsList = {};
 		var temp = DBManager.getInstance().getItem("elements") || {};
 
-		console.log("TEMP", temp);
-
 		Object.keys(temp).forEach((key) => {
 			const proto = components[temp[key].component.name];
 
@@ -59,9 +61,15 @@ export default function Canvas(props) {
 			var tComp = temp[key].component;
 			obj = Object.assign(obj, tComp);
 
+			// assign the transpile function to the object
+			obj.transpile = proto.transpile;
+			obj.reload = proto.reload;
+			obj.getOutput = proto.getOutput;
+			obj.getHelp = proto.getHelp;
+			
+
 			// get prototype of the component
 
-			console.log("OBJ", obj);
 			// assign the new object to the element
 			var elem = new Element(
 				temp[key].x,
@@ -70,11 +78,11 @@ export default function Canvas(props) {
 				temp[key].h,
 				obj
 			);
+			
 			elem.fromJSON(temp[key]);
 			elementsList[temp[key].component.id] = elem;
+			
 		});
-
-		console.log("ELEMS", elementsList);
 
 		// loop through the elements and fix the lines
 		Object.keys(elementsList).forEach((key) => {
@@ -89,7 +97,6 @@ export default function Canvas(props) {
 	}, [props.components, props.flip]);
 
 	function onKeyboard(e) {
-		console.log("KEY", e.key);
 		if (e.key == "Escape") {
 			if (selectedElement) {
 				selectedElement.dragging = false;
@@ -104,7 +111,6 @@ export default function Canvas(props) {
 			props.selectElement(null);
 			redrawCanvas();
 		} else if (e.key == "Delete") {
-			console.log("DELETE", selectedElement, oldSelectedElement);
 			if (selectedElems.length > 0) {
 				var tempElems = elements;
 				selectedElems.forEach((elem) => {
@@ -116,7 +122,11 @@ export default function Canvas(props) {
 				setElements(tempElems);
 				redrawCanvas();
 			} else if (selectedElement != null) {
-				if (selectedElement.selectedLine != null) {
+				console.log(selectedElement);
+				if (
+					selectedElement.selectedLine != null ||
+					selectedElement.selectedBot != null
+				) {
 					selectedElement.disconnectOutput();
 					setSelectedElement(null);
 					redrawCanvas();
@@ -127,13 +137,16 @@ export default function Canvas(props) {
 				// selectedElement.removeElement();
 				var tempElems = elements;
 				delete tempElems[selectedElement.id];
-				console.log("DELETED", tempElems);
+
 				setElements(tempElems);
 				props.updateNotebook(tempElems);
 				elementsList = tempElems;
 				redrawCanvas();
 			} else if (oldSelectedElement != null) {
-				if (oldSelectedElement.selectedLine != null) {
+				if (
+					oldSelectedElement.selectedLine != null ||
+					oldSelectedElement.selectedBot != null
+				) {
 					oldSelectedElement.disconnectOutput();
 					setOldSelectedElement(null);
 					redrawCanvas();
@@ -144,13 +157,13 @@ export default function Canvas(props) {
 				// oldSelectedElement.removeElement();
 				var tempElems = elements;
 				delete tempElems[oldSelectedElement.id];
-				console.log("DELETED", tempElems);
+
 				setElements(tempElems);
 				props.updateNotebook(tempElems);
 				elementsList = tempElems;
 				redrawCanvas();
-			} 
-			
+			}
+
 			props.selectElement(null);
 		} else if (e.key == "ArrowRight") {
 			if (selectedElement != null) {
@@ -243,7 +256,7 @@ export default function Canvas(props) {
 
 	function redrawCanvas() {
 		// draw the background grid
-		// console.log(elementsList, elements);
+
 		elementsList = elements;
 		const ctx = canvas.current.getContext("2d");
 		const w = canvas.current.width * 5;
@@ -255,7 +268,6 @@ export default function Canvas(props) {
 			elements[key].drawLines(ctx);
 		});
 		Object.keys(elements).forEach((key) => {
-			// console.log("DRAWING", key);
 			elements[key].draw(ctx);
 		});
 
@@ -293,7 +305,7 @@ export default function Canvas(props) {
 	function onMouseDownCanvas(e) {
 		// add a new element to the canvas
 		var rect = canvas.current.getBoundingClientRect();
-		console.log("CLICK", e.clientX, e.clientY, rect.left, rect.top);
+
 		x = (e.clientX - rect.left) * (canvas.current.width / rect.width);
 		y = (e.clientY - rect.top) * (canvas.current.height / rect.height);
 		setLastMousePos({ x: x, y: y });
@@ -304,9 +316,11 @@ export default function Canvas(props) {
 
 		if (selectedElement) {
 			selectedElement.selectedLine == null;
+			selectedElement.selectedBot == null;
 		}
 		if (oldSelectedElement) {
 			oldSelectedElement.selectedLine = null;
+			oldSelectedElement.selectedBot = null;
 		}
 
 		// if right click, start the select box
@@ -404,7 +418,7 @@ export default function Canvas(props) {
 					}
 					setSelectedElems([]);
 				}
-				console.log("LINESELECTED");
+
 				busy = true;
 				setBusy(true);
 				if (oldSelectedElement) {
@@ -435,11 +449,8 @@ export default function Canvas(props) {
 	useEffect(() => {
 		var tx = props.mouseUp[0];
 		var ty = props.mouseUp[1];
-		console.log("TUP", tx, ty);
-		if (tx < 0 || ty < 0 || tx == undefined || ty == undefined) return;
-		console.log("TUP", tx, ty);
 
-		console.log("SUCCESS");
+		if (tx < 0 || ty < 0 || tx == undefined || ty == undefined) return;
 
 		var rect = canvas.current.getBoundingClientRect();
 		tx = (tx - rect.left) * (canvas.current.width / rect.width);
@@ -507,6 +518,7 @@ export default function Canvas(props) {
 			// stop drawing the line
 			if (selectedElement) {
 				selectedElement.lining = false;
+				selectedElement.liningBot = false;
 				if (!didLine) {
 					selectedElement.lineToX = -1;
 					selectedElement.lineToY = -1;
@@ -554,7 +566,6 @@ export default function Canvas(props) {
 				(x - lastMousePos.x) ** 2 + (y - lastMousePos.y) ** 2
 			);
 			if (dist > 10) {
-				console.log("TIMER");
 				canvas.current.style.cursor = "grabbing";
 				setDragging(true);
 				redrawCanvas();
@@ -604,11 +615,12 @@ export default function Canvas(props) {
 					)
 				) {
 					elem.dragging = true;
-					props.updateNotebook(elements);
+
 					// if not in the selected elements, add it
 					if (!selectedElems.includes(elem)) {
 						var tempselectedElems = selectedElems;
 						tempselectedElems.push(elem);
+						props.updateNotebook(elements);
 						setSelectedElems(tempselectedElems);
 					}
 				} else {
@@ -616,6 +628,7 @@ export default function Canvas(props) {
 					// if in the selected elements, remove it
 					if (selectedElems.includes(elem)) {
 						var tempselectedElems = selectedElems;
+						props.updateNotebook(elements);
 						tempselectedElems.splice(tempselectedElems.indexOf(elem), 1);
 						setSelectedElems(tempselectedElems);
 					}
@@ -642,13 +655,13 @@ export default function Canvas(props) {
 			clientX: e.touches[0].clientX,
 			clientY: e.touches[0].clientY,
 		};
-		console.log("TOUCHADASF", newE);
+
 		onMouseDownCanvas(newE);
 	}
 
 	function touchDragElement(e) {
 		e.preventDefault();
-		console.log("TOUCHMOVEMENT", e);
+
 		if (touchX == -1 && touchY == -1) {
 			touchX = e.touches[0].clientX;
 			touchY = e.touches[0].clientY;
@@ -712,6 +725,7 @@ export function CanvasOverlay(props) {
 	const [active, setActive] = React.useState(false);
 
 	const [display, setDisplay] = React.useState(<></>);
+	const [hidden, setHidden] = React.useState(false);
 
 	React.useEffect(() => {
 		if (props.selectedElement) {
@@ -737,7 +751,6 @@ export function CanvasOverlay(props) {
 						if (data[key].hidden) return <></>;
 						switch (data[key].type) {
 							case "radio":
-								console.log("RADIO");
 								return (
 									<RadioGroup
 										row
@@ -762,7 +775,6 @@ export function CanvasOverlay(props) {
 									</RadioGroup>
 								);
 							case "checkbox":
-								console.log("CHECKBOX");
 								return (
 									<FormControlLabel
 										key={key + "checkbox" + component.id}
@@ -787,7 +799,6 @@ export function CanvasOverlay(props) {
 									/>
 								);
 							case "slider":
-								console.log("SLIDER");
 								return (
 									<InputGroup
 										className="row"
@@ -920,11 +931,27 @@ export function CanvasOverlay(props) {
 				<div className={active ? "canvas-overlay active" : "canvas-overlay"}>
 					<div
 						className={
-							props.pointer
+							(props.pointer
 								? "canvas-overlay-content none_pointer_events"
-								: "canvas-overlay-content"
+								: "canvas-overlay-content") +
+							(hidden ? " canvas-overlay-hidden" : "")
 						}
 					>
+						<div className="canvas-overlay-dismiss">
+							<FontAwesomeIcon
+								icon={faChevronDown}
+								className={
+									hidden
+										? "canvas-overlay-dismiss-icon overlay-hidden"
+										: "canvas-overlay-dismiss-icon"
+								}
+								onClick={() => {
+									setHidden(!hidden);
+									// setActive(false);
+									// setComponent(null);
+								}}
+							/>
+						</div>
 						{display}
 					</div>
 				</div>
@@ -950,9 +977,14 @@ class Element {
 		this.text = this.component.name || "Component";
 		this.id = this.component.id;
 		this.selectedLine = null;
-
-		console.log("CREATED", this.component);
-
+		this.selectedBot = null;
+		this.top = this.component.top || false;
+		this.bot = this.component.bot || false;
+		this.lineBotX = -1;
+		this.lineBotY = -1;
+		this.liningBot = false;
+		this.botElements = [];
+	
 		if (this.text.length > 5) {
 			this.w = Math.max(this.text.length * 25, this.w);
 		}
@@ -993,6 +1025,12 @@ class Element {
 		}
 		if (this.component.numInputs != 0) {
 			ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
+		}
+		if (this.bot) {
+			ctx.fillRect(this.x + this.w / 2 - 10, this.y + this.h - 10, 20, 20);
+		}
+		if (this.top) {
+			ctx.fillRect(this.x + this.w / 2 - 10, this.y - 10, 20, 20);
 		}
 		// draw the text
 		if (this.dragging) {
@@ -1070,13 +1108,14 @@ class Element {
 			}
 		}
 
-		if (this.lineToX >= 0 && this.lineToY >= 0) {
+		if (!this.liningBot && this.lineToX >= 0 && this.lineToY >= 0) {
 			// draw a line with bezier curves
 			ctx.strokeStyle = "#fff";
 			ctx.lineWidth = 4;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
 			ctx.beginPath();
+
 			ctx.moveTo(this.x + this.w, this.y + this.h / 2);
 			ctx.bezierCurveTo(
 				this.x + this.w + 200,
@@ -1086,10 +1125,88 @@ class Element {
 				this.lineToX,
 				this.lineToY
 			);
+
 			ctx.stroke();
 		}
-	}
 
+		if (this.bot && this.liningBot && this.lineToX >= 0 && this.lineToY >= 0) {
+			// draw a line with bezier curves
+			ctx.strokeStyle = "#fff";
+			ctx.lineWidth = 4;
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.beginPath();
+			ctx.moveTo(this.x + this.w / 2, this.y + this.h);
+			ctx.bezierCurveTo(
+				this.x + this.w / 2,
+				this.y + this.h + 200,
+				this.lineToX,
+				this.lineToY - 200,
+				this.lineToX,
+				this.lineToY
+			);
+			ctx.stroke();
+
+			var midX = (this.x + this.w / 2 + this.lineToX) / 2;
+			var midY = (this.y + this.h + this.lineToY) / 2;
+			var radius = 7.5;
+			// draw a small circle at the middle of the line
+			if (this.liningBot) {
+				ctx.fillStyle = this.color;
+			} else {
+				ctx.fillStyle = "#fff";
+			}
+			ctx.beginPath();
+			ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
+			ctx.fill();
+		}
+
+		for (var i = 0; i < this.botElements.length; i++) {
+			var elem = elementsList[this.botElements[i]];
+			if (elem == null) {
+				this.botElements.splice(i, 1);
+				continue;
+			}
+			var tlineToX = elem.x + elem.w / 2;
+			var tlineToY = elem.y;
+
+			if (tlineToX >= 0 && tlineToY >= 0) {
+				// draw a line with bezier curves
+				if (this.selectedLine != this.botElements[i]) {
+					ctx.strokeStyle = "#fff";
+				} else {
+					ctx.strokeStyle = this.color;
+				}
+				ctx.lineWidth = 4;
+				ctx.lineCap = "round";
+				ctx.lineJoin = "round";
+				ctx.beginPath();
+				ctx.moveTo(this.x + this.w / 2, this.y + this.h);
+				ctx.bezierCurveTo(
+					this.x + this.w / 2,
+					this.y + this.h + 200,
+					tlineToX,
+					tlineToY - 200,
+					tlineToX,
+					tlineToY
+				);
+				ctx.stroke();
+
+				var midX = (this.x + this.w / 2 + tlineToX) / 2;
+				var midY = (this.y + this.h + tlineToY) / 2;
+				var radius = 7.5;
+				// draw a small circle at the middle of the line
+				if (this.selectedLine == this.botElements[i]) {
+					ctx.fillStyle = this.color;
+				} else {
+					ctx.fillStyle = "#fff";
+				}
+				ctx.beginPath();
+				ctx.arc(midX, midY, radius, 0, 2 * Math.PI);
+				ctx.fill();
+			}
+		}
+	}
 	isDragging(x, y) {
 		return (
 			x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h
@@ -1105,18 +1222,55 @@ class Element {
 	}
 
 	isLining(x, y) {
+		this.liningBot = false;
+		if (this.bot) {
+			if (
+				x >= this.x + this.w / 2 - 15 &&
+				x <= this.x + this.w / 2 + 25 &&
+				y >= this.y + this.h - 15 &&
+				y <= this.y + this.h + 25
+			) {
+				this.liningBot = true;
+				console.log("lining bot");
+				return true;
+			}
+		}
+
 		if (this.component.numOutputs == 0) return false;
 
 		// check if the mouse is over the small rectangle at the right center of the element
 		return (
-			x >= this.x + this.w - 5 &&
-			x <= this.x + this.w + 15 &&
-			y >= this.y + this.h / 2 - 5 &&
-			y <= this.y + this.h / 2 + 15
+			x >= this.x + this.w - 15 &&
+			x <= this.x + this.w + 25 &&
+			y >= this.y + this.h / 2 - 15 &&
+			y <= this.y + this.h / 2 + 25
 		);
 	}
 
 	isLineSelected(x, y) {
+		if (this.botElements.length > 0) {
+			for (var i = 0; i < this.botElements.length; i++) {
+				var elem = elementsList[this.botElements[i]];
+				var tlineToX = elem.x + elem.w / 2;
+				var tlineToY = elem.y;
+
+				// check if mouse is near the middle of the line
+				var midX = (this.x + this.w / 2 + tlineToX) / 2;
+				var midY = (this.y + this.h + tlineToY) / 2;
+				var tolerance = 20;
+				if (
+					x >= midX - tolerance &&
+					x <= midX + tolerance &&
+					y >= midY - tolerance &&
+					y <= midY + tolerance
+				) {
+					this.selectedLine = this.botElements[i];
+					this.selectedBot = this.botElements[i];
+					return true;
+				}
+			}
+		}
+
 		if (this.elements.length == 0) return false;
 		for (var i = 0; i < this.elements.length; i++) {
 			var elem = elementsList[this.elements[i]];
@@ -1179,13 +1333,6 @@ class Element {
 		this.y += dy;
 	}
 
-	// moveTowards(x, y) {
-	// 	// move to the new position smoothly over time
-	// 	var dx = (x - this.w / 2 - this.x) / 2;
-	// 	var dy = (y - this.h / 2 - this.y) / 2;
-	// 	this.move(dx, dy);
-	// }
-
 	moveTo(x, y) {
 		this.x = x - this.w / 2;
 		this.y = y - this.h / 2;
@@ -1207,12 +1354,6 @@ class Element {
 	}
 
 	findSelf(component) {
-		console.log(
-			"CHECKING LOOP",
-			component.id,
-			this.component.id,
-			this.component.id + "" == component.id + ""
-		);
 		if (component == null) return false;
 		if (this.component.id + "" == component.id + "") return true;
 
@@ -1227,12 +1368,27 @@ class Element {
 	}
 
 	lineToElement(i) {
-		console.log("LINE TO", i);
 		if (
 			i == this.id ||
 			this.component.id in Object.keys(elementsList[i].component.outputs)
 		) {
-			console.log("ALREADY CONNECTED");
+			this.lineToX = -1;
+			this.lineToY = -1;
+			return false;
+		}
+
+		if (this.bot && this.liningBot) {
+			if (elementsList[i].top && !this.botElements.includes(i)) {
+				this.botLineX = -1;
+				this.botLineY = -1;
+				this.lineToX = -1;
+				this.lineToY = -1;
+				this.botElements.push(i);
+				// this.component.helpers[this.component.id] = elementsList[i].component;
+				elementsList[i].component.helpers[i] = this.component;
+				return true;
+			}
+
 			this.lineToX = -1;
 			this.lineToY = -1;
 			return false;
@@ -1241,13 +1397,11 @@ class Element {
 		// prevent loop by recursing through the outputs
 		var temp = elementsList[i].component;
 		if (this.findSelf(temp)) {
-			console.log("LOOP");
 			this.lineToX = -1;
 			this.lineToY = -1;
 			return false;
 		}
 
-		console.log(this.component.id);
 		this.elements.push(i);
 		this.component.outputs[i] = elementsList[i].component;
 		elementsList[i].component.inputs[this.component.id] = this.component;
@@ -1265,9 +1419,11 @@ class Element {
 		var inputs = this.component.inputs;
 		var outputs = this.component.outputs;
 		Object.keys(inputs).forEach((key) => {
-			elementsList[key].element = [];
-			elementsList[key].lineToX = -1;
-			elementsList[key].lineToY = -1;
+			if (elementsList[key] == null) return;
+			if (elementsList[key].elements == null) return;
+			elementsList[key].elements = elementsList[key].elements.filter(
+				(item) => item !== this.component.id
+			);
 			delete inputs[key].outputs[this.component.id];
 		});
 		Object.keys(outputs).forEach((key) => {
@@ -1276,6 +1432,28 @@ class Element {
 	}
 
 	disconnectOutput() {
+		if (this.selectedBot) {
+			// delete elementsList[this.botElement].component.inputs[this.component.id];
+			// delete this.component.outputs[this.botElement];
+
+			console.log("DISCONNECTED",this.botElements);
+			this.botLineX = -1;
+			this.botLineY = -1;
+
+			// remove from bot elements
+			this.botElements = this.botElements.filter(
+				(item) => item !== this.selectedBot
+			);
+
+			delete elementsList[this.selectedBot].component.helpers[
+				this.component.id
+			];
+
+			this.selectedBot = null;
+
+			return;
+		}
+
 		if (this.elements.length > 0) {
 			delete elementsList[this.selectedLine].component.inputs[
 				this.component.id
@@ -1322,9 +1500,11 @@ class Element {
 				data: this.component.data,
 				inputs: {},
 				outputs: {},
+				helpers: {},
 				color: this.component.color,
 			},
 			elements: this.elements,
+			botElements: this.botElements,
 			lineToX: this.lineToX,
 			lineToY: this.lineToY,
 		};
@@ -1339,5 +1519,6 @@ class Element {
 		this.elements = json.elements;
 		this.lineToX = json.lineToX;
 		this.lineToY = json.lineToY;
+		this.botElements = json.botElements;
 	}
 }

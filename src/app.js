@@ -160,7 +160,7 @@ function App() {
 		pixelL = e.clientX;
 		var parentWidth = e.target.parentElement.clientWidth;
 		var parentHeight = e.target.parentElement.clientHeight;
-		console.log((e.clientX / parentWidth) * 100);
+
 		w = (e.clientX / parentWidth) * 100;
 		document.documentElement.style.setProperty("--pointer-events", "none");
 		document.documentElement.style.setProperty(
@@ -179,11 +179,11 @@ function App() {
 
 	function mobileResizeTools(e) {
 		// set css variable --mouse-x to the mouse x position
-		// console.log(e);
+
 		pixelL = e.touches[0].clientX;
 		var parentWidth = e.target.parentElement.clientWidth;
 		var parentHeight = e.target.parentElement.clientHeight;
-		console.log((e.touches[0].clientX / parentWidth) * 100);
+
 		w = (e.touches[0].clientX / parentWidth) * 100;
 		document.documentElement.style.setProperty("--pointer-events", "none");
 		document.documentElement.style.setProperty(
@@ -249,11 +249,11 @@ function App() {
 	}
 
 	function onKeyPressed(e) {
-		// console.log('onKeyDown', e);
+
 		// get ig b is pressed
 		// if (e.key === "b") {
-		// 	console.log("b");
-		// 	console.log(darkThemes);
+
+
 		// 	setDarkThemes(!darkMode);
 		// 	setDarkTheme(!darkMode);
 		// }
@@ -262,7 +262,7 @@ function App() {
 	const canvasContainer = React.useRef(null);
 
 	function mouseUp(e) {
-		console.log("mouseUp");
+
 		setIsResizing(false);
 		setWebPointer(false);
 		setIsPanning(false);
@@ -301,7 +301,7 @@ function App() {
 
 	function panCanvas(e) {
 		// pan the canvasContainer wheen the mouse is down and moving
-		// console.log('panCanvas', e);
+
 
 		if (!isPanning) {
 			return;
@@ -340,7 +340,7 @@ function App() {
 		setDarkThemes(darkMode);
 
 		// set the canvas width and height
-		console.log("canvasWidth", localStorage.getItem("canvasWidth"));
+
 		canvas.style.width = localStorage.getItem("canvasWidth") + "px";
 		canvas.style.height = localStorage.getItem("canvasHeight") + "px";
 		canvas2.style.width = localStorage.getItem("canvasWidth") + "px";
@@ -354,7 +354,7 @@ function App() {
 		// setCanvasHeight(canvasContainer.current.clientHeight);
 
 		// if (isMobile()) {
-		// 	console.log("MOBILE");
+
 		// 	// add event listeners for touch events
 		// 	var div = document.createElement("div");
 
@@ -365,7 +365,7 @@ function App() {
 
 		// 	div.addEventListener("click", function () {
 		// 		// request full screen
-		// 		console.log("FULLSCREEN");
+
 		// 		document.documentElement.requestFullscreen();
 
 		// 		// remove self
@@ -374,7 +374,7 @@ function App() {
 		// 	// emulate click event
 		// 	// div.click();
 
-		// 	console.log(div);
+
 		// }
 
 		return () => {
@@ -395,13 +395,13 @@ function App() {
 	}, [items]);
 
 	function preventDefault(e) {
-		console.log("preventDefault");
+
 		e.preventDefault();
 	}
 
 	function zoomContainer(e) {
 		e.preventDefault();
-		// console.log(e.clientX, e.clientY);
+
 		// zoom in where the mouse is
 		var mouseX =
 			e.clientX -
@@ -433,7 +433,7 @@ function App() {
 			// 1
 		);
 
-		console.log(newWidth, newHeight);
+
 
 		// set the new width and height
 		newWidth = Math.min(newWidth, canvasSize2.x);
@@ -466,7 +466,7 @@ function App() {
 	const [canvasMouseUp, setCanvasMouseUp] = React.useState([-1, -1]);
 
 	function createItem(e, ax, ay) {
-		console.log(e.target);
+
 		if (e.target.id == "canvas") {
 			if (isCreating) {
 				setCanvasMouseUp([ax, ay]);
@@ -508,7 +508,7 @@ function App() {
 	}
 
 	function addChildrenToComponentList(component, idList = []) {
-		console.log("Recursing");
+
 		var finArray = [component.id];
 
 		if (idList.includes(component.id)) {
@@ -521,8 +521,14 @@ function App() {
 		idList.push(component.id);
 		// loop through keys of component outputs {id : component}
 		Object.keys(component.outputs).map((key, index) => {
-			console.log("CHILD!", component.outputs[key]);
+
 			var tempArr = addChildrenToComponentList(component.outputs[key], idList);
+			// add the arr to the finArray
+			finArray = finArray.concat(tempArr);
+		});
+		Object.keys(component.helpers).map((key, index) => {
+			
+			var tempArr = addChildrenToComponentList(component.helpers[key], idList);
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
 		});
@@ -536,7 +542,7 @@ function App() {
 	}
 
 	function updateNotebook(currentElements) {
-		console.log("ELEMSNOTE", currentElements);
+
 
 		var saveElements = {};
 		Object.keys(currentElements).map((key, index) => {
@@ -555,24 +561,24 @@ function App() {
 		for (var i = 0; i < tempElements.length; i++) {
 			var element = tempElements[i];
 
-			console.log(tempElements);
+
 			tcomponents.push(element.component);
 			scomponents[element.component.id] = element.component;
 		}
-		console.log("ELEMENTS", tempElements);
+
 
 		// get all components with no inputs
 		for (var i = 0; i < tcomponents.length; i++) {
 			var component = tcomponents[i];
-			console.log(component);
+
 			if (Object.keys(component.inputs).length == 0) {
-				console.log("NO INPUTS", i);
+
 
 				// keyList.push(component.id);
 				rootComponents.push(component);
 			}
 		}
-		console.log("ROOT COMPONENTS", rootComponents);
+
 
 		// sort root components by priority low to high
 		rootComponents = rootComponents.sort((a, b) => {
@@ -582,19 +588,19 @@ function App() {
 		});
 
 		for (var i = 0; i < rootComponents.length; i++) {
-			console.log("ROOT", rootComponents[i].name);
+
 			keyList.push(rootComponents[i].id);
 		}
 
 		// loop through all components with no inputs, adding their outputs to the inputs of other components
 		for (var i = 0; i < rootComponents.length; i++) {
 			var children = rootComponents[i].outputs;
-			console.log("CHILDREN", children);
+
 			Object.keys(children).map((key, index) => {
-				console.log("CHILD", children[key]);
+
 				// add the children to the components array
 				var tempArr = addChildrenToComponentList(children[key]);
-				console.log("TEMPARR", tempArr);
+
 				keyList = keyList.concat(tempArr);
 			});
 		}
@@ -620,7 +626,7 @@ function App() {
 			}
 		}
 
-		// console.log(scomponents);
+
 
 		// parse the components into JSON cells
 		var tcells = [];
@@ -634,7 +640,7 @@ function App() {
 					return line + "\n";
 				});
 
-				console.log("VALUE", value, currentElements[value.id].dragging);
+
 
 				tcells.push({
 					cell_type: "code",
@@ -648,7 +654,7 @@ function App() {
 				});
 			}
 		});
-		console.log(tcells);
+
 		setCells(tcells);
 	}
 
@@ -658,7 +664,7 @@ function App() {
 	// const [currentKeys, setCurrentKeys] = React.useState([]);
 
 	function onKeyboardDown(e) {
-		// console.log("onKeyboardDown", e);
+
 		setKeyDown(e);
 
 		// if key is in keys, return
@@ -668,22 +674,21 @@ function App() {
 
 		keys.push(e.key);
 
-		console.log("KEYS", keys);
+
 
 		// if control z is pressed, undo
 		if (keys.includes("Control") && keys.includes("z")) {
-			console.log("UNDO");
+
 			DBManager.getInstance().undo();
 			flop();
 		} else if (keys.includes("Control") && keys.includes("y")) {
-			console.log("REDO");
+
 			DBManager.getInstance().redo();
 			flop();
 		}
 	}
 
 	function onKeyboardUp(e) {
-		console.log("onKeyboardUp", e);
 		// remove the key from keys
 		var temp = keys;
 		temp.splice(temp.indexOf(e.key), 1);
@@ -702,7 +707,7 @@ function App() {
 					mouseUp(e);
 				}}
 				onTouchEnd={(e) => {
-					console.log("TOUCH END", e);
+
 					createItem(e, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
 					mouseUp(e);
 				}}
@@ -884,6 +889,7 @@ function DraggableTemplate(props) {
 		newComponent.data = JSON.parse(JSON.stringify(props.component.data));
 		newComponent.inputs = {};
 		newComponent.outputs = {};
+		newComponent.helpers = {};
 
 		newComponent.id = props.getNewId();
 		props.setCurrentComponent(newComponent);
@@ -914,10 +920,10 @@ function DraggableTemplate(props) {
 						setThisComponent(false);
 					}}
 					onMouseMove={(e) => {
-						console.log("dragging");
+
 					}}
 					onTouchMove={(e) => {
-						console.log("dragging");
+
 					}}
 				>
 					<div className="inputs">

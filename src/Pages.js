@@ -37,6 +37,12 @@ export function Notebook(props) {
 						}
 						p += "</p>";
 						code.innerHTML = p;
+
+						// find all elements with the class "cell-selected" and scroll to them
+						var selected = document.getElementsByClassName("cell-selected");
+						for (var i = 0; i < selected.length; i++) {
+							selected[i].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+						}
 					}
 				});
 				hljs.highlightAll();
