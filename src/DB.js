@@ -1,3 +1,5 @@
+var version = "0.0.1";
+
 export class DBManager {
 	static instance = null;
 	static getInstance() {
@@ -12,6 +14,17 @@ export class DBManager {
 		this.db = JSON.parse(window.localStorage.getItem("tensorboardDB")) || {};
 		this.history =
 			JSON.parse(window.localStorage.getItem("tensorboardHistory")) || [];
+		this.version = JSON.parse(window.localStorage.getItem("tensorboardVersion")) || "0";
+
+		// if the version is different, clear the database
+		if (this.version !== version) {
+			this.db = {};
+			this.version = version;
+			window.localStorage.setItem("tensorboardVersion", JSON.stringify(version));
+			this.history = [];
+			this.save();
+		}
+
 		this.historyIndex = 0;
 		this.undoing = false;
 	}
