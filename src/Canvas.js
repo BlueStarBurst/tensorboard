@@ -66,7 +66,6 @@ export default function Canvas(props) {
 			obj.reload = proto.reload;
 			obj.getOutput = proto.getOutput;
 			obj.getHelp = proto.getHelp;
-			
 
 			// get prototype of the component
 
@@ -78,10 +77,9 @@ export default function Canvas(props) {
 				temp[key].h,
 				obj
 			);
-			
+
 			elem.fromJSON(temp[key]);
 			elementsList[temp[key].component.id] = elem;
-			
 		});
 
 		// loop through the elements and fix the lines
@@ -725,7 +723,7 @@ export function CanvasOverlay(props) {
 	const [active, setActive] = React.useState(false);
 
 	const [display, setDisplay] = React.useState(<></>);
-	const [hidden, setHidden] = React.useState(false);
+	const [hidden, setHidden] = React.useState(true);
 
 	React.useEffect(() => {
 		if (props.selectedElement) {
@@ -984,7 +982,7 @@ class Element {
 		this.lineBotY = -1;
 		this.liningBot = false;
 		this.botElements = [];
-	
+
 		if (this.text.length > 5) {
 			this.w = Math.max(this.text.length * 25, this.w);
 		}
@@ -1070,6 +1068,19 @@ class Element {
 			}
 			var tlineToX = elem.x;
 			var tlineToY = elem.y + elem.h / 2;
+			var dist = Math.sqrt(
+				(this.x + this.w - tlineToX) ** 2 +
+					(this.y + this.h / 2 - tlineToY) ** 2
+			);
+
+			var yAdjust = 0;
+			if (this.x + this.w > tlineToX) {
+				yAdjust = 50;
+				dist *= 1.5;
+				if (this.y + this.h / 2 < tlineToY) {
+					yAdjust *= -1;
+				}
+			}
 
 			if (tlineToX >= 0 && tlineToY >= 0) {
 				// draw a line with bezier curves
@@ -1084,10 +1095,10 @@ class Element {
 				ctx.beginPath();
 				ctx.moveTo(this.x + this.w, this.y + this.h / 2);
 				ctx.bezierCurveTo(
-					this.x + this.w + 200,
-					this.y + this.h / 2,
-					tlineToX - 200,
-					tlineToY,
+					this.x + this.w + (dist / 600) * 200,
+					this.y + this.h / 2 - yAdjust,
+					tlineToX - (dist / 600) * 200,
+					tlineToY + yAdjust,
 					tlineToX,
 					tlineToY
 				);
@@ -1169,6 +1180,19 @@ class Element {
 			}
 			var tlineToX = elem.x + elem.w / 2;
 			var tlineToY = elem.y;
+			var dist = Math.sqrt(
+				(this.x + this.w - tlineToX) ** 2 +
+					(this.y + this.h / 2 - tlineToY) ** 2
+			);
+
+			var xAdjust = 0;
+			if (this.y + this.h / 2 > tlineToY) {
+				xAdjust = 50;
+				dist *= 1.5;
+				if (this.x + this.w / 2 < tlineToX) {
+					xAdjust *= -1;
+				}
+			}
 
 			if (tlineToX >= 0 && tlineToY >= 0) {
 				// draw a line with bezier curves
@@ -1183,10 +1207,10 @@ class Element {
 				ctx.beginPath();
 				ctx.moveTo(this.x + this.w / 2, this.y + this.h);
 				ctx.bezierCurveTo(
-					this.x + this.w / 2,
-					this.y + this.h + 200,
-					tlineToX,
-					tlineToY - 200,
+					this.x + this.w / 2 - xAdjust,
+					this.y + this.h + (dist / 500) * 200,
+					tlineToX + xAdjust,
+					tlineToY - (dist / 500) * 200,
 					tlineToX,
 					tlineToY
 				);
@@ -1351,6 +1375,13 @@ class Element {
 			elementsList[this.elements[i]].component.inputs[this.component.id] =
 				this.component;
 		}
+		for (var i = 0; i < this.botElements.length; i++) {
+			// if not in component outputs, add it
+			this.component.topInputs[this.botElements[i]] =
+				elementsList[this.botElements[i]].component;
+			elementsList[this.botElements[i]].component.helpers[this.component.id] =
+				this.component;
+		}
 	}
 
 	findSelf(component) {
@@ -1386,6 +1417,7 @@ class Element {
 				this.botElements.push(i);
 				// this.component.helpers[this.component.id] = elementsList[i].component;
 				elementsList[i].component.helpers[i] = this.component;
+				this.component.topInputs[i] = elementsList[i].component;
 				return true;
 			}
 
@@ -1413,11 +1445,20 @@ class Element {
 			delete elementsList[this.element[i]].component.inputs[this.component.id];
 			delete this.component.outputs[this.element[i]];
 		}
+		for (var i = 0; i < this.botElements.length; i++) {
+			delete elementsList[this.botElements[i]].component.helpers[
+				this.component.id
+			];
+			delete this.component.topInputs[this.botElements[i]];
+		}
 	}
 
 	deleteSelf() {
 		var inputs = this.component.inputs;
 		var outputs = this.component.outputs;
+
+		var topIns = this.component.topInputs;
+		var bots = this.component.helpers;
 		Object.keys(inputs).forEach((key) => {
 			if (elementsList[key] == null) return;
 			if (elementsList[key].elements == null) return;
@@ -1429,6 +1470,25 @@ class Element {
 		Object.keys(outputs).forEach((key) => {
 			delete outputs[key].inputs[this.component.id];
 		});
+
+		Object.keys(topIns).forEach((key) => {
+			if (elementsList[key] == null) return;
+			if (elementsList[key].botElements == null) return;
+			elementsList[key].botElements = elementsList[key].botElements.filter(
+				(item) => item !== this.component.id
+			);
+			delete topIns[key].helpers[this.component.id];
+		});
+		Object.keys(bots).forEach((key) => {
+			delete bots[key].topInputs[this.component.id];
+		});
+
+		for (var i = 0; i < this.botElements.length; i++) {
+			delete elementsList[this.botElements[i]].component.helpers[
+				this.component.id
+			];
+			delete this.component.topInputs[this.botElements[i]];
+		}
 	}
 
 	disconnectOutput() {
@@ -1436,7 +1496,7 @@ class Element {
 			// delete elementsList[this.botElement].component.inputs[this.component.id];
 			// delete this.component.outputs[this.botElement];
 
-			console.log("DISCONNECTED",this.botElements);
+			console.log("DISCONNECTED", this.botElements);
 			this.botLineX = -1;
 			this.botLineY = -1;
 
@@ -1448,6 +1508,7 @@ class Element {
 			delete elementsList[this.selectedBot].component.helpers[
 				this.component.id
 			];
+			delete this.component.topInputs[this.selectedBot];
 
 			this.selectedBot = null;
 
@@ -1501,6 +1562,7 @@ class Element {
 				inputs: {},
 				outputs: {},
 				helpers: {},
+				topInputs: {},
 				color: this.component.color,
 			},
 			elements: this.elements,

@@ -510,15 +510,24 @@ function App() {
 	function addChildrenToComponentList(component, idList = []) {
 
 		var finArray = [component.id];
+		console.log("IDLIST", idList);
 
 		if (idList.includes(component.id)) {
 			// get index of id
-			var index = idList.indexOf(component.id);
+			var index = idList.lastIndexOf(component.id);
 			if (idList[index - 1] == idList[idList.length - 1]) {
 				return [];
 			}
 		}
 		idList.push(component.id);
+
+		Object.keys(component.helpers).map((key, index) => {
+			
+			var tempArr = addChildrenToComponentList(component.helpers[key], idList);
+			// add the arr to the finArray
+			finArray = finArray.concat(tempArr);
+		});
+
 		// loop through keys of component outputs {id : component}
 		Object.keys(component.outputs).map((key, index) => {
 
@@ -526,12 +535,7 @@ function App() {
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
 		});
-		Object.keys(component.helpers).map((key, index) => {
-			
-			var tempArr = addChildrenToComponentList(component.helpers[key], idList);
-			// add the arr to the finArray
-			finArray = finArray.concat(tempArr);
-		});
+		
 		return finArray;
 	}
 
@@ -890,6 +894,7 @@ function DraggableTemplate(props) {
 		newComponent.inputs = {};
 		newComponent.outputs = {};
 		newComponent.helpers = {};
+		newComponent.topInputs = {};
 
 		newComponent.id = props.getNewId();
 		props.setCurrentComponent(newComponent);

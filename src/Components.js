@@ -552,6 +552,9 @@ export const components = {
 				var helper = this.helpers[Object.keys(this.helpers)[0]];
 				var help = helper.getHelp();
 				var help2 = helper.getHelp();
+				if (help == null) {
+					return `print("Helper")`;
+				}
 				// for every input, replace the @ with the input
 				for (var i = 0; i < input.length; i++) {
 					// find a null in the help
@@ -579,6 +582,7 @@ export const components = {
 		outputs: [],
 		inputs: [],
 		helpers: {},
+		topInputs: {},
 		getOutput: function () {
 			return this.output + this.id;
 		},
