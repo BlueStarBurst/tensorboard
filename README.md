@@ -8,3 +8,5 @@ A tool to help students learn about machine learning through Tensorflow and Pyto
 Basically, drag and drop scratch.mit mechanics that transpiles into a Jupyter notebook B)
 
 Progress: 65%
+
+Fix weird priority helper + array + value bug
