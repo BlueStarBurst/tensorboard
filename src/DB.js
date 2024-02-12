@@ -1,4 +1,4 @@
-var version = "0.0.2";
+var version = "0.0.3";
 
 export class DBManager {
 	static instance = null;

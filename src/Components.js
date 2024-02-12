@@ -80,6 +80,14 @@ export const components = {
 			},
 		},
 		transpile: function () {
+			// if this has an input, return the first input
+			if (Object.keys(this.inputs).length > 0) {
+				return `${this.getOutput()} = ${this.inputs[
+					Object.keys(this.inputs)[0]
+				].getOutput()} / ${this.data.Range.value} - ${
+					this.data.Translate.value
+				}`;
+			}
 			return `print('Normalizing data')`;
 		},
 		reload: function () {},
@@ -145,8 +153,11 @@ export const components = {
 				this.data.Float.hidden = true;
 				this.data.Boolean.hidden = true;
 				this.data.Other.hidden = false;
-				this.data.Other.value = this.inputs[Object.keys(this.inputs)[0]].getOutput();
-				return `${this.getOutput()} = ${this.inputs[Object.keys(this.inputs)[0]].getOutput()}`;
+				this.data.Other.value =
+					this.inputs[Object.keys(this.inputs)[0]].getOutput();
+				return `${this.getOutput()} = ${this.inputs[
+					Object.keys(this.inputs)[0]
+				].getOutput()}`;
 			}
 
 			if (this.data.Type.value == "Integer") {
@@ -306,6 +317,11 @@ export const components = {
 		numOutputs: -1,
 		description: "Use Values as inputs to create an array of values",
 		data: {
+			Sort: {
+				type: "sort",
+				value: [],
+				hidden: false,
+			},
 			Data: {
 				type: "text",
 				value: "text",
@@ -315,14 +331,12 @@ export const components = {
 		},
 		transpile: function () {
 			// get the outputs of the inputs
+			this.reload();
 
 			var vals = [];
-			var outputs = Object.keys(this.inputs).map((key, index) => {
-				var input = this.inputs[key];
-				if (input.getValue) {
-					vals.push(input.getValue());
-				}
-				return input.getOutput();
+			var outputs = this.data.Sort.value.map((obj) => {
+				vals.push(obj.value);
+				return obj.id;
 			});
 			console.log(outputs);
 
@@ -331,13 +345,76 @@ export const components = {
 			// return an array of the outputs
 			return `${this.getOutput()} = [${outputs.join(", ")}]`;
 		},
-		reload: function () {},
+		reload: function () {
+			// loop through the inputs and if they are not in the sort, add them
+			if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+				var sorts = [];
+				var keys = Object.keys(this.inputs);
+				// push the new inputs to the sort
+				sorts = this.data.Sort.value;
+				for (var i = 0; i < keys.length; i++) {
+					if (
+						sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+							.length == 0
+					) {
+						sorts.push({
+							id: this.inputs[keys[i]].getOutput(),
+							value: this.inputs[keys[i]].getValue(),
+							realId: keys[i],
+						});
+					}
+				}
+				this.data.Sort.value = sorts;
+			} else if (
+				Object.keys(this.inputs).length < this.data.Sort.value.length
+			) {
+				// remove the inputs that are not in the sort
+
+				var temp = [];
+				var keys = Object.keys(this.inputs);
+				// remove the inputs that are not in the sort
+
+				for (var i = 0; i < this.data.Sort.value.length; i++) {
+					if (
+						keys.filter(
+							(obj) =>
+								this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+						).length > 0
+					) {
+						temp.push(this.data.Sort.value[i]);
+					}
+				}
+				this.data.Sort.value = temp;
+			}
+
+			for (var i = 0; i < this.data.Sort.value.length; i++) {
+				if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getValue();
+				} else {
+					this.data.Sort.value[i].value = this.inputs[
+						this.data.Sort.value[i].realId
+					].getOutput();
+				}
+				this.data.Sort.value[i].id =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
+			}
+
+			if (this.data.Sort.value.length == 0) {
+				// hide the Sort
+				this.data.Sort.hidden = true;
+			} else {
+				this.data.Sort.hidden = false;
+			}
+		},
 		getOutput: function () {
 			return "array" + this.id;
 		},
 		getValue: function () {
 			return this.data.Data.value;
 		},
+		inputs: {},
+		outputs: {},
 	},
 	Print: {
 		name: "Print",
@@ -527,6 +604,11 @@ export const components = {
 		top: true,
 		bot: true,
 		data: {
+			Sort: {
+				type: "sort",
+				value: [],
+				hidden: false,
+			},
 			Help: {
 				type: "text",
 				value: "",
@@ -535,17 +617,75 @@ export const components = {
 			},
 		},
 		transpile: function () {
+			// get the outputs of the inputs
+
+			if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+				var sorts = [];
+				var keys = Object.keys(this.inputs);
+				// push the new inputs to the sort
+				sorts = this.data.Sort.value;
+				for (var i = 0; i < keys.length; i++) {
+					if (
+						sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+							.length == 0
+					) {
+						sorts.push({
+							id: this.inputs[keys[i]].getOutput(),
+							value: this.inputs[keys[i]].getValue(),
+							realId: keys[i],
+						});
+					}
+				}
+				this.data.Sort.value = sorts;
+			} else if (
+				Object.keys(this.inputs).length < this.data.Sort.value.length
+			) {
+				// remove the inputs that are not in the sort
+
+				var temp = [];
+				var keys = Object.keys(this.inputs);
+				// remove the inputs that are not in the sort
+
+				for (var i = 0; i < this.data.Sort.value.length; i++) {
+					if (
+						keys.filter(
+							(obj) =>
+								this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+						).length > 0
+					) {
+						temp.push(this.data.Sort.value[i]);
+					}
+				}
+				this.data.Sort.value = temp;
+			}
+
+			for (var i = 0; i < this.data.Sort.value.length; i++) {
+				if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getValue();
+				} else {
+					this.data.Sort.value[i].value = this.inputs[
+						this.data.Sort.value[i].realId
+					].getOutput();
+				}
+				this.data.Sort.value[i].id =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
+			}
+
+			if (this.data.Sort.value.length == 0) {
+				// hide the Sort
+				this.data.Sort.hidden = true;
+			} else {
+				this.data.Sort.hidden = false;
+			}
+
 			var input = [];
 			var vals = [];
-			if (Object.keys(this.inputs).length > 0) {
-				input = Object.keys(this.inputs).map((key, index) => {
-					return this.inputs[key].getOutput();
-				});
-				vals = Object.keys(this.inputs).map((key, index) => {
-					if (this.inputs[key].getValue) return this.inputs[key].getValue();
-					else return this.inputs[key].getOutput();
-				});
-			}
+			this.data.Sort.value.map((obj) => {
+				input.push(obj.id);
+				vals.push(obj.value);
+			});
+
 			console.log("RELOADING HELPER");
 			console.log(this.helpers);
 			if (Object.keys(this.helpers).length > 0) {

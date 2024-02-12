@@ -445,14 +445,15 @@ function App() {
 		canvas2.style.width = newWidth + "px";
 		canvas2.style.height = newHeight + "px";
 
-		if (delta > 0) {
+		if (delta > 0 && (newWidth != canvasSize2.x && newHeight != canvasSize2.y)) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
-		} else {
+		} 
+		if (delta < 0 && newWidth != (window.innerWidth * w) / 100 - 20 && newHeight != (window.innerWidth * w) / 100 - 20) {
 			// set the scroll position so that the mouse position is the same
-			// canvasContainer.current.scrollLeft -= (mouseX * delta) / newWidth;
-			// canvasContainer.current.scrollTop -= (mouseY * delta) / newHeight;
+			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
+			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
 		}
 
 		if (canvasOverlay.current) {

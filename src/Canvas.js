@@ -7,6 +7,7 @@ import {
 	InputLabel,
 	Radio,
 	RadioGroup,
+	Select,
 	Slider,
 } from "@mui/material";
 import { InputGroup } from "react-bootstrap";
@@ -18,6 +19,7 @@ import python from "highlight.js/lib/languages/python";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { DragContainer } from "./Misc";
 
 hljs.registerLanguage("python", python);
 
@@ -128,6 +130,7 @@ export default function Canvas(props) {
 					selectedElement.disconnectOutput();
 					setSelectedElement(null);
 					redrawCanvas();
+					props.updateNotebook(elements);
 					return;
 				}
 
@@ -148,6 +151,7 @@ export default function Canvas(props) {
 					oldSelectedElement.disconnectOutput();
 					setOldSelectedElement(null);
 					redrawCanvas();
+					props.updateNotebook(elements);
 					return;
 				}
 
@@ -778,6 +782,21 @@ export function CanvasOverlay(props) {
 					{Object.keys(data).map((key) => {
 						if (data[key].hidden) return <></>;
 						switch (data[key].type) {
+							case "sort": {
+								return (
+									<>
+										<InputLabel id="demo-simple-select-label">{key}</InputLabel>
+										<DragContainer order={data[key].value} reorder={(order) => {
+											data[key].value = order;
+											component.data[key] = data[key];
+											component.reload();
+											props.updateNotebook(elementsList);
+											setData({ ...data, [key]: data[key] });
+										}} />
+
+									</>
+								);
+							}
 							case "radio":
 								return (
 									<RadioGroup

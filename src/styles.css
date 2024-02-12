@@ -541,6 +541,64 @@ pre {
   transition: transform 0.5s ease-in-out;
 }
 
+.drag-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+  /* gap: 1rem; */
+  overflow: hidden;
+  margin-top: -1rem;
+
+}
+
+.invisible {
+  opacity: 0;
+}
+
+.auto-width {
+  padding-top: 1rem;
+  width: 100%;
+  transition: width 0.5s ease-in-out;
+  overflow: hidden;
+  position: relative;
+}
+
+.zero-width {
+  width: 0 !important;
+  transition: width 0.5s ease-in-out;
+  overflow: hidden;
+  position: relative;
+}
+
+.dragging {
+  cursor: grabbing;
+  position: absolute;
+}
+
+.drag-option {
+  width: 100%;
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+  transition: width 0.5s ease-in-out;
+}
+
+.drag-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+  /* gap: 1rem; */
+  transition: width 0.5s ease-in-out;
+
+}
+
 /* @media screen and (max-height: 768px) {
   .slider {
     width: 2rem;
