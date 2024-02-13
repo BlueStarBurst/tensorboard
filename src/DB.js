@@ -52,7 +52,9 @@ export class DBManager {
 			elems[key].component.inputs = {};
 			elems[key].component.outputs = {};
 			elems[key].component.helpers = {};
+			elems[key].component.topInputs = {};
 		});
+		console.log("jsonifyElements", elems);
 		return elems;
 	}
 

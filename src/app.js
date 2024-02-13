@@ -897,7 +897,7 @@ function DraggableTemplate(props) {
 		newComponent.outputs = {};
 		newComponent.helpers = {};
 		newComponent.topInputs = {};
-		newComponent.priority = 100;
+		newComponent.priority = props.component.priority || 100;
 
 		newComponent.id = props.getNewId();
 		props.setCurrentComponent(newComponent);
