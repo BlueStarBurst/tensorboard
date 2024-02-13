@@ -1431,7 +1431,15 @@ class Element {
 	}
 
 	fixLines() {
+
 		for (var i = 0; i < this.elements.length; i++) {
+
+			// if component is not in the elements list, remove it
+			if (elementsList[this.elements[i]] == null) {
+				this.elements.splice(i, 1);
+				continue;
+			}
+
 			// if not in component outputs, add it
 			this.component.outputs[this.elements[i]] =
 				elementsList[this.elements[i]].component;
@@ -1439,6 +1447,11 @@ class Element {
 				this.component;
 		}
 		for (var i = 0; i < this.botElements.length; i++) {
+			// if component is not in the elements list, remove it
+			if (elementsList[this.botElements[i]] == null) {
+				this.botElements.splice(i, 1);
+				continue;
+			}
 			// if not in component outputs, add it
 			this.component.topInputs[this.botElements[i]] =
 				elementsList[this.botElements[i]].component;
