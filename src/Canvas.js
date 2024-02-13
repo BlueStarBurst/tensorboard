@@ -52,18 +52,29 @@ export default function Canvas(props) {
 
 	useEffect(() => {
 		elementsList = {};
+		console.log("updating elements");
 		var temp = DBManager.getInstance().getItem("elements") || {};
 
 		Object.keys(temp).forEach((key) => {
 			const proto = components[temp[key].component.name];
 
 			var obj = Object.create(proto);
-			obj = Object.assign(obj, proto);
+			// var tComp = temp[key].component;
+			// obj = Object.assign(obj, tComp);
+
+			// fill in the object with the default prototype values
+			obj = Object.assign(obj, proto); 
+
+			obj.data = temp[key].component.data;
+			// obj.inputs = temp[key].component.inputs;
+			// obj.outputs = temp[key].component.outputs;
+			// obj.helpers = temp[key].component.helpers;
+			// obj.topInputs = temp[key].component.topInputs;
 
 			var tComp = temp[key].component;
 			obj = Object.assign(obj, tComp);
 
-			// assign the transpile function to the object
+			// // assign the transpile function to the object
 			obj.transpile = proto.transpile;
 			obj.reload = proto.reload;
 			obj.getOutput = proto.getOutput;
@@ -79,6 +90,9 @@ export default function Canvas(props) {
 				temp[key].h,
 				obj
 			);
+
+			console.log("loading element", elem);
+			console.log(components[temp[key].component.name])
 
 			elem.fromJSON(temp[key]);
 			elementsList[temp[key].component.id] = elem;
@@ -273,7 +287,7 @@ export default function Canvas(props) {
 		ctx.clearRect(0, 0, w, h);
 
 		if (props.darkMode) {
-			ctx.fillStyle = "#ffffff25";
+			ctx.fillStyle = "#ffffff40";
 		} else {
 			ctx.fillStyle = "#00000025";
 		}
@@ -1431,6 +1445,8 @@ class Element {
 			elementsList[this.botElements[i]].component.helpers[this.component.id] =
 				this.component;
 		}
+		this.lineToX = -1;
+		this.lineToY = -1;
 	}
 
 	findSelf(component) {

@@ -13,14 +13,12 @@ export function Notebook(props) {
 	const [ready, setReady] = React.useState(false);
 
 	useEffect(() => {
-		console.log("Setting cells");
 		setCells(props.cells);
 		setReady(false);
 		// setCells(props.cells);
 	}, [props.cells]);
 
 	useEffect(() => {
-		console.log("Setting ready", ready);
 		if (ready == false) {
 			setTimeout(() => {
 				Object.keys(cells).forEach((key) => {
@@ -57,7 +55,6 @@ export function Notebook(props) {
 		<div className="notebook-container">
 			<div className="cell-container" key={"1"} id="1">
 				{cells.map((cell, index) => {
-					console.log("SELECTED", cell.metadata.selected);
 					return (
 						<div key={index} className="cell">
 							<div

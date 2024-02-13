@@ -2,7 +2,7 @@ export const components = {
 	Data: {
 		name: "Data",
 		// color: "#F1AB86",
-		color: "#9e6649",
+		color: "#c2734a",
 		description:
 			"This component is used to download data from a remote URL for model training",
 		id: -1,
@@ -66,7 +66,7 @@ export const components = {
 		description: "Normalizes the input data",
 		numInputs: 1,
 		numOutputs: -1,
-		color: "#6A2E35",
+		color: "#a3313e",
 		data: {
 			Range: {
 				type: "slider",
@@ -101,7 +101,7 @@ export const components = {
 	Value: {
 		name: "Value",
 		description: "Create variables of different types",
-		color: "#943854",
+		color: "#c42b59",
 		numInputs: 1,
 		numOutputs: -1,
 		data: {
@@ -205,8 +205,8 @@ export const components = {
 				this.data.Other.hidden = false;
 			}
 		},
-		outputs: [],
-		inputs: [],
+		outputs: {},
+		inputs: {},
 		getOutput: function () {
 			return this.data.Type.value.toLowerCase() + this.id;
 		},
@@ -312,7 +312,7 @@ export const components = {
 	},
 	Array: {
 		name: "Array",
-		color: "#0c6fab",
+		color: "#0c7fc4",
 		numInputs: -1,
 		numOutputs: -1,
 		description: "Use Values as inputs to create an array of values",
@@ -338,7 +338,7 @@ export const components = {
 				vals.push(obj.value);
 				return obj.id;
 			});
-			console.log(outputs);
+			// console.log(outputs);
 
 			this.data.Data.value = `[${vals.join(", ")}]`;
 
@@ -359,7 +359,7 @@ export const components = {
 					) {
 						sorts.push({
 							id: this.inputs[keys[i]].getOutput(),
-							value: this.inputs[keys[i]].getValue(),
+							value: this.inputs[keys[i]].getValue != null ? this.inputs[keys[i]].getValue() : this.inputs[keys[i]].getOutput(),
 							realId: keys[i],
 						});
 					}
@@ -392,12 +392,11 @@ export const components = {
 					this.data.Sort.value[i].value =
 						this.inputs[this.data.Sort.value[i].realId].getValue();
 				} else {
-					this.data.Sort.value[i].value = this.inputs[
-						this.data.Sort.value[i].realId
-					].getOutput();
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
 				}
 				this.data.Sort.value[i].id =
-						this.inputs[this.data.Sort.value[i].realId].getOutput();
+					this.inputs[this.data.Sort.value[i].realId].getOutput();
 			}
 
 			if (this.data.Sort.value.length == 0) {
@@ -419,7 +418,7 @@ export const components = {
 	Print: {
 		name: "Print",
 		description: "Print a value to the console",
-		color: "#4a8260",
+		color: "#4db074",
 		numInputs: 1,
 		numOutputs: 0,
 		data: {
@@ -484,7 +483,7 @@ export const components = {
 	CustomCode: {
 		name: "CustomCode",
 		description: "Write custom code!",
-		color: "#3d3d3d",
+		color: "#ba501e",
 		numInputs: 0,
 		numOutputs: -1,
 		bot: true,
@@ -598,7 +597,7 @@ export const components = {
 	Helper: {
 		name: "Helper",
 		description: "A helper component to help manage the flow of the notebook",
-		color: "#3d3d3d",
+		color: "#cfa021",
 		numInputs: 1,
 		numOutputs: 1,
 		top: true,
@@ -631,7 +630,10 @@ export const components = {
 					) {
 						sorts.push({
 							id: this.inputs[keys[i]].getOutput(),
-							value: this.inputs[keys[i]].getValue(),
+							value:
+								this.inputs[keys[i]].getValue != null
+									? this.inputs[keys[i]].getValue()
+									: this.inputs[keys[i]].getOutput(),
 							realId: keys[i],
 						});
 					}
@@ -664,12 +666,11 @@ export const components = {
 					this.data.Sort.value[i].value =
 						this.inputs[this.data.Sort.value[i].realId].getValue();
 				} else {
-					this.data.Sort.value[i].value = this.inputs[
-						this.data.Sort.value[i].realId
-					].getOutput();
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
 				}
 				this.data.Sort.value[i].id =
-						this.inputs[this.data.Sort.value[i].realId].getOutput();
+					this.inputs[this.data.Sort.value[i].realId].getOutput();
 			}
 
 			if (this.data.Sort.value.length == 0) {
@@ -686,8 +687,8 @@ export const components = {
 				vals.push(obj.value);
 			});
 
-			console.log("RELOADING HELPER");
-			console.log(this.helpers);
+			// console.log("RELOADING HELPER");
+			// console.log(this.helpers);
 			if (Object.keys(this.helpers).length > 0) {
 				var helper = this.helpers[Object.keys(this.helpers)[0]];
 				var help = helper.getHelp();
@@ -730,5 +731,72 @@ export const components = {
 			return this.data.Help.value;
 		},
 		output: "helper",
+	},
+	IndexOf: {
+		name: "IndexOf",
+		description: "Get the index of an item in an array",
+		color: "#bda1cc",
+		numInputs: 1,
+		numOutputs: 1,
+		output: "index",
+		data: {
+			Index: {
+				type: "slider",
+				value: 0,
+				min: 0,
+				max: 100,
+				hidden: false,
+				step: 1,
+			},
+			Data: {
+				type: "text",
+				value: "text",
+				readonly: true,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			this.reload();
+			// get the outputs of the inputs
+			var values = [];
+			var outputs = Object.keys(this.inputs).map((key, index) => {
+				if (this.inputs[key].getValue) {
+					values.push(this.inputs[key].getValue());
+				}
+				return this.inputs[key].getOutput();
+			});
+
+			var max = 0;
+			if (values.length > 0) {
+				var val = values[0];
+				// if val has [ and ] in it, it is an array
+				if (val.includes("[") && val.includes("]")) {
+					// get the length of the array
+					val = val.replace("[", "").replace("]", "");
+					max = val.split(",").length;
+					this.data.Index.max = max - 1;
+					if (this.data.Index.value < max) {
+						this.data.Data.value = val.split(",")[this.data.Index.value];
+					}
+				} else {
+					this.data.Index.max = 10;
+					this.data.Data.value = `${outputs[0]}[${this.data.Index.value}]`;
+				}
+			} else {
+				this.data.Data.value = `${outputs[0]}[${this.data.Index.value}]`;
+			}
+
+			return `${this.getOutput()} = ${outputs[0]}[${this.data.Index.value}]`;
+		},
+		reload: function () {
+			if (Object.keys(this.inputs).length > 0) {
+				this.data.Index.hidden = false;
+			} else {
+				this.data.Index.hidden = true;
+			}
+		},
+		getOutput: function () {
+			return this.output + this.id;
+		},
 	},
 };

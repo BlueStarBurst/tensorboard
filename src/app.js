@@ -40,9 +40,9 @@ if (darkMode === null) {
 
 function setDarkTheme(isDark) {
 	if (isDark) {
-		document.documentElement.style.setProperty("--bg-color", "#182031");
+		document.documentElement.style.setProperty("--bg-color", "#212e4a");
 		document.documentElement.style.setProperty("--text-color", "#b0b0b0");
-		document.documentElement.style.setProperty("--canvas-color", "#1c2a43");
+		document.documentElement.style.setProperty("--canvas-color", "#213457");
 	} else {
 		document.documentElement.style.setProperty("--bg-color", "#fff");
 		document.documentElement.style.setProperty("--text-color", "#000");
@@ -65,6 +65,7 @@ const canvasSize = { x: 3000, y: 3000 };
 const canvasSize2 = { x: 2000, y: 2000 };
 
 var keys = [];
+var flipper = false;
 
 function App() {
 	const [darkThemes, setDarkThemes] = React.useState(false);
@@ -511,7 +512,7 @@ function App() {
 	function addChildrenToComponentList(component, idList = []) {
 
 		var finArray = [component.id];
-		console.log("IDLIST", idList);
+		// console.log("IDLIST", idList);
 
 		if (idList.includes(component.id)) {
 			// get index of id
@@ -540,10 +541,11 @@ function App() {
 		return finArray;
 	}
 
-	const [flip, setFlip] = React.useState(false);
+	const [flip, setFlip] = React.useState(flipper);
 
 	function flop() {
-		setFlip(!flip);
+		flipper = !flipper;
+		setFlip(flipper);
 	}
 
 	function updateNotebook(currentElements) {
@@ -565,8 +567,6 @@ function App() {
 
 		for (var i = 0; i < tempElements.length; i++) {
 			var element = tempElements[i];
-
-
 			tcomponents.push(element.component);
 			scomponents[element.component.id] = element.component;
 		}
@@ -581,6 +581,7 @@ function App() {
 
 				// keyList.push(component.id);
 				rootComponents.push(component);
+				console.log("ROOT COMPONENT", component);
 			}
 		}
 
@@ -896,6 +897,7 @@ function DraggableTemplate(props) {
 		newComponent.outputs = {};
 		newComponent.helpers = {};
 		newComponent.topInputs = {};
+		newComponent.priority = 100;
 
 		newComponent.id = props.getNewId();
 		props.setCurrentComponent(newComponent);
