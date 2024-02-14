@@ -142,6 +142,7 @@ export const components = {
 				value: "",
 				readonly: true,
 				hidden: true,
+				trueValue: "",
 			},
 		},
 		transpile: function () {
@@ -155,6 +156,7 @@ export const components = {
 				this.data.Other.hidden = false;
 				this.data.Other.value =
 					this.inputs[Object.keys(this.inputs)[0]].getOutput();
+				this.data.Other.trueValue = this.inputs[Object.keys(this.inputs)[0]].getValue ? this.inputs[Object.keys(this.inputs)[0]].getValue() : this.inputs[Object.keys(this.inputs)[0]].getOutput();
 				return `${this.getOutput()} = ${this.inputs[
 					Object.keys(this.inputs)[0]
 				].getOutput()}`;
@@ -220,7 +222,7 @@ export const components = {
 			} else if (this.data.Type.value == "Boolean") {
 				return this.data.Boolean.value;
 			} else {
-				return this.data.Other.value;
+				return this.data.Other.trueValue;
 			}
 		},
 		output: "value",

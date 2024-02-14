@@ -587,6 +587,11 @@ pre {
   justify-content: start;
   align-items: start;
   transition: width 0.5s ease-in-out;
+  cursor: grab !important;
+}
+
+.drag-option * {
+  cursor: grab !important;
 }
 
 .drag-row {

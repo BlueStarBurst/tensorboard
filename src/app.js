@@ -202,6 +202,11 @@ function App() {
 	}
 
 	function refreshCanvasWidth() {
+
+		if (isResizing) {
+			return;
+		}
+
 		var canvas =
 			canvasContainer.current.children[
 				canvasContainer.current.children.length - 1
@@ -301,6 +306,9 @@ function App() {
 	const [isPanning, setIsPanning] = React.useState(false);
 
 	function panCanvas(e) {
+		if (isResizing) {
+			return;
+		}
 		// pan the canvasContainer wheen the mouse is down and moving
 
 
@@ -402,6 +410,9 @@ function App() {
 
 	function zoomContainer(e) {
 		e.preventDefault();
+		if (isResizing) {
+			return;
+		}
 
 		// zoom in where the mouse is
 		var mouseX =
