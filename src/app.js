@@ -650,7 +650,15 @@ function App() {
 		});
 
 		// using the iframeRef to get the iframe, add a script to the iframe that saves the cells to the indexedDB database
-		// if (iframeRef.current) {
+		if (iframeRef.current) {
+			// create a json file with the cells
+			var data = start + JSON.stringify(tcells) + end;
+			var blob = new Blob([data], { type: "application/json" });
+			var url = URL.createObjectURL(blob);
+
+			iframeRef.current.src = window.location.href + "/jupyter/lab?fromURL=" + url;
+
+		}
 		// 	var iframe = iframeRef.current;
 		// 	var win = iframe.contentWindow;
 		// 	var doc = win.document;
