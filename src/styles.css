@@ -565,6 +565,10 @@ pre {
   transition: width 0.5s ease-in-out;
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
 }
 
 .zero-width {
@@ -585,9 +589,11 @@ pre {
   display: flex;
   flex-direction: row;
   justify-content: start;
-  align-items: start;
+  align-items: center;
   transition: width 0.5s ease-in-out;
   cursor: grab !important;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
 }
 
 .drag-option * {

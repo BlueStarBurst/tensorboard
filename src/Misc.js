@@ -1,3 +1,5 @@
+import { faGripVertical } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, TextField } from "@mui/material";
 import * as React from "react";
 import { useEffect } from "react";
@@ -69,6 +71,7 @@ export function DragOption(props) {
 
 	return (
 		<div className={"auto-width " + (isDragging ? "zero-width" : "")}>
+            
 			<div
 				className={"drag-option " + (isDragging ? "dragging" : "")}
 				draggable={true}
@@ -83,6 +86,7 @@ export function DragOption(props) {
 					props.setDraggingObj(null);
 				}}
 			>
+                <FontAwesomeIcon icon={faGripVertical} />
 				<TextField value={props.obj.value} label={props.obj.id} fullWidth disabled />
 			</div>
 			<TextField

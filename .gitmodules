@@ -1,0 +1,3 @@
+[submodule "jupyterlite-tensorboard"]
+	path = jupyterlite-tensorboard
+	url = https://github.com/BlueStarBurst/jupyterlite-tensorboard.git

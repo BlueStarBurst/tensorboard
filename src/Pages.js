@@ -149,6 +149,7 @@ export function Notebook(props) {
 export function Web(props) {
 	return (
 		<iframe
+			ref={props.iframeRef}
 			src="https://jupyterlite.github.io/demo/lab/index.html"
 			width="100%"
 			height="100%"
@@ -157,6 +158,7 @@ export function Web(props) {
 }
 
 export function Raw(props) {
+
 	return (
 		<textarea
 			autoCorrect="off"

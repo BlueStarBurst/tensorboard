@@ -734,9 +734,9 @@ export const components = {
 		},
 		output: "helper",
 	},
-	IndexOf: {
-		name: "IndexOf",
-		description: "Get the index of an item in an array",
+	IndexAt: {
+		name: "IndexAt",
+		description: "Get the item in an array at a specific index",
 		color: "#bda1cc",
 		numInputs: 1,
 		numOutputs: 1,

@@ -21,8 +21,6 @@ function isMobile() {
 	return false;
 }
 
-
-
 const darkTheme = createTheme({
 	palette: {
 		mode: "dark",
@@ -88,6 +86,7 @@ function App() {
 	const [currentElements, setCurrentElements] = React.useState([]);
 
 	const canvasOverlay = React.useRef(null);
+	const iframeRef = React.useRef(null);
 
 	function setMouseCoords(e) {
 		setMouseX(e.clientX);
@@ -202,7 +201,6 @@ function App() {
 	}
 
 	function refreshCanvasWidth() {
-
 		if (isResizing) {
 			return;
 		}
@@ -255,11 +253,8 @@ function App() {
 	}
 
 	function onKeyPressed(e) {
-
 		// get ig b is pressed
 		// if (e.key === "b") {
-
-
 		// 	setDarkThemes(!darkMode);
 		// 	setDarkTheme(!darkMode);
 		// }
@@ -268,7 +263,6 @@ function App() {
 	const canvasContainer = React.useRef(null);
 
 	function mouseUp(e) {
-
 		setIsResizing(false);
 		setWebPointer(false);
 		setIsPanning(false);
@@ -310,7 +304,6 @@ function App() {
 			return;
 		}
 		// pan the canvasContainer wheen the mouse is down and moving
-
 
 		if (!isPanning) {
 			return;
@@ -383,7 +376,6 @@ function App() {
 		// 	// emulate click event
 		// 	// div.click();
 
-
 		// }
 
 		return () => {
@@ -404,7 +396,6 @@ function App() {
 	}, [items]);
 
 	function preventDefault(e) {
-
 		e.preventDefault();
 	}
 
@@ -445,8 +436,6 @@ function App() {
 			// 1
 		);
 
-
-
 		// set the new width and height
 		newWidth = Math.min(newWidth, canvasSize2.x);
 		newHeight = Math.min(newHeight, canvasSize2.y);
@@ -457,12 +446,16 @@ function App() {
 		canvas2.style.width = newWidth + "px";
 		canvas2.style.height = newHeight + "px";
 
-		if (delta > 0 && (newWidth != canvasSize2.x && newHeight != canvasSize2.y)) {
+		if (delta > 0 && newWidth != canvasSize2.x && newHeight != canvasSize2.y) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
-		} 
-		if (delta < 0 && newWidth != (window.innerWidth * w) / 100 - 20 && newHeight != (window.innerWidth * w) / 100 - 20) {
+		}
+		if (
+			delta < 0 &&
+			newWidth != (window.innerWidth * w) / 100 - 20 &&
+			newHeight != (window.innerWidth * w) / 100 - 20
+		) {
 			// set the scroll position so that the mouse position is the same
 			canvasContainer.current.scrollLeft += (mouseX * delta) / newWidth;
 			canvasContainer.current.scrollTop += (mouseY * delta) / newHeight;
@@ -479,7 +472,6 @@ function App() {
 	const [canvasMouseUp, setCanvasMouseUp] = React.useState([-1, -1]);
 
 	function createItem(e, ax, ay) {
-
 		if (e.target.id == "canvas") {
 			if (isCreating) {
 				setCanvasMouseUp([ax, ay]);
@@ -521,7 +513,6 @@ function App() {
 	}
 
 	function addChildrenToComponentList(component, idList = []) {
-
 		var finArray = [component.id];
 		// console.log("IDLIST", idList);
 
@@ -535,7 +526,6 @@ function App() {
 		idList.push(component.id);
 
 		Object.keys(component.helpers).map((key, index) => {
-			
 			var tempArr = addChildrenToComponentList(component.helpers[key], idList);
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
@@ -543,12 +533,11 @@ function App() {
 
 		// loop through keys of component outputs {id : component}
 		Object.keys(component.outputs).map((key, index) => {
-
 			var tempArr = addChildrenToComponentList(component.outputs[key], idList);
 			// add the arr to the finArray
 			finArray = finArray.concat(tempArr);
 		});
-		
+
 		return finArray;
 	}
 
@@ -560,8 +549,6 @@ function App() {
 	}
 
 	function updateNotebook(currentElements) {
-
-
 		var saveElements = {};
 		Object.keys(currentElements).map((key, index) => {
 			saveElements[key] = currentElements[key].toJSON();
@@ -582,20 +569,16 @@ function App() {
 			scomponents[element.component.id] = element.component;
 		}
 
-
 		// get all components with no inputs
 		for (var i = 0; i < tcomponents.length; i++) {
 			var component = tcomponents[i];
 
 			if (Object.keys(component.inputs).length == 0) {
-
-
 				// keyList.push(component.id);
 				rootComponents.push(component);
 				console.log("ROOT COMPONENT", component);
 			}
 		}
-
 
 		// sort root components by priority low to high
 		rootComponents = rootComponents.sort((a, b) => {
@@ -605,7 +588,6 @@ function App() {
 		});
 
 		for (var i = 0; i < rootComponents.length; i++) {
-
 			keyList.push(rootComponents[i].id);
 		}
 
@@ -614,7 +596,6 @@ function App() {
 			var children = rootComponents[i].outputs;
 
 			Object.keys(children).map((key, index) => {
-
 				// add the children to the components array
 				var tempArr = addChildrenToComponentList(children[key]);
 
@@ -643,8 +624,6 @@ function App() {
 			}
 		}
 
-
-
 		// parse the components into JSON cells
 		var tcells = [];
 		fcomponents.map((value, index) => {
@@ -656,8 +635,6 @@ function App() {
 				raw_python = raw_python.map((line) => {
 					return line + "\n";
 				});
-
-
 
 				tcells.push({
 					cell_type: "code",
@@ -672,6 +649,23 @@ function App() {
 			}
 		});
 
+		// using the iframeRef to get the iframe, add a script to the iframe that saves the cells to the indexedDB database
+		// if (iframeRef.current) {
+		// 	var iframe = iframeRef.current;
+		// 	var win = iframe.contentWindow;
+		// 	var doc = win.document;
+
+		// 	// add the cells to the iframe
+		// 	const request = win.indexedDB.open("JupyterLite Storage", 5);
+		// 	request.onsuccess = (e) => {
+		// 		var db = e.target.result;
+		// 		var transaction = db.transaction("notebook", "readwrite");
+		// 		var objectStore = transaction.objectStore("notebook");
+		// 		objectStore.clear();
+		// 		objectStore.add({ cells: tcells });
+		// 	};
+		// }
+
 		setCells(tcells);
 	}
 
@@ -681,7 +675,6 @@ function App() {
 	// const [currentKeys, setCurrentKeys] = React.useState([]);
 
 	function onKeyboardDown(e) {
-
 		setKeyDown(e);
 
 		// if key is in keys, return
@@ -691,15 +684,11 @@ function App() {
 
 		keys.push(e.key);
 
-
-
 		// if control z is pressed, undo
 		if (keys.includes("Control") && keys.includes("z")) {
-
 			DBManager.getInstance().undo();
 			flop();
 		} else if (keys.includes("Control") && keys.includes("y")) {
-
 			DBManager.getInstance().redo();
 			flop();
 		}
@@ -724,8 +713,11 @@ function App() {
 					mouseUp(e);
 				}}
 				onTouchEnd={(e) => {
-
-					createItem(e, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+					createItem(
+						e,
+						e.changedTouches[0].clientX,
+						e.changedTouches[0].clientY
+					);
 					mouseUp(e);
 				}}
 				onKeyDown={onKeyboardDown}
@@ -864,7 +856,7 @@ function App() {
 					) : panel == "notebook" ? (
 						<Notebook cells={cells} start={start} end={end} flop={flop} />
 					) : panel == "web" ? (
-						<Web />
+						<Web iframeRef={iframeRef} />
 					) : null}
 					<div
 						className={
@@ -875,7 +867,7 @@ function App() {
 								: "web-container web-hidden"
 						}
 					>
-						<Web />
+						<Web iframeRef={iframeRef} />
 					</div>
 				</div>
 			</div>
@@ -938,12 +930,8 @@ function DraggableTemplate(props) {
 						props.setIsDragging(false);
 						setThisComponent(false);
 					}}
-					onMouseMove={(e) => {
-
-					}}
-					onTouchMove={(e) => {
-
-					}}
+					onMouseMove={(e) => {}}
+					onTouchMove={(e) => {}}
 				>
 					<div className="inputs">
 						{
