@@ -10,13 +10,13 @@ function createCopy(pathW = '') {
             publicPath: "/"
         },
         devServer: {
-            historyApiFallback: {
-                index: 'index.html',
-                rewrites: [
-                    // from any url that doesn't match the above, redirect to /index.html
-                    { from: /./, to: '/index.html' },
-                ]
-            }
+            // historyApiFallback: {
+            //     index: 'index.html',
+            //     rewrites: [
+            //         // from any url that doesn't match the above, redirect to /index.html
+            //         { from: /./, to: '/index.html' },
+            //     ]
+            // }
         },
         module: {
             rules: [

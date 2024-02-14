@@ -655,8 +655,9 @@ function App() {
 			var data = start + JSON.stringify(tcells) + end;
 			var blob = new Blob([data], { type: "application/json" });
 			var url = URL.createObjectURL(blob);
+			console.log(url);
 
-			iframeRef.current.src = window.location.href + "/jupyter/lab?fromURL=" + url;
+			iframeRef.current.src = window.location.href + "jupyter/lab?fromURL=" + url;
 
 		}
 		// 	var iframe = iframeRef.current;
