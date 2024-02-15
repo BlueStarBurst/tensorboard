@@ -632,9 +632,14 @@ function App() {
 				// split by new line
 				raw_python = raw_python.split("\n");
 				// add a new line to the end of each line
-				raw_python = raw_python.map((line) => {
-					return line + "\n";
+				raw_python = raw_python.map((line, i) => {
+					if (i != raw_python.length - 1) {
+						return line + "\n";
+					} else {
+						return line;
+					}
 				});
+				// remove the last new line
 
 				tcells.push({
 					cell_type: "code",
@@ -653,27 +658,38 @@ function App() {
 		if (iframeRef.current) {
 			// create a json file with the cells
 			var data = start + JSON.stringify(tcells) + end;
-			var blob = new Blob([data], { type: "application/json" });
-			var url = URL.createObjectURL(blob);
-			console.log(url);
 
-			iframeRef.current.src = window.location.href + "jupyter/lab?fromURL=" + url;
+			// date is in format "2022-01-01T00:00:00.000Z"
 
+			var trueData = {
+				content: JSON.parse(data),
+				created: new Date().toISOString(),
+				format: "json",
+				last_modified: new Date().toISOString(),
+				mimetype: "application/json",
+				name: "current.ipynb",
+				path: "current.ipynb",
+				size: data.length,
+				type: "notebook",
+				writable: false,
+			};
+			console.log("DATA", trueData);
+
+			// get the indexedDB database
+			const request = window.indexedDB.open("JupyterLite Storage", 5);
+			request.onsuccess = (e) => {
+				var db = e.target.result;
+				var transaction = db.transaction(["files"], "readwrite");
+				var objectStore = transaction.objectStore("files");
+				var request = objectStore.put(trueData, "current.ipynb");
+				request.onsuccess = (e) => {
+					console.log("Success");
+					// refresh the iframe using window.location.reload()
+					iframeRef.current.src = iframeRef.current.src;
+					iframeRef.current.contentWindow.location.reload();
+				};
+			};
 		}
-		// 	var iframe = iframeRef.current;
-		// 	var win = iframe.contentWindow;
-		// 	var doc = win.document;
-
-		// 	// add the cells to the iframe
-		// 	const request = win.indexedDB.open("JupyterLite Storage", 5);
-		// 	request.onsuccess = (e) => {
-		// 		var db = e.target.result;
-		// 		var transaction = db.transaction("notebook", "readwrite");
-		// 		var objectStore = transaction.objectStore("notebook");
-		// 		objectStore.clear();
-		// 		objectStore.add({ cells: tcells });
-		// 	};
-		// }
 
 		setCells(tcells);
 	}
@@ -864,9 +880,8 @@ function App() {
 						<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
 					) : panel == "notebook" ? (
 						<Notebook cells={cells} start={start} end={end} flop={flop} />
-					) : panel == "web" ? (
-						<Web iframeRef={iframeRef} />
-					) : null}
+					) : panel == "web" ? // <Web iframeRef={iframeRef} />
+					null : null}
 					<div
 						className={
 							webSelected

@@ -39,7 +39,11 @@ export function Notebook(props) {
 						// find all elements with the class "cell-selected" and scroll to them
 						var selected = document.getElementsByClassName("cell-selected");
 						for (var i = 0; i < selected.length; i++) {
-							selected[i].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+							selected[i].scrollIntoView({
+								behavior: "smooth",
+								block: "center",
+								inline: "center",
+							});
 						}
 					}
 				});
@@ -147,10 +151,11 @@ export function Notebook(props) {
 }
 
 export function Web(props) {
+
 	return (
 		<iframe
 			ref={props.iframeRef}
-			src="https://jupyterlite.github.io/demo/lab/index.html"
+			src={window.location.href + "jupyter/lab"}
 			width="100%"
 			height="100%"
 		></iframe>
@@ -158,7 +163,6 @@ export function Web(props) {
 }
 
 export function Raw(props) {
-
 	return (
 		<textarea
 			autoCorrect="off"

@@ -2,7 +2,8 @@
   --mouse-x: 50%;
   --mouse-y: 0px;
   --bg-color: #182031;
-  --canvas-color: #1c2a43;
+  --bg-color-darker: #1c2942;
+  --canvas-color: #213457;
   --text-color: #b0b0b0;
   --pointer-events: auto;
   --cursor: auto;
@@ -50,6 +51,7 @@ h6 {
   position: relative;
   flex-direction: row;
   justify-content: space-between;
+  align-items: start;
   width: 100vw !important;
 }
 
@@ -109,6 +111,7 @@ h6 {
   /* min-width: 25%; */
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   /* transition: all 0.01s ease-in-out; */
+  padding-top: 2.5rem;
 }
 
 .transition-width {
@@ -256,13 +259,17 @@ h6 {
 }
 
 .right-panel-header {
+  top: 0;
+  position: fixed;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
   width: 100%;
-  /* flex-grow: 3; */
-  background-color: #0000001b;
+  background-color: var(--bg-color-darker);
+  /* filter: brightness(0.75); */
+  z-index: 100000000000;
+  left: var(--mouse-x);
 }
 
 .right-panel-header-option {
@@ -284,11 +291,12 @@ h6 {
 
 .selected {
   background-color: var(--bg-color);
+  /* filter: brightness(1); */
   /* transition: background-color 0.5s ease-in-out; */
 }
 
 .unselected {
-  background-color: #0000001b;
+  background-color: var(--bg-color-darker);
   /* transition: background-color 0.5s ease-in-out; */
 }
 
@@ -362,7 +370,9 @@ iframe {
   position: relative;
   display: flex;
   width: 100%;
-  height: 100%;
+  height: 93vh;
+  margin-top: 0;
+  overflow: hidden;
 }
 
 .cell {
@@ -411,7 +421,7 @@ iframe {
   position: absolute;
   width: 100%;
   height: 100%;
-  transform: translateY(2.5rem);
+  /* transform: translateY(2.5rem); */
   padding-left: 0.1rem;
 }
 
@@ -434,13 +444,14 @@ iframe {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+  /* margin-top: 1.5rem; */
 }
 
 .cell-container {
   position: relative;
   height: 100%;
   overflow: auto;
-  padding-top: 1rem;
+  /* padding-top: 1rem; */
 }
 
 .notebook-footer {
@@ -485,6 +496,7 @@ iframe {
 
 .right-panel textarea {
   opacity: 0.5;
+  padding-top: 0.5rem;
 }
 
 pre {
