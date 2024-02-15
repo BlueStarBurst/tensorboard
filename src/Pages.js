@@ -155,7 +155,7 @@ export function Web(props) {
 	return (
 		<iframe
 			ref={props.iframeRef}
-			src={window.location.href + "jupyter/lab"}
+			src={window.location.href + "jupyter/lab/index.html"}
 			width="100%"
 			height="100%"
 		></iframe>
