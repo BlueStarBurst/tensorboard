@@ -39,11 +39,17 @@ export function Notebook(props) {
 						// find all elements with the class "cell-selected" and scroll to them
 						var selected = document.getElementsByClassName("cell-selected");
 						for (var i = 0; i < selected.length; i++) {
-							selected[i].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+							selected[i].scrollIntoView({
+								behavior: "smooth",
+								block: "center",
+								inline: "center",
+							});
 						}
+						
+						hljs.highlightBlock(code);
 					}
 				});
-				hljs.highlightAll();
+				// hljs.highlightAll();
 				setReady(true);
 			}, 0.1);
 		}
@@ -147,18 +153,34 @@ export function Notebook(props) {
 }
 
 export function Web(props) {
-	return (
-		<iframe
-			ref={props.iframeRef}
-			src="https://jupyterlite.github.io/demo/lab/index.html"
-			width="100%"
-			height="100%"
-		></iframe>
-	);
+	const ref = React.useRef(null);
+
+	useEffect(() => {
+		setTimeout(() => {
+			// get children of body
+			if (ref.current) {
+				var children = document.body.children;
+				// if length is greater than 1
+				if (children.length > 1) {
+					// move the children to the ref
+					ref.current.appendChild(children[1]);
+					// remove the children from the body
+					// document.body.removeChild(children[1]);
+
+					// remove all attributes from the body
+					var attributes = document.body.attributes;
+					for (var i = 0; i < attributes.length; i++) {
+						document.body.removeAttribute(attributes[i].name);
+					}
+				}
+			}
+		}, 5000);
+	}, []);
+
+	return <div ref={ref} className="notebook-web" data-notebook="lab" cz-shortcut-listen="true" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light" data-jp-theme-scrollbars="false" />;
 }
 
 export function Raw(props) {
-
 	return (
 		<textarea
 			autoCorrect="off"

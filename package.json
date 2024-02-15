@@ -2,7 +2,8 @@
   "scripts": {
     "docs": "webpack --mode development --config ./webpack.docs.js --watch",
     "server": "node server.js",
-    "start": "webpack-dev-server --open --config ./webpack.dev.config.cjs --mode development"
+    "start": "webpack-dev-server --open --config ./webpack.dev.config.cjs --mode development",
+    "build": "./build.bat"
   },
   "version": "0.0.1",
   "dependencies": {
@@ -11,6 +12,7 @@
     "autoprefixer": "^10.4.14",
     "body-parser": "^1.19.1",
     "cookie-parser": "^1.4.6",
+    "copy-webpack-plugin": "^12.0.2",
     "cors": "^2.8.5",
     "express": "^4.18.1",
     "express-fileupload": "^1.4.0",

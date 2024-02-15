@@ -737,7 +737,7 @@ export const components = {
 	IndexAt: {
 		name: "IndexAt",
 		description: "Get the item in an array at a specific index",
-		color: "#bda1cc",
+		color: "#9e80ad",
 		numInputs: 1,
 		numOutputs: 1,
 		output: "index",

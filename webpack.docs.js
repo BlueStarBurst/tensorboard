@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 function createCopy() {
     return ({
@@ -46,14 +47,14 @@ function createCopy() {
         },
         plugins: [
             new HtmlWebpackPlugin({
-                filename: 'index.html',
+                filename: 'lab/index.html',
                 template: path.resolve(__dirname, './public/index.html'),
             }),
-            // new CopyWebpackPlugin({
-            //     patterns: [
-            //         { from: 'assets' }
-            //     ]
-            // })
+            new CopyWebpackPlugin({
+                patterns: [
+                    { from: './jupyter' },
+                ]
+            })
         ],
         experiments: {
             topLevelAwait: true

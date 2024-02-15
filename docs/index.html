@@ -1,41 +1,68 @@
 <!DOCTYPE html>
-<html style="scroll-behavior: auto;">
+<!--
+  This is the root document for _your_ JupyterLite. Thanks for viewing your source!
+     ___ __   __ _______ __   __ _______ _______ ______   ___     ___ _______ _______
+    |   |  | |  |       |  | |  |       |       |    _ | |   |   |   |       |       |
+    |   |  | |  |    _  |  |_|  |_     _|    ___|   | || |   |   |   |_     _|    ___|
+    |   |  |_|  |   |_| |       | |   | |   |___|   |_||_|   |   |   | |   | |   |___
+ ___|   |       |    ___|_     _| |   | |    ___|    __  |   |___|   | |   | |    ___|
+|       |       |   |     |   |   |   | |   |___|   |  | |       |   | |   | |   |___
+|_______|_______|___|     |___|   |___| |_______|___|  |_|_______|___| |___| |_______|
 
-<head>
-    <title>Tensorboard</title>
-    <!-- <link rel="icon" type="image/x-icon" href="./ico.png"> -->
-    <script src="https://unpkg.com/react/umd/react.production.min.js" crossorigin></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
-        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
-        integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300&display=swap" rel="stylesheet" />
+Code: https://github.com/jupyterlite/jupyterlite
+Demo: https://jupyterlite.rtfd.io/en/latest/try
 
-    <script src="https://www.gstatic.com/firebasejs/9.9.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.9.2/firebase-storage.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+# FILES
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
+Your JupyterLite is structured like this:
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-    <!-- <script defer src="/appBundle.js"></script> -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-<script defer src="appBundle.js"></script></head>
+    index.html             <---- you are here
+    {:app}/                <---- currently-known: `lab` (semi-required) and `notebook`
+      index.html
+      extensions/
+        {:org}/{:package}/ <---|
+        {:package}/        <---+- federated extensions
+          schema/
+          package.json
+    # TBD
+    files/                 <----- also need to populate `api/contents/`!
+    static/                <----- might save duplication
+      {:app}
 
-<body>
-    <div onload="init()" style="" id="root"></div>
-    <script src="https://kit.fontawesome.com/1158619689.js" crossorigin="anonymous"></script>
-</body>
+-->
+<html>
+  <head>
+    <!--
+      # jupyter-config-data
 
+      The JSON in `jupyter-lite.json` is the last that will be loaded by most
+      child `index.html` pages, and every field can be overridden.
+
+      See the recognized schema as described in the documentation:
+
+      - https://jupyterlite.rtfd.io/en/latest/schema
+
+      Notes
+        - fields that...
+          - are relative paths values
+            - will have the parent directory of _this_ file appended, accounting
+              for "magic" hosts which redirect to `{:path}index.html` to `{:path}`,
+              with or without a slash
+        - some fields, such as `federated_extensions` will be _added together_
+    -->
+    <script id="jupyter-config-data" type="application/json" data-jupyter-lite-root=".">
+      {}
+    </script>
+    <!--
+      # jupyter-lite-root
+
+      The source of truth for relative path locations. The `.` means _this_
+      is the root, and will redirect to the `appUrl` defined in
+      `.jupyter-lite/#jupyter-config-data`.
+    -->
+    <script type="module">
+      await import('./config-utils.js');
+    </script>
+    <!-- that's it, there shouldn't be anything below here in head! -->
+  </head>
 </html>

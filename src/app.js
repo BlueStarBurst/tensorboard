@@ -649,31 +649,22 @@ function App() {
 			}
 		});
 
-		// using the iframeRef to get the iframe, add a script to the iframe that saves the cells to the indexedDB database
 		if (iframeRef.current) {
-			// create a json file with the cells
-			var data = start + JSON.stringify(tcells) + end;
-			var blob = new Blob([data], { type: "application/json" });
-			var url = URL.createObjectURL(blob);
-			console.log(url);
+			// using the iframeRef to get the iframe, get the window, and then the document
+			var iframe = iframeRef.current;
+			var win = iframe.contentWindow;
+			// var doc = win.document;
 
-			iframeRef.current.src = window.location.href + "jupyter/lab?fromURL=" + url;
-
+			// add the cells to the iframe
+			const request = win.indexedDB.open("JupyterLite Storage", 5);
+			request.onsuccess = (e) => {
+				var db = e.target.result;
+				var transaction = db.transaction("notebook", "readwrite");
+				var objectStore = transaction.objectStore("notebook");
+				objectStore.clear();
+				objectStore.add({ cells: tcells });
+			};
 		}
-		// 	var iframe = iframeRef.current;
-		// 	var win = iframe.contentWindow;
-		// 	var doc = win.document;
-
-		// 	// add the cells to the iframe
-		// 	const request = win.indexedDB.open("JupyterLite Storage", 5);
-		// 	request.onsuccess = (e) => {
-		// 		var db = e.target.result;
-		// 		var transaction = db.transaction("notebook", "readwrite");
-		// 		var objectStore = transaction.objectStore("notebook");
-		// 		objectStore.clear();
-		// 		objectStore.add({ cells: tcells });
-		// 	};
-		// }
 
 		setCells(tcells);
 	}

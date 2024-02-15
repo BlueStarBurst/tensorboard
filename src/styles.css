@@ -1,4 +1,4 @@
-:root {
+:root:not(.notebook-web *) {
   --mouse-x: 50%;
   --mouse-y: 0px;
   --bg-color: #182031;
@@ -8,17 +8,31 @@
   --cursor: auto;
 }
 
-html {
+html:not(.notebook-web *) {
   overflow: hidden;
   cursor: var(--cursor);
+  font-family: 'Roboto', sans-serif !important;
 }
+
+body div:first-child * {
+  opacity: 1 !important;
+}
+body div:last-child * {
+  opacity: 1 !important;
+}
+body div * {
+  opacity: 0 !important;
+}
+
+
 
 h1,
 h2,
 h3,
 h4,
 h5,
-h6 {
+h6:not(.notebook-section *) {
+  font-family: 'Roboto', sans-serif !important;
   margin: 0;
 }
 
@@ -94,7 +108,7 @@ h6 {
   /* scroll-behavior: smooth; */
 }
 
-.right-panel {
+.right-panel:not(.notebook-section *) {
   overflow: hidden;
   position: relative;
   display: flex;
@@ -109,6 +123,7 @@ h6 {
   /* min-width: 25%; */
   transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   /* transition: all 0.01s ease-in-out; */
+  /* padding-top: 1.5rem; */
 }
 
 .transition-width {
@@ -256,13 +271,17 @@ h6 {
 }
 
 .right-panel-header {
+  position: static;
+  top: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
   width: 100%;
   /* flex-grow: 3; */
-  background-color: #0000001b;
+  background-color: var(--bg-color);
+  z-index: 1000000;
+  font-size: 200%;
 }
 
 .right-panel-header-option {
@@ -608,6 +627,22 @@ pre {
   /* gap: 1rem; */
   transition: width 0.5s ease-in-out;
 
+}
+
+.notebook-web {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* all: unset; */
+}
+
+.jp-ModalCommandPalette {
+}
+
+.lm-Widget.lm-Menu {
+  position: absolute !important;
+  top: 0;
 }
 
 /* @media screen and (max-height: 768px) {
