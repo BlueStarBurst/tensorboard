@@ -7,6 +7,8 @@ hljs.registerLanguage("python", python);
 
 import "highlight.js/styles/tokyo-night-dark.css";
 import { DBManager } from "./DB";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 
 export function Notebook(props) {
 	const [cells, setCells] = React.useState([]);
@@ -17,6 +19,11 @@ export function Notebook(props) {
 		setReady(false);
 		// setCells(props.cells);
 	}, [props.cells]);
+
+	function runCell(cell, index) {
+		// use pyodide to run the cell's source 
+		console.log(cell.source.join(""));
+	}
 
 	useEffect(() => {
 		if (ready == false) {
@@ -70,7 +77,13 @@ export function Notebook(props) {
 								key={index}
 							>
 								<div className="cell-left">
-									<p className="cell-index">[{index + 1}]:</p>
+									<p className="cell-index">
+										[{" " + (index + 1) + " "}]:
+										<FontAwesomeIcon className="play" icon={faPlay} onClick={(e) => {
+											runCell(cell, index);
+										}} />
+									</p>
+
 									<p className="cell-id">{cell.metadata.id}</p>
 								</div>
 								<pre style={{ width: "100%" }}>
@@ -151,14 +164,14 @@ export function Notebook(props) {
 }
 
 export function Web(props) {
-
 	return (
-		<iframe
-			ref={props.iframeRef}
-			src={window.location.href + "jupyter/lab/index.html"}
-			width="100%"
-			height="100%"
-		></iframe>
+		<></>
+		// <iframe
+		// 	ref={props.iframeRef}
+		// 	src={window.location.href + "jupyter/lab/index.html"}
+		// 	width="100%"
+		// 	height="100%"
+		// ></iframe>
 	);
 }
 

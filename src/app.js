@@ -548,6 +548,19 @@ function App() {
 		setFlip(flipper);
 	}
 
+	const [pyodide, setPyodide] = React.useState(null);
+	async function setPyodideVal() {
+		// get the pyodide module
+		const pyodide = await loadPyodide();
+		console.log("PYODIDE", pyodide);
+		console.log("PYODIDE", pyodide.runPython("import sys\nsys.version\n"));
+		setPyodide(pyodide);
+	}
+
+	useEffect(() => {
+		setPyodideVal();
+	}, []);
+
 	function updateNotebook(currentElements) {
 		var saveElements = {};
 		Object.keys(currentElements).map((key, index) => {
@@ -654,42 +667,42 @@ function App() {
 			}
 		});
 
-		// using the iframeRef to get the iframe, add a script to the iframe that saves the cells to the indexedDB database
-		if (iframeRef.current) {
-			// create a json file with the cells
-			var data = start + JSON.stringify(tcells) + end;
+		// 	// using the iframeRef to get the iframe, add a script to the iframe that saves the cells to the indexedDB database
+		// 	if (iframeRef.current) {
+		// 		// create a json file with the cells
+		// 		var data = start + JSON.stringify(tcells) + end;
 
-			// date is in format "2022-01-01T00:00:00.000Z"
+		// 		// date is in format "2022-01-01T00:00:00.000Z"
 
-			var trueData = {
-				content: JSON.parse(data),
-				created: new Date().toISOString(),
-				format: "json",
-				last_modified: new Date().toISOString(),
-				mimetype: "application/json",
-				name: "current.ipynb",
-				path: "current.ipynb",
-				size: data.length,
-				type: "notebook",
-				writable: false,
-			};
-			console.log("DATA", trueData);
+		// 		var trueData = {
+		// 			content: JSON.parse(data),
+		// 			created: new Date().toISOString(),
+		// 			format: "json",
+		// 			last_modified: new Date().toISOString(),
+		// 			mimetype: "application/json",
+		// 			name: "current.ipynb",
+		// 			path: "current.ipynb",
+		// 			size: data.length,
+		// 			type: "notebook",
+		// 			writable: false,
+		// 		};
+		// 		console.log("DATA", trueData);
 
-			// get the indexedDB database
-			const request = window.indexedDB.open("JupyterLite Storage", 5);
-			request.onsuccess = (e) => {
-				var db = e.target.result;
-				var transaction = db.transaction(["files"], "readwrite");
-				var objectStore = transaction.objectStore("files");
-				var request = objectStore.put(trueData, "current.ipynb");
-				request.onsuccess = (e) => {
-					console.log("Success");
-					// refresh the iframe using window.location.reload()
-					iframeRef.current.src = iframeRef.current.src;
-					iframeRef.current.contentWindow.location.reload();
-				};
-			};
-		}
+		// 		// get the indexedDB database
+		// 		const request = window.indexedDB.open("JupyterLite Storage", 5);
+		// 		request.onsuccess = (e) => {
+		// 			var db = e.target.result;
+		// 			var transaction = db.transaction(["files"], "readwrite");
+		// 			var objectStore = transaction.objectStore("files");
+		// 			var request = objectStore.put(trueData, "current.ipynb");
+		// 			request.onsuccess = (e) => {
+		// 				console.log("Success");
+		// 				// refresh the iframe using window.location.reload()
+		// 				iframeRef.current.src = iframeRef.current.src;
+		// 				iframeRef.current.contentWindow.location.reload();
+		// 			};
+		// 		};
+		// 	}
 
 		setCells(tcells);
 	}
@@ -855,33 +868,34 @@ function App() {
 						<div className="filler" />
 					</div>
 
-					{panel == "tools" ? (
-						<div className="tools">
-							{/* <p>Components</p> */}
-							{Object.keys(components).map((key, index) => {
-								return (
-									<DraggableTemplate
-										key={index}
-										mouseX={mouseX}
-										mouseY={mouseY}
-										isDragging={isDragging}
-										setIsDragging={setIsDragging}
-										setIsCreating={setIsCreating}
-										setCurrentComponent={setCurrentComponent}
-										component={components[key]}
-										getNewId={getNewId}
-									>
-										{components[key].name}
-									</DraggableTemplate>
-								);
-							})}
-						</div>
-					) : panel == "raw" ? (
-						<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
-					) : panel == "notebook" ? (
-						<Notebook cells={cells} start={start} end={end} flop={flop} />
-					) : panel == "web" ? // <Web iframeRef={iframeRef} />
-					null : null}
+					{
+						panel == "tools" ? (
+							<div className="tools">
+								{/* <p>Components</p> */}
+								{Object.keys(components).map((key, index) => {
+									return (
+										<DraggableTemplate
+											key={index}
+											mouseX={mouseX}
+											mouseY={mouseY}
+											isDragging={isDragging}
+											setIsDragging={setIsDragging}
+											setIsCreating={setIsCreating}
+											setCurrentComponent={setCurrentComponent}
+											component={components[key]}
+											getNewId={getNewId}
+										>
+											{components[key].name}
+										</DraggableTemplate>
+									);
+								})}
+							</div>
+						) : panel == "raw" ? (
+							<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
+						) : panel == "notebook" ? (
+							<Notebook cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} />
+						) : panel == "web" ? null : null // <Web iframeRef={iframeRef} />
+					}
 					<div
 						className={
 							webSelected
