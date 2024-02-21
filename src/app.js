@@ -738,6 +738,9 @@ function App() {
 		temp.splice(temp.indexOf(e.key), 1);
 	}
 
+	const [statuses, setStatuses] = React.useState({});
+	const [prevStatuses, setPrevStatuses] = React.useState({});
+
 	return (
 		<ThemeProvider theme={darkTheme}>
 			<CssBaseline />
@@ -881,7 +884,7 @@ function App() {
 						) : panel == "raw" ? (
 							<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
 						) : panel == "notebook" ? (
-							<Notebook cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} setPyodideVal={setPyodideVal} />
+							<Notebook statuses={statuses} setStatuses={setStatuses} prevStatuses={prevStatuses} setPrevStatuses={setPrevStatuses} cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} setPyodideVal={setPyodideVal} />
 						) : null // <Web iframeRef={iframeRef} />
 					}
 					

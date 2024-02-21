@@ -23,21 +23,23 @@ import { Spinner } from "react-bootstrap";
 export function Notebook(props) {
 	const [cells, setCells] = React.useState([]);
 	const [prevCells, setPrevCells] = React.useState([]);
-	const [statuses, setStatuses] = React.useState({});
+	
+	
 	const [ready, setReady] = React.useState(false);
 	const [restarting, setRestarting] = React.useState(false);
 
 	useEffect(() => {
+		props.setPrevStatuses(props.statuses);
 		if (props.cells.length != cells.length) {
 			setPrevCells(props.cells);
 		} else {
 			setPrevCells(cells);
 		}
-		
+
 		setCells(props.cells);
 		setReady(false);
 		// setCells(props.cells);
-	}, [props.cells]);
+	}, [props.cells, props.statuses, props.prevStatuses, props.pyodide]);
 
 	function runCell(cell, index) {
 		// use pyodide to run the cell's source
@@ -47,9 +49,14 @@ export function Notebook(props) {
 		}
 
 		var id = cell.metadata.id;
-		var tempStatuses = statuses;
-		tempStatuses[id] = { status: "running", error: "", output: "" };
-		setStatuses(tempStatuses);
+		var tempStatuses = props.statuses;
+		tempStatuses[id] = {
+			status: "running",
+			error: "",
+			output: "",
+			source: cell.source.join(""),
+		};
+		props.setStatuses(tempStatuses);
 
 		var output = "";
 		var error = "";
@@ -62,23 +69,25 @@ export function Notebook(props) {
 				} else {
 					output += "\n" + newOutput;
 				}
-				var tempStatuses = statuses;
+				var tempStatuses = props.statuses;
 				tempStatuses[id] = {
 					status: "done",
 					error: tempStatuses[id].error,
 					output: output,
+					source: cell.source.join(""),
 				};
-				setStatuses(tempStatuses);
+				props.setStatuses(tempStatuses);
 			},
 		});
 		props.pyodide.setStderr((output) => {
-			var tempStatuses = statuses;
+			var tempStatuses = props.statuses;
 			tempStatuses[id] = {
 				status: "error",
 				error: output,
 				output: tempStatuses[id].output,
+				source: cell.source.join(""),
 			};
-			setStatuses(tempStatuses);
+			props.setStatuses(tempStatuses);
 		});
 
 		// for each line in source, run it
@@ -86,13 +95,14 @@ export function Notebook(props) {
 			props.pyodide.runPython(cell.source.join("") + `\nprint("")`);
 		} catch (e) {
 			console.log(e);
-			var tempStatuses = statuses;
+			var tempStatuses = props.statuses;
 			tempStatuses[id] = {
 				status: "error",
 				error: e + "",
 				output: tempStatuses[id].output,
+				source: cell.source.join(""),
 			};
-			setStatuses(tempStatuses);
+			props.setStatuses(tempStatuses);
 		}
 	}
 
@@ -111,14 +121,16 @@ export function Notebook(props) {
 	async function restartPyodide() {
 		await props.setPyodideVal();
 
-		// clear the output of all cells
-		var temp = cells;
-		for (var i = 0; i < temp.length; i++) {
-			temp[i].output = "";
-			temp[i].error = "";
-			temp[i].status = "";
-		}
-		setCells(temp);
+		// clear the output of all statuses
+		var tempStatuses = props.statuses;
+		Object.keys(tempStatuses).forEach((key) => {
+			tempStatuses[key] = {
+				status: "",
+				error: "",
+				output: "",
+				source: "",
+			};
+		});
 		setRestarting(false);
 	}
 
@@ -135,18 +147,19 @@ export function Notebook(props) {
 						var cell = cells[key];
 						var source = cell.source;
 
-						
 						// if source is different from prevCells source, reset the status
-						if (prevCells[key] != null) {
-							if (source.join("") != prevCells[key].source.join("")) {
-								console.log("source is different");
-								var tempStatuses = statuses;
+						if (props.prevStatuses[cell.metadata.id] != null) {
+							if (
+								props.prevStatuses[cell.metadata.id].source != cell.source.join("")
+							) {
+								var tempStatuses = props.statuses;
 								tempStatuses[cell.metadata.id] = {
 									status: "",
 									error: "",
 									output: "",
+									source: cell.source.join(""),
 								};
-								setStatuses(tempStatuses);
+								props.setStatuses(tempStatuses);
 							}
 						}
 
@@ -200,19 +213,20 @@ export function Notebook(props) {
 											}}
 										/>
 										<div className="status">
-											{statuses[cell.metadata.id] != null && statuses[cell.metadata.id].status != "" ? (
-												statuses[cell.metadata.id].status == "running" ||
+											{props.statuses[cell.metadata.id] != null &&
+											props.statuses[cell.metadata.id].status != "" ? (
+												props.statuses[cell.metadata.id].status == "running" ||
 												restarting ? (
 													<CircularProgress className="stat-circular" />
 												) : (
 													<FontAwesomeIcon
 														className={
-															statuses[cell.metadata.id].status == "error"
+															props.statuses[cell.metadata.id].status == "error"
 																? "stat red"
 																: "stat green"
 														}
 														icon={
-															statuses[cell.metadata.id].status == "error"
+															props.statuses[cell.metadata.id].status == "error"
 																? faX
 																: faCheck
 														}
@@ -244,21 +258,21 @@ export function Notebook(props) {
 										})} */}
 										</code>
 									</pre>
-									{statuses[cell.metadata.id] != null &&
-									statuses[cell.metadata.id].output != null &&
-									statuses[cell.metadata.id].output != "" ? (
+									{props.statuses[cell.metadata.id] != null &&
+									props.statuses[cell.metadata.id].output != null &&
+									props.statuses[cell.metadata.id].output != "" ? (
 										<div className="cell-output">
-											<p>{statuses[cell.metadata.id].output}</p>
+											<p>{props.statuses[cell.metadata.id].output}</p>
 										</div>
 									) : (
 										<></>
 									)}
-									{statuses[cell.metadata.id] != null &&
-									statuses[cell.metadata.id].status == "error" &&
-									statuses[cell.metadata.id].error != null &&
-									statuses[cell.metadata.id].error != "" ? (
+									{props.statuses[cell.metadata.id] != null &&
+									props.statuses[cell.metadata.id].status == "error" &&
+									props.statuses[cell.metadata.id].error != null &&
+									props.statuses[cell.metadata.id].error != "" ? (
 										<div className="cell-output error">
-											<p>{statuses[cell.metadata.id].error}</p>
+											<p>{props.statuses[cell.metadata.id].error}</p>
 										</div>
 									) : (
 										<></>
