@@ -853,18 +853,6 @@ function App() {
 							<h5>Notebook</h5>
 						</div>
 
-						<div
-							className={
-								"right-panel-header-option " +
-								(panel == "web" ? "selected" : "")
-							}
-							onClick={(e) => {
-								setPanel("web");
-							}}
-						>
-							<h5>Web</h5>
-						</div>
-
 						<div className="filler" />
 					</div>
 
@@ -893,20 +881,10 @@ function App() {
 						) : panel == "raw" ? (
 							<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
 						) : panel == "notebook" ? (
-							<Notebook cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} />
-						) : panel == "web" ? null : null // <Web iframeRef={iframeRef} />
+							<Notebook cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} setPyodideVal={setPyodideVal} />
+						) : null // <Web iframeRef={iframeRef} />
 					}
-					<div
-						className={
-							webSelected
-								? webPointer
-									? "web-container web-pointer"
-									: "web-container"
-								: "web-container web-hidden"
-						}
-					>
-						<Web iframeRef={iframeRef} />
-					</div>
+					
 				</div>
 			</div>
 		</ThemeProvider>

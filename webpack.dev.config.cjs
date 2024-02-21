@@ -55,10 +55,7 @@ function createCopy(pathW = "") {
 			new HtmlWebpackPlugin({
 				filename: "index.html",
 				template: path.resolve(__dirname, "./public/index.html"),
-			}),
-			new CopyWebpackPlugin({
-				patterns: [{ from: "docs/jupyter", to: "jupyter" }],
-			}),
+			})
 		],
 	};
 }
