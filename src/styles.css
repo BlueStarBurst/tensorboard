@@ -732,6 +732,16 @@ pre {
   color: red !important;
 }
 
+.notebook-python-options button {
+  padding: 0.5rem 1.5rem !important;
+  min-width: 0 !important;
+}
+
+.notebook-file-options button {
+  padding: 0.5rem !important;
+  min-width: 0 !important;
+}
+
 /* @media screen and (max-height: 768px) {
   .slider {
     width: 2rem;
