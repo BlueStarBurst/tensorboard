@@ -131,15 +131,29 @@ export function Notebook(props) {
 		}
 	}
 
-	function runAllCells() {
+	async function runAllCells() {
 		// use pyodide to run the cell's source
 		if (props.pyodide == null) {
 			return;
 		}
 
+		// set all statuses to running
 		for (var i = 0; i < cells.length; i++) {
 			var cell = cells[i];
-			runCell(cell, i);
+			var id = cell.metadata.id;
+			var tempStatuses = props.statuses;
+			tempStatuses[id] = {
+				status: "running",
+				error: "",
+				output: "",
+				source: cell.source.join(""),
+			};
+			props.setStatuses(tempStatuses);
+		}
+
+		for (var i = 0; i < cells.length; i++) {
+			var cell = cells[i];
+			await runCell(cell, i);
 		}
 	}
 
