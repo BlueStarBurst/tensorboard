@@ -552,6 +552,7 @@ function App() {
 	async function setPyodideVal() {
 		// get the pyodide module
 		const pyodide = await loadPyodide();
+		await pyodide.loadPackage("micropip");
 		console.log("PYODIDE", pyodide);
 		console.log("PYODIDE", pyodide.runPython("import sys\nsys.version\n"));
 		setPyodide(pyodide);

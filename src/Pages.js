@@ -23,8 +23,7 @@ import { Spinner } from "react-bootstrap";
 export function Notebook(props) {
 	const [cells, setCells] = React.useState([]);
 	const [prevCells, setPrevCells] = React.useState([]);
-	
-	
+
 	const [ready, setReady] = React.useState(false);
 	const [restarting, setRestarting] = React.useState(false);
 
@@ -41,7 +40,7 @@ export function Notebook(props) {
 		// setCells(props.cells);
 	}, [props.cells, props.statuses, props.prevStatuses, props.pyodide]);
 
-	function runCell(cell, index) {
+	async function runCell(cell, index) {
 		// use pyodide to run the cell's source
 		console.log(cell.source.join(""));
 		if (props.pyodide == null) {
@@ -57,9 +56,12 @@ export function Notebook(props) {
 			source: cell.source.join(""),
 		};
 		props.setStatuses(tempStatuses);
-
 		var output = "";
 		var error = "";
+		var src = cell.source.join("");
+
+		
+
 		props.pyodide.setStdout({
 			batched: (newOutput) => {
 				// remove the last newline character
@@ -89,6 +91,29 @@ export function Notebook(props) {
 			};
 			props.setStatuses(tempStatuses);
 		});
+
+		var isDownloading = false;
+		while (src.indexOf("%pip install") != -1) {
+			var pip = src.split("%pip install")[1];
+			pip = pip.split("\n")[0];
+			const micropip = props.pyodide.pyimport("micropip");
+			await micropip.install(pip);
+			src = src.replace("%pip install" + pip, "");
+			isDownloading = true;
+		}
+		console.log(src);
+
+		if (isDownloading && src == "") {
+			var tempStatuses = props.statuses;
+			tempStatuses[id] = {
+				status: "done",
+				error: "",
+				output: "",
+				source: cell.source.join(""),
+			};
+			props.setStatuses(tempStatuses);
+			return;
+		}
 
 		// for each line in source, run it
 		try {
@@ -150,7 +175,8 @@ export function Notebook(props) {
 						// if source is different from prevCells source, reset the status
 						if (props.prevStatuses[cell.metadata.id] != null) {
 							if (
-								props.prevStatuses[cell.metadata.id].source != cell.source.join("")
+								props.prevStatuses[cell.metadata.id].source !=
+								cell.source.join("")
 							) {
 								var tempStatuses = props.statuses;
 								tempStatuses[cell.metadata.id] = {
