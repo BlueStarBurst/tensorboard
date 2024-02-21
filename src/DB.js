@@ -11,11 +11,25 @@ export class DBManager {
 
 	constructor() {
 		// get from local storage if exists
-		this.db = JSON.parse(window.localStorage.getItem("tensorboardDB")) || {"elements": {}};
-		this.history =
-			JSON.parse(window.localStorage.getItem("tensorboardHistory")) || [JSON.stringify(this.db)];
+		this.db = JSON.parse(window.localStorage.getItem("tensorboardDB")) || {
+			elements: {},
+		};
+		this.history = JSON.parse(
+			window.localStorage.getItem("tensorboardHistory")
+		) || [JSON.stringify(this.db)];
 		this.version =
 			JSON.parse(window.localStorage.getItem("tensorboardVersion")) || "0";
+
+		this.historyIndex =
+			JSON.parse(window.localStorage.getItem("tensorboardHistoryIndex")) || 0;
+
+		if (
+			this.history.length > 0 &&
+			this.historyIndex < this.history.length &&
+			this.historyIndex > 0
+		) {
+			this.db = this.history[this.historyIndex] || this.db;
+		}
 
 		// if the version is different, clear the database
 		if (this.version !== version) {
@@ -29,8 +43,6 @@ export class DBManager {
 			this.save();
 		}
 
-		this.historyIndex =
-			JSON.parse(window.localStorage.getItem("tensorboardHistoryIndex")) || 0;
 		this.undoing = false;
 	}
 
