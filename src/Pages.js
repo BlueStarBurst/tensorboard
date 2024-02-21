@@ -56,21 +56,18 @@ export function Notebook(props) {
 			source: cell.source.join(""),
 		};
 		props.setStatuses(tempStatuses);
-		var output = "";
+		var output = [];
 		var error = "";
 		var src = cell.source.join("");
-
-		
 
 		props.pyodide.setStdout({
 			batched: (newOutput) => {
 				// remove the last newline character
 				// output = output.substring(0, output.length - 1);
-				if (output == "") {
-					output += newOutput;
-				} else {
-					output += "\n" + newOutput;
+				if (newOutput != "") {
+					output.push(newOutput);
 				}
+				console.log(output);
 				var tempStatuses = props.statuses;
 				tempStatuses[id] = {
 					status: "done",
@@ -107,8 +104,8 @@ export function Notebook(props) {
 			var tempStatuses = props.statuses;
 			tempStatuses[id] = {
 				status: "done",
-				error: "",
-				output: "",
+				error: tempStatuses[id].error,
+				output: tempStatuses[id].output,
 				source: cell.source.join(""),
 			};
 			props.setStatuses(tempStatuses);
@@ -244,7 +241,7 @@ export function Notebook(props) {
 							>
 								<div className="cell-left">
 									<p className="cell-index">
-										[{" " + (index + 1) + " "}]:
+										[{" " + (index + 1) + " "}]
 										<FontAwesomeIcon
 											className="play"
 											icon={faPlay}
@@ -300,9 +297,13 @@ export function Notebook(props) {
 									</pre>
 									{props.statuses[cell.metadata.id] != null &&
 									props.statuses[cell.metadata.id].output != null &&
-									props.statuses[cell.metadata.id].output != "" ? (
+									props.statuses[cell.metadata.id].output.length > 0 ? (
 										<div className="cell-output">
-											<p>{props.statuses[cell.metadata.id].output}</p>
+											{props.statuses[cell.metadata.id].output.map(
+												(line, i) => {
+													return <p>{line}</p>;
+												}
+											)}
 										</div>
 									) : (
 										<></>

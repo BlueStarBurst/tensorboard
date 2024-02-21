@@ -161,11 +161,11 @@ function App() {
 		var parentWidth = e.target.parentElement.clientWidth;
 		var parentHeight = e.target.parentElement.clientHeight;
 
-		w = (e.clientX / parentWidth) * 100;
+		w = ((e.clientX + 10) / parentWidth) * 100;
 		document.documentElement.style.setProperty("--pointer-events", "none");
 		document.documentElement.style.setProperty(
 			"--mouse-x",
-			(e.clientX / parentWidth) * 100 + "%"
+			((e.clientX + 10) / parentWidth) * 100 + "%"
 		);
 		document.documentElement.style.setProperty(
 			"--mouse-y",
@@ -173,7 +173,7 @@ function App() {
 		);
 		// setCanvasWidth(e.clientX);
 		// setCanvasHeight(canvasContainer.current.clientHeight);
-
+		document.documentElement.style.setProperty("--cursor", "w-resize");
 		refreshCanvasWidth();
 	}
 
