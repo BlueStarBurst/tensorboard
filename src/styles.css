@@ -166,7 +166,8 @@ h6 {
   flex-direction: row;
   justify-content: space-between;
   align-items: end;
-  justify-content: start; /* FUN TEST FUN */
+  justify-content: start;
+  /* FUN TEST FUN */
   padding: 1rem;
   transform: translateY(100%);
   transition: transform 0.5s ease-in-out;
@@ -177,10 +178,11 @@ h6 {
   0% {
     transform: translateY(100%);
   }
+
   100% {
     transform: translateY(0);
   }
-  
+
 }
 
 .active {
@@ -552,10 +554,10 @@ iframe {
   transition: opacity 0.5s ease-in-out;
   padding: 0.25rem 0.5rem;
   text-align: start;
-  
+
 }
 
-.cell-line:hover > .cell-left:not(:hover) .cell-id {
+.cell-line:hover>.cell-left:not(:hover) .cell-id {
   opacity: 1;
   transition: opacity 0.5s ease-in-out;
 }
@@ -737,6 +739,54 @@ pre {
   min-width: 0 !important;
 }
 
+.notebook-server-link {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-wrap: nowrap !important;
+}
+
+.notebook-server-link div {
+  /* padding: 0.5rem 1.5rem !important;
+  min-width: 0 !important; */
+  max-height: 2rem;
+  height: 2rem;
+  /* font-size: 50%; */
+  width: 75%;
+}
+
+.notebook-server-link div div {
+  /* padding: 0.5rem 1.5rem !important;
+  min-width: 0 !important; */
+  max-height: 2rem;
+  /* font-size: 50%; */
+  width: 100%;
+}
+
+.notebook-server-link button {
+  max-height: 2rem;
+  height: 2rem;
+  width: 25%;
+  max-width: 4rem;
+  min-width: 2rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+.notebook-server-link label {
+  margin-top: -0.75rem;
+}
+
+.css-axj3wf-MuiFormLabel-root-MuiInputLabel-root.Mui-focused {
+  margin-top: 0rem;
+}
+
+.css-axj3wf-MuiFormLabel-root-MuiInputLabel-root {
+  margin-top: 0rem !important;
+}
+
 .notebook-file-options button {
   padding: 0.5rem !important;
   min-width: 0 !important;
@@ -760,4 +810,3 @@ pre {
     background-color: rgba(0, 0, 0, 0.074);
   }
 } */
-

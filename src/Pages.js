@@ -1,5 +1,5 @@
-import { Button, CircularProgress } from "@mui/material";
-import React, { useEffect } from "react";
+import { Button, CircularProgress, FormGroup, TextField } from "@mui/material";
+import React, { useEffect, useState } from "react";
 
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
@@ -14,11 +14,14 @@ import {
 	faDownload,
 	faFloppyDisk,
 	faPlay,
+	faRefresh,
 	faSpinner,
 	faUpload,
 	faX,
 } from "@fortawesome/free-solid-svg-icons";
 import { Spinner } from "react-bootstrap";
+
+var queue = [];
 
 export function Notebook(props) {
 	const [cells, setCells] = React.useState([]);
@@ -28,6 +31,7 @@ export function Notebook(props) {
 	const [restarting, setRestarting] = React.useState(false);
 
 	useEffect(() => {
+		console.log("notebook useEffect");
 		props.setPrevStatuses(props.statuses);
 		if (props.cells.length != cells.length) {
 			setPrevCells(props.cells);
@@ -42,10 +46,30 @@ export function Notebook(props) {
 
 	async function runCell(cell, index) {
 		// use pyodide to run the cell's source
+		if (props.ws && props.ws.readyState == 1) {
+			var id = cell.metadata.id;
+			var tempStatuses = props.statuses;
+			tempStatuses[id] = {
+				status: "running",
+				error: "",
+				output: "",
+				source: cell.source.join(""),
+			};
+			props.setStatuses(tempStatuses);
+			props.ws.send(JSON.stringify({ type: "runCell", data: index }));
+			return;
+		}
+
 		console.log(cell.source.join(""));
 		if (props.pyodide == null) {
 			return;
 		}
+
+		// add to the queue
+		// queue.push(cell);
+		// if (queue[0].source.join("") != cell.source.join("")) {
+		// 	return;
+		// }
 
 		var id = cell.metadata.id;
 		var tempStatuses = props.statuses;
@@ -64,8 +88,10 @@ export function Notebook(props) {
 			batched: (newOutput) => {
 				// remove the last newline character
 				// output = output.substring(0, output.length - 1);
-				if (newOutput != "") {
+				if (newOutput != "<end>") {
 					output.push(newOutput);
+				} else {
+					console.log("<end> found");
 				}
 				console.log(output);
 				var tempStatuses = props.statuses;
@@ -76,6 +102,12 @@ export function Notebook(props) {
 					source: cell.source.join(""),
 				};
 				props.setStatuses(tempStatuses);
+				// cell.output = output;
+				// var tempCells = cells;
+				// tempCells[index] = cell;
+				// setCells(tempCells);
+				// queue.shift();
+				// if (queue.length > 0) runCell(queue[0]);
 			},
 		});
 		props.pyodide.setStderr((output) => {
@@ -101,6 +133,7 @@ export function Notebook(props) {
 		console.log(src);
 
 		if (isDownloading && src == "") {
+			console.log("downloaded");
 			var tempStatuses = props.statuses;
 			tempStatuses[id] = {
 				status: "done",
@@ -114,10 +147,11 @@ export function Notebook(props) {
 
 		// for each line in source, run it
 		try {
-			props.pyodide.runPython(cell.source.join("") + `\nprint("")`);
+			props.pyodide.runPython(cell.source.join("") + `\nprint("<end>")`);
 		} catch (e) {
 			console.log(e);
 			var tempStatuses = props.statuses;
+			// queue = [];
 			tempStatuses[id] = {
 				status: "error",
 				error: e + "",
@@ -224,6 +258,7 @@ export function Notebook(props) {
 	}, [cells]);
 
 	const [innerHTMLs, setInnerHTMLs] = React.useState([]);
+	const [url, setUrl] = useState("ws://localhost:3000");
 
 	return (
 		<div className="notebook-container">
@@ -301,7 +336,7 @@ export function Notebook(props) {
 										<div className="cell-output">
 											{props.statuses[cell.metadata.id].output.map(
 												(line, i) => {
-													return <p>{line}</p>;
+													return <p key={line}>{line}</p>;
 												}
 											)}
 										</div>
@@ -347,6 +382,39 @@ export function Notebook(props) {
 						<FontAwesomeIcon icon={faPlay} />
 					</Button>
 				</div>
+
+				<FormGroup row className="notebook-server-link">
+					<TextField
+						autoComplete="off"
+						autoCorrect="off"
+						id="outlined-basic"
+						label={"Jupyter Server"}
+						variant="outlined"
+						defaultValue={url}
+						value={url}
+						disabled={props.ws && props.ws.readyState == 1}
+						onChange={(e) => {
+							setUrl(e.target.value);
+						}}
+					/>
+					<Button
+						variant="contained"
+						disabled={props.ws && props.ws.readyState != 1}
+						color={props.ws && props.ws.readyState == 1 ? "error" : "primary"}
+						onClick={(_) => {
+							if (props.ws && props.ws.readyState == 1) {
+								props.disconnectFromWS();
+							} else {
+								props.connectToWS(url);
+							}
+						}}
+					>
+						<FontAwesomeIcon
+							icon={props.ws && props.ws.readyState == 1 ? faX : faRefresh}
+						/>
+					</Button>
+				</FormGroup>
+
 				<div className="notebook-file-options">
 					<Button
 						variant="contained"

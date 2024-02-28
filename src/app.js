@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Col, Row } from "react-bootstrap";
 import ReactDOM from "react-dom";
 
@@ -496,6 +496,7 @@ function App() {
 	const [end, setEnd] = React.useState(
 		`,"metadata": {"kernelspec": {"display_name": "Python 3","language": "python","name": "python3"},"language_info": {"codemirror_mode": {"name": "ipython","version": 3},"file_extension": ".py","mimetype": "text/x-python","name": "python","nbconvert_exporter": "python","pygments_lexer": "ipython3","version": "3.10.13"},"colab": {"provenance": []}},"nbformat": 4,"nbformat_minor": 0}`
 	);
+	const [oldNote, setOldNote] = React.useState(``);
 
 	const [webSelected, setWebSelected] = React.useState(false);
 
@@ -706,6 +707,20 @@ function App() {
 		// 	}
 
 		setCells(tcells);
+
+		if (ws && ws.readyState == 1) {
+			const newNote = start + JSON.stringify(tcells, null, 4) + end;
+			console.log("NOTE: " + newNote + " " + oldNote);
+			if (newNote != oldNote) {
+				ws.send(
+					JSON.stringify({
+						type: "setNotebook",
+						data: newNote,
+					})
+				);
+			}
+			setOldNote(newNote);
+		}
 	}
 
 	const [disableOverlay, setDisableOverlay] = React.useState(false);
@@ -741,6 +756,64 @@ function App() {
 
 	const [statuses, setStatuses] = React.useState({});
 	const [prevStatuses, setPrevStatuses] = React.useState({});
+
+	useEffect(() => {
+		console.log("REFRESHING STATUS");
+	}, [statuses]);
+
+	function setStatusOutput(data) {
+		console.log(data);
+		const id = data.metadata.id;
+		var tempStatuses = statuses;
+		var outputs = data.outputs.map((obj, i) => {
+			return obj.text;
+		});
+		tempStatuses[id] = {
+			status: "done",
+			error: tempStatuses[id].error,
+			output: outputs,
+			source: tempStatuses[id].source,
+		};
+		setStatuses(tempStatuses);
+	}
+
+	const [ws, setWs] = useState(null);
+	function connectToWS(url) {
+		console.log("Connecting to " + url);
+		if (ws != null) {
+			ws.close();
+		}
+
+		const socket = new WebSocket(url);
+
+		// Connection opened
+		socket.addEventListener("open", (event) => {
+			socket.send(JSON.stringify({ type: "client", data: "" }));
+		});
+
+		// Listen for messages
+		socket.addEventListener("message", (event) => {
+			console.log("Message from server ", event.data);
+			const msg = JSON.parse(event.data);
+			switch (msg.type) {
+				case "setOutput":
+					setStatusOutput(msg.data);
+					break;
+				default:
+					console.log("Unknown message");
+					break;
+			}
+		});
+
+		setWs(socket);
+	}
+
+	function disconnectFromWS() {
+		if (ws != null) {
+			ws.close();
+		}
+		setWs(null);
+	}
 
 	return (
 		<ThemeProvider theme={darkTheme}>
@@ -885,10 +958,23 @@ function App() {
 						) : panel == "raw" ? (
 							<Raw value={start + JSON.stringify(cells, null, 4) + end}></Raw>
 						) : panel == "notebook" ? (
-							<Notebook statuses={statuses} setStatuses={setStatuses} prevStatuses={prevStatuses} setPrevStatuses={setPrevStatuses} cells={cells} start={start} end={end} flop={flop} pyodide={pyodide} setPyodideVal={setPyodideVal} />
+							<Notebook
+								statuses={statuses}
+								setStatuses={setStatuses}
+								prevStatuses={prevStatuses}
+								setPrevStatuses={setPrevStatuses}
+								connectToWS={connectToWS}
+								disconnectFromWS={disconnectFromWS}
+								ws={ws}
+								cells={cells}
+								start={start}
+								end={end}
+								flop={flop}
+								pyodide={pyodide}
+								setPyodideVal={setPyodideVal}
+							/>
 						) : null // <Web iframeRef={iframeRef} />
 					}
-					
 				</div>
 			</div>
 		</ThemeProvider>
