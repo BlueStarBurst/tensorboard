@@ -1101,3 +1101,4 @@ class Component {
 
 // render the app component
 ReactDOM.render(<App />, document.getElementById("root"));
+
