@@ -227,6 +227,261 @@ export const components = {
 		},
 		output: "value",
 	},
+
+	Value2: {
+		name: "Value2",
+		description: "Create variables of different types",
+		color: "#080CE6",
+		numInputs: 1,
+		numOutputs: -1,
+		data: {
+			Type: {
+				type: "radio",
+				options: ["Integer", "String", "Float", "Boolean", "Other"],
+				value: "Integer",
+				hidden: false,
+			},
+			Integer: {
+				type: "slider",
+				value: 0,
+				min: -100,
+				max: 100,
+				step: 1,
+				hidden: false,
+			},
+			String: {
+				type: "text",
+				value: "",
+				hidden: true,
+			},
+			Float: {
+				type: "slider",
+				value: 0.0,
+				min: -100,
+				max: 100,
+				step: 0.01,
+				hidden: true,
+			},
+			Boolean: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Other: {
+				type: "text",
+				value: "",
+				readonly: true,
+				hidden: true,
+				trueValue: "",
+			},
+		},
+		transpile: function () {
+			// if this has an input, return the first input
+			if (Object.keys(this.inputs).length > 0) {
+				this.data.Type.value = "Other";
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = false;
+				this.data.Other.value =
+					this.inputs[Object.keys(this.inputs)[0]].getOutput();
+				this.data.Other.trueValue = this.inputs[Object.keys(this.inputs)[0]].getValue ? this.inputs[Object.keys(this.inputs)[0]].getValue() : this.inputs[Object.keys(this.inputs)[0]].getOutput();
+				return `${this.getOutput()} = ${this.inputs[
+					Object.keys(this.inputs)[0]
+				].getOutput()}`;
+			}
+
+			if (this.data.Type.value == "Integer") {
+				return `${this.getOutput()} = ${this.data.Integer.value}`;
+			} else if (this.data.Type.value == "String") {
+				return `${this.getOutput()} = "${this.data.String.value}"`;
+			} else if (this.data.Type.value == "Float") {
+				return `${this.getOutput()} = ${this.data.Float.value}`;
+			} else if (this.data.Type.value == "Boolean") {
+				return `${this.getOutput()} = ${this.data.Boolean.value}`;
+			} else {
+				return `${this.getOutput()} = ${this.data.Other.value}`;
+			}
+		},
+		reload: function () {
+			if (this.data.Type.value == "Integer") {
+				this.data.Integer.hidden = false;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
+			} else if (this.data.Type.value == "String") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = false;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
+			} else if (this.data.Type.value == "Float") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = false;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = true;
+			} else if (this.data.Type.value == "Boolean") {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = false;
+				this.data.Other.hidden = true;
+			} else {
+				this.data.Integer.hidden = true;
+				this.data.String.hidden = true;
+				this.data.Float.hidden = true;
+				this.data.Boolean.hidden = true;
+				this.data.Other.hidden = false;
+			}
+		},
+		outputs: {},
+		inputs: {},
+		getOutput: function () {
+			return this.data.Type.value.toLowerCase() + this.id;
+		},
+		getValue: function () {
+			if (this.data.Type.value == "Integer") {
+				return this.data.Integer.value;
+			} else if (this.data.Type.value == "String") {
+				return this.data.String.value;
+			} else if (this.data.Type.value == "Float") {
+				return this.data.Float.value;
+			} else if (this.data.Type.value == "Boolean") {
+				return this.data.Boolean.value;
+			} else {
+				return this.data.Other.trueValue;
+			}
+		},
+		output: "value",
+	},
+
+	Operator: {
+		name: "Operator",
+		description: "Create operator that can operate values",
+		color: "#080CE6",
+		numInputs: 1,
+		numOutputs: -1,
+		data: {
+			Type: {
+				type: "radio",
+				options: ["Add", "Subtract", "Multiply", "Divide", "Exponent", "Root"],
+				value: "Integer",
+				hidden: false,
+			},
+			Add: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Subtract: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Multiply: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Divide: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Exponent: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Root: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+		},
+		transpile: function () {
+			if (Object.keys(this.inputs).length < 2){
+				return this.getOutput() + " = null";
+			}
+			if (this.data.Type.value == "Add"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " + " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
+			}
+			if (this.data.Type.value == "Subtract"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " - " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
+			}
+			if (this.data.Type.value == "Multiply"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " * " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
+			}
+			if (this.data.Type.value == "Divide"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " / " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
+			}
+			if (this.data.Type.value == "Exponent"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " ** " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
+			}
+			if (this.data.Type.value == "Root"){
+				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " **(1/" + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
+			}
+			return "";
+		},
+		reload: function () {
+			// if (this.data.Type.value == "Integer") {
+			// 	this.data.Integer.hidden = false;
+			// 	this.data.String.hidden = true;
+			// 	this.data.Float.hidden = true;
+			// 	this.data.Boolean.hidden = true;
+			// 	this.data.Other.hidden = true;
+			// } else if (this.data.Type.value == "String") {
+			// 	this.data.Integer.hidden = true;
+			// 	this.data.String.hidden = false;
+			// 	this.data.Float.hidden = true;
+			// 	this.data.Boolean.hidden = true;
+			// 	this.data.Other.hidden = true;
+			// } else if (this.data.Type.value == "Float") {
+			// 	this.data.Integer.hidden = true;
+			// 	this.data.String.hidden = true;
+			// 	this.data.Float.hidden = false;
+			// 	this.data.Boolean.hidden = true;
+			// 	this.data.Other.hidden = true;
+			// } else if (this.data.Type.value == "Boolean") {
+			// 	this.data.Integer.hidden = true;
+			// 	this.data.String.hidden = true;
+			// 	this.data.Float.hidden = true;
+			// 	this.data.Boolean.hidden = false;
+			// 	this.data.Other.hidden = true;
+			// } else {
+			// 	this.data.Integer.hidden = true;
+			// 	this.data.String.hidden = true;
+			// 	this.data.Float.hidden = true;
+			// 	this.data.Boolean.hidden = true;
+			// 	this.data.Other.hidden = false;
+			// }
+		},
+		outputs: {},
+		inputs: {},
+		getOutput: function () {
+			// return this.data.Type.value.toLowerCase() + this.id;
+			return "Operator" + this.id;
+		},
+		getValue: function () {
+			// if (this.data.Type.value == "Integer") {
+			// 	return this.data.Integer.value;
+			// } else if (this.data.Type.value == "String") {
+			// 	return this.data.String.value;
+			// } else if (this.data.Type.value == "Float") {
+			// 	return this.data.Float.value;
+			// } else if (this.data.Type.value == "Boolean") {
+			// 	return this.data.Boolean.value;
+			// } else {
+			// 	return this.data.Other.trueValue;
+			// }
+			return null;
+		},
+		output: "value",
+	},
+
 	Library: {
 		name: "Library",
 		description: "Install a library from pip",
@@ -346,6 +601,111 @@ export const components = {
 
 			// return an array of the outputs
 			return `${this.getOutput()} = [${outputs.join(", ")}]`;
+		},
+		reload: function () {
+			// loop through the inputs and if they are not in the sort, add them
+			if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+				var sorts = [];
+				var keys = Object.keys(this.inputs);
+				// push the new inputs to the sort
+				sorts = this.data.Sort.value;
+				for (var i = 0; i < keys.length; i++) {
+					if (
+						sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+							.length == 0
+					) {
+						sorts.push({
+							id: this.inputs[keys[i]].getOutput(),
+							value: this.inputs[keys[i]].getValue != null ? this.inputs[keys[i]].getValue() : this.inputs[keys[i]].getOutput(),
+							realId: keys[i],
+						});
+					}
+				}
+				this.data.Sort.value = sorts;
+			} else if (
+				Object.keys(this.inputs).length < this.data.Sort.value.length
+			) {
+				// remove the inputs that are not in the sort
+
+				var temp = [];
+				var keys = Object.keys(this.inputs);
+				// remove the inputs that are not in the sort
+
+				for (var i = 0; i < this.data.Sort.value.length; i++) {
+					if (
+						keys.filter(
+							(obj) =>
+								this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+						).length > 0
+					) {
+						temp.push(this.data.Sort.value[i]);
+					}
+				}
+				this.data.Sort.value = temp;
+			}
+
+			for (var i = 0; i < this.data.Sort.value.length; i++) {
+				if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getValue();
+				} else {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
+				}
+				this.data.Sort.value[i].id =
+					this.inputs[this.data.Sort.value[i].realId].getOutput();
+			}
+
+			if (this.data.Sort.value.length == 0) {
+				// hide the Sort
+				this.data.Sort.hidden = true;
+			} else {
+				this.data.Sort.hidden = false;
+			}
+		},
+		getOutput: function () {
+			return "array" + this.id;
+		},
+		getValue: function () {
+			return this.data.Data.value;
+		},
+		inputs: {},
+		outputs: {},
+	},
+	Vector: {
+		name: "Vector",
+		color: "#0c7fc4",
+		numInputs: -1,
+		numOutputs: 1,
+		description: "Use Values as inputs to create a vector of values",
+		data: {
+			Sort: {
+				type: "sort",
+				value: [],
+				hidden: false,
+			},
+			Data: {
+				type: "text",
+				value: "text",
+				readonly: true,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			// get the outputs of the inputs
+			this.reload();
+
+			var vals = [];
+			var outputs = this.data.Sort.value.map((obj) => {
+				vals.push(obj.value);
+				return obj.id;
+			});
+			// console.log(outputs);
+
+			this.data.Data.value = `[${vals.join(", ")}]`;
+
+			// return an array of the outputs
+			return `${this.getOutput()} = np.array([${outputs.join(", ")}])`;
 		},
 		reload: function () {
 			// loop through the inputs and if they are not in the sort, add them
