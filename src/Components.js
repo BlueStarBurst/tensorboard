@@ -228,146 +228,16 @@ export const components = {
 		output: "value",
 	},
 
-	Value2: {
-		name: "Value2",
-		description: "Create variables of different types",
-		color: "#080CE6",
-		numInputs: 1,
-		numOutputs: -1,
-		data: {
-			Type: {
-				type: "radio",
-				options: ["Integer", "String", "Float", "Boolean", "Other"],
-				value: "Integer",
-				hidden: false,
-			},
-			Integer: {
-				type: "slider",
-				value: 0,
-				min: -100,
-				max: 100,
-				step: 1,
-				hidden: false,
-			},
-			String: {
-				type: "text",
-				value: "",
-				hidden: true,
-			},
-			Float: {
-				type: "slider",
-				value: 0.0,
-				min: -100,
-				max: 100,
-				step: 0.01,
-				hidden: true,
-			},
-			Boolean: {
-				type: "checkbox",
-				value: "False",
-				hidden: true,
-			},
-			Other: {
-				type: "text",
-				value: "",
-				readonly: true,
-				hidden: true,
-				trueValue: "",
-			},
-		},
-		transpile: function () {
-			// if this has an input, return the first input
-			if (Object.keys(this.inputs).length > 0) {
-				this.data.Type.value = "Other";
-				this.data.Integer.hidden = true;
-				this.data.String.hidden = true;
-				this.data.Float.hidden = true;
-				this.data.Boolean.hidden = true;
-				this.data.Other.hidden = false;
-				this.data.Other.value =
-					this.inputs[Object.keys(this.inputs)[0]].getOutput();
-				this.data.Other.trueValue = this.inputs[Object.keys(this.inputs)[0]].getValue ? this.inputs[Object.keys(this.inputs)[0]].getValue() : this.inputs[Object.keys(this.inputs)[0]].getOutput();
-				return `${this.getOutput()} = ${this.inputs[
-					Object.keys(this.inputs)[0]
-				].getOutput()}`;
-			}
-
-			if (this.data.Type.value == "Integer") {
-				return `${this.getOutput()} = ${this.data.Integer.value}`;
-			} else if (this.data.Type.value == "String") {
-				return `${this.getOutput()} = "${this.data.String.value}"`;
-			} else if (this.data.Type.value == "Float") {
-				return `${this.getOutput()} = ${this.data.Float.value}`;
-			} else if (this.data.Type.value == "Boolean") {
-				return `${this.getOutput()} = ${this.data.Boolean.value}`;
-			} else {
-				return `${this.getOutput()} = ${this.data.Other.value}`;
-			}
-		},
-		reload: function () {
-			if (this.data.Type.value == "Integer") {
-				this.data.Integer.hidden = false;
-				this.data.String.hidden = true;
-				this.data.Float.hidden = true;
-				this.data.Boolean.hidden = true;
-				this.data.Other.hidden = true;
-			} else if (this.data.Type.value == "String") {
-				this.data.Integer.hidden = true;
-				this.data.String.hidden = false;
-				this.data.Float.hidden = true;
-				this.data.Boolean.hidden = true;
-				this.data.Other.hidden = true;
-			} else if (this.data.Type.value == "Float") {
-				this.data.Integer.hidden = true;
-				this.data.String.hidden = true;
-				this.data.Float.hidden = false;
-				this.data.Boolean.hidden = true;
-				this.data.Other.hidden = true;
-			} else if (this.data.Type.value == "Boolean") {
-				this.data.Integer.hidden = true;
-				this.data.String.hidden = true;
-				this.data.Float.hidden = true;
-				this.data.Boolean.hidden = false;
-				this.data.Other.hidden = true;
-			} else {
-				this.data.Integer.hidden = true;
-				this.data.String.hidden = true;
-				this.data.Float.hidden = true;
-				this.data.Boolean.hidden = true;
-				this.data.Other.hidden = false;
-			}
-		},
-		outputs: {},
-		inputs: {},
-		getOutput: function () {
-			return this.data.Type.value.toLowerCase() + this.id;
-		},
-		getValue: function () {
-			if (this.data.Type.value == "Integer") {
-				return this.data.Integer.value;
-			} else if (this.data.Type.value == "String") {
-				return this.data.String.value;
-			} else if (this.data.Type.value == "Float") {
-				return this.data.Float.value;
-			} else if (this.data.Type.value == "Boolean") {
-				return this.data.Boolean.value;
-			} else {
-				return this.data.Other.trueValue;
-			}
-		},
-		output: "value",
-	},
-
 	Operator: {
 		name: "Operator",
-		description: "Create operator that can operate values",
+		description: "Create operator that can operate value(s)",
 		color: "#080CE6",
 		numInputs: 1,
 		numOutputs: -1,
 		data: {
 			Type: {
 				type: "radio",
-				options: ["Add", "Subtract", "Multiply", "Divide", "Exponent", "Root"],
+				options: ["Add", "Subtract", "Multiply", "Divide", "Exponent", "Root", "Logarithm", "Sine", "Cosine", "Tangent", "Secant", "Cosecant", "Cotangent", "Factorial"],
 				value: "Integer",
 				hidden: false,
 			},
@@ -401,11 +271,49 @@ export const components = {
 				value: "False",
 				hidden: true,
 			},
+			Logarithm: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Sine: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Cosine: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Tangent: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Secant: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Cosecant: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Cotangent: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
+			Factorial: {
+				type: "checkbox",
+				value: "False",
+				hidden: true,
+			},
 		},
 		transpile: function () {
-			if (Object.keys(this.inputs).length < 2){
-				return this.getOutput() + " = null";
-			}
+			if (Object.keys(this.inputs).length == 2){
 			if (this.data.Type.value == "Add"){
 				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " + " + this.inputs[Object.keys(this.inputs)[1]].getOutput();
 			}
@@ -424,59 +332,86 @@ export const components = {
 			if (this.data.Type.value == "Root"){
 				return this.getOutput() + " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " **(1/" + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
 			}
+			if (this.data.Type.value == "Logarithm"){
+				return this.getOutput() + " = math.log(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
+			}
+		}
+
+			if (this.data.Type.value == "Sine"){
+				return this.getOutput() + " = math.sin(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Cosine"){
+				return this.getOutput() + " = math.cos(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Tangent"){
+				return this.getOutput() + " = math.tan(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Secant"){
+				return this.getOutput() + " = 1/(math.cos(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + "))";
+			}
+			if (this.data.Type.value == "Cosecant"){
+				return this.getOutput() + " = 1/(math.sin(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + "))";
+			}
+			if (this.data.Type.value == "Cotangent"){
+				return this.getOutput() + " = 1/(math.tan(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + "))";
+			}
+			if (this.data.Type.value == "Factorial"){
+				return this.getOutput() + " = math.factorial(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")";
+			}
+
 			return "";
 		},
 		reload: function () {
-			// if (this.data.Type.value == "Integer") {
-			// 	this.data.Integer.hidden = false;
-			// 	this.data.String.hidden = true;
-			// 	this.data.Float.hidden = true;
-			// 	this.data.Boolean.hidden = true;
-			// 	this.data.Other.hidden = true;
-			// } else if (this.data.Type.value == "String") {
-			// 	this.data.Integer.hidden = true;
-			// 	this.data.String.hidden = false;
-			// 	this.data.Float.hidden = true;
-			// 	this.data.Boolean.hidden = true;
-			// 	this.data.Other.hidden = true;
-			// } else if (this.data.Type.value == "Float") {
-			// 	this.data.Integer.hidden = true;
-			// 	this.data.String.hidden = true;
-			// 	this.data.Float.hidden = false;
-			// 	this.data.Boolean.hidden = true;
-			// 	this.data.Other.hidden = true;
-			// } else if (this.data.Type.value == "Boolean") {
-			// 	this.data.Integer.hidden = true;
-			// 	this.data.String.hidden = true;
-			// 	this.data.Float.hidden = true;
-			// 	this.data.Boolean.hidden = false;
-			// 	this.data.Other.hidden = true;
-			// } else {
-			// 	this.data.Integer.hidden = true;
-			// 	this.data.String.hidden = true;
-			// 	this.data.Float.hidden = true;
-			// 	this.data.Boolean.hidden = true;
-			// 	this.data.Other.hidden = false;
-			// }
 		},
 		outputs: {},
 		inputs: {},
 		getOutput: function () {
-			// return this.data.Type.value.toLowerCase() + this.id;
 			return "Operator" + this.id;
 		},
 		getValue: function () {
-			// if (this.data.Type.value == "Integer") {
-			// 	return this.data.Integer.value;
-			// } else if (this.data.Type.value == "String") {
-			// 	return this.data.String.value;
-			// } else if (this.data.Type.value == "Float") {
-			// 	return this.data.Float.value;
-			// } else if (this.data.Type.value == "Boolean") {
-			// 	return this.data.Boolean.value;
-			// } else {
-			// 	return this.data.Other.trueValue;
-			// }
+			return null;
+		},
+		output: "value",
+	},
+
+	VectorOperator: {
+		name: "Vector Operator",
+		description: "Create vector operator that can operate value(s)",
+		color: "#080CE6",
+		numInputs: 1,
+		numOutputs: -1,
+		data: {
+			Type: {
+				type: "radio",
+				options: ["Dot Product", "Cross Product", "Magnitude", "Outer Product"],
+				value: "Integer",
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			if (this.data.Type.value == "Dot Product"){
+				return this.getOutput() + " = np.dot(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Cross Product"){
+				return this.getOutput() + " = np.cross(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Magnitude"){
+				return this.getOutput() + " = np.linalg.norm(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")";
+			}
+			if (this.data.Type.value == "Outer Product"){
+				return this.getOutput() + " = np.outer(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")";
+			}
+
+			return "";
+		},
+		reload: function () {
+		},
+		outputs: {},
+		inputs: {},
+		getOutput: function () {
+			return "VectorOperator" + this.id;
+		},
+		getValue: function () {
 			return null;
 		},
 		output: "value",
@@ -678,6 +613,112 @@ export const components = {
 		numInputs: -1,
 		numOutputs: 1,
 		description: "Use Values as inputs to create a vector of values",
+		data: {
+			Sort: {
+				type: "sort",
+				value: [],
+				hidden: false,
+			},
+			Data: {
+				type: "text",
+				value: "text",
+				readonly: true,
+				hidden: false,
+			},
+		},
+		transpile: function () {
+			// get the outputs of the inputs
+			this.reload();
+
+			var vals = [];
+			var outputs = this.data.Sort.value.map((obj) => {
+				vals.push(obj.value);
+				return obj.id;
+			});
+			// console.log(outputs);
+
+			this.data.Data.value = `[${vals.join(", ")}]`;
+
+			// return an array of the outputs
+			return `${this.getOutput()} = np.array([${outputs.join(", ")}])`;
+		},
+		reload: function () {
+			// loop through the inputs and if they are not in the sort, add them
+			if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+				var sorts = [];
+				var keys = Object.keys(this.inputs);
+				// push the new inputs to the sort
+				sorts = this.data.Sort.value;
+				for (var i = 0; i < keys.length; i++) {
+					if (
+						sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+							.length == 0
+					) {
+						sorts.push({
+							id: this.inputs[keys[i]].getOutput(),
+							value: this.inputs[keys[i]].getValue != null ? this.inputs[keys[i]].getValue() : this.inputs[keys[i]].getOutput(),
+							realId: keys[i],
+						});
+					}
+				}
+				this.data.Sort.value = sorts;
+			} else if (
+				Object.keys(this.inputs).length < this.data.Sort.value.length
+			) {
+				// remove the inputs that are not in the sort
+
+				var temp = [];
+				var keys = Object.keys(this.inputs);
+				// remove the inputs that are not in the sort
+
+				for (var i = 0; i < this.data.Sort.value.length; i++) {
+					if (
+						keys.filter(
+							(obj) =>
+								this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+						).length > 0
+					) {
+						temp.push(this.data.Sort.value[i]);
+					}
+				}
+				this.data.Sort.value = temp;
+			}
+
+			for (var i = 0; i < this.data.Sort.value.length; i++) {
+				if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getValue();
+				} else {
+					this.data.Sort.value[i].value =
+						this.inputs[this.data.Sort.value[i].realId].getOutput();
+				}
+				this.data.Sort.value[i].id =
+					this.inputs[this.data.Sort.value[i].realId].getOutput();
+			}
+
+			if (this.data.Sort.value.length == 0) {
+				// hide the Sort
+				this.data.Sort.hidden = true;
+			} else {
+				this.data.Sort.hidden = false;
+			}
+		},
+		getOutput: function () {
+			return "array" + this.id;
+		},
+		getValue: function () {
+			return this.data.Data.value;
+		},
+		inputs: {},
+		outputs: {},
+	},
+
+	Matrix: {
+		name: "Matrix",
+		color: "#0c7fc4",
+		numInputs: -1,
+		numOutputs: 1,
+		description: "Use Values as inputs to create a matrix of values",
 		data: {
 			Sort: {
 				type: "sort",
