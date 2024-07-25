@@ -968,6 +968,8 @@ export const components = {
           "Einstein Summation",
           "Gradient",
           "Orthonormal Basis",
+          "Solve for Ax = B",
+          "Subspace Angle",
         ],
         value: "Integer",
         hidden: false,
@@ -1029,6 +1031,26 @@ export const components = {
           return (
             this.getOutput() +
             ' = np.einsum("mk,kn", ' +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Solve for Ax = B") {
+          return (
+            this.getOutput() +
+            " = scipy.linalg.solve(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Subspace Angle") {
+          return (
+            this.getOutput() +
+            " = scipy.linalg.subspace_angles(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             " , " +
             this.inputs[Object.keys(this.inputs)[1]].getOutput() +
