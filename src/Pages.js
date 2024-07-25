@@ -127,7 +127,9 @@ export function Notebook(props) {
 			pip = pip.split("\n")[0];
 			const micropip = props.pyodide.pyimport("micropip");
 			await micropip.install(pip);
+			src = src.replace("%pip install" + pip + "\n", "");
 			src = src.replace("%pip install" + pip, "");
+			console.log("downloading " + pip, src);
 			isDownloading = true;
 		}
 		console.log(src);
@@ -147,7 +149,7 @@ export function Notebook(props) {
 
 		// for each line in source, run it
 		try {
-			props.pyodide.runPython(cell.source.join("") + `\nprint("<end>")`);
+			props.pyodide.runPython(src + `\nprint("<end>")`);
 		} catch (e) {
 			console.log(e);
 			var tempStatuses = props.statuses;
