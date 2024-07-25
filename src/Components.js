@@ -667,21 +667,22 @@ export const components = {
     },
     transpile: function () {
       if (Object.keys(this.inputs).length > 1) {
+        if (this.data.Type.value == "Value for x") {
+          return (
+            this.getOutput() +
+            " = np.polyval(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ", " +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+      } else if (Object.keys(this.inputs).length == 1) {
         if (this.data.Type.value == "Polynomial") {
           return (
             this.getOutput() +
             " = np.poly1d(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
-            ")"
-          );
-        }
-        if (this.data.Type.value == "Value for x") {
-          return (
-            this.getOutput() +
-            " = np.polyval(" +
-            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
-            ", " +
-            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
             ")"
           );
         }
@@ -746,16 +747,23 @@ export const components = {
           "Dot Product",
           "Cross Product",
           "Magnitude",
+          "Unit Vector",
           "Outer Product",
           "Kronecker Product",
           "Distance",
+          "Angle Between",
+          "Projection",
+          "Other Projection",
+          "Parallelogram Area",
+          "Parallelopiped Volume",
+          "Einstein Summation",
         ],
         value: "Integer",
         hidden: false,
       },
     },
     transpile: function () {
-      if (Object.keys(this.inputs).length > 1) {
+      if (Object.keys(this.inputs).length == 2) {
         if (this.data.Type.value == "Dot Product") {
           return (
             this.getOutput() +
@@ -773,14 +781,6 @@ export const components = {
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             " , " +
             this.inputs[Object.keys(this.inputs)[1]].getOutput() +
-            ")"
-          );
-        }
-        if (this.data.Type.value == "Magnitude") {
-          return (
-            this.getOutput() +
-            " = np.linalg.norm(" +
-            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             ")"
           );
         }
@@ -811,6 +811,93 @@ export const components = {
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             " - " +
             this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Angle Between") {
+          return (
+            this.getOutput() +
+            " = np.arccos(np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") / (np.linalg.norm(" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ") * np.linalg.norm(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")))"
+          );
+        }
+        if (this.data.Type.value == "Projection") {
+          return (
+            this.getOutput() +
+            " = (np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") / np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")) * (" + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+          );
+        }
+        if (this.data.Type.value == "Other Projection") {
+          return (
+            this.getOutput() +
+            " = (np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ") / np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")) * (" + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")"
+          );
+        }
+        if (this.data.Type.value == "Parallelogram Area") {
+          return (
+            this.getOutput() +
+            " = np.linalg.norm(np.cross(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            "))"
+          );
+        }
+        if (this.data.Type.value == "Einstein Summation") {
+          return (
+            this.getOutput() +
+            ' = np.einsum("n,n", ' +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+      }
+      if (Object.keys(this.inputs).length == 3) {
+        if (this.data.Type.value == "Parallelopiped Volume") {
+          return (
+            this.getOutput() +
+            " = np.linalg.norm(np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , np.cross(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() + " , " + 
+            this.inputs[Object.keys(this.inputs)[2]].getOutput() +
+            ")))"
+          );
+        }
+      }
+      if (Object.keys(this.inputs).length == 1) {
+        if (this.data.Type.value == "Magnitude") {
+          return (
+            this.getOutput() +
+            " = np.linalg.norm(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Unit Vector") {
+          return (
+            this.getOutput() +
+            " = " + this.inputs[Object.keys(this.inputs)[0]].getOutput() + "/np.linalg.norm(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             ")"
           );
         }
@@ -854,6 +941,8 @@ export const components = {
           "Inverse",
           "Diagonal",
           "Transpose",
+          "Einstein Summation",
+          "Gradient",
         ],
         value: "Integer",
         hidden: false,
@@ -895,6 +984,16 @@ export const components = {
           return (
             this.getOutput() +
             " = np.kron(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Einstein Summation") {
+          return (
+            this.getOutput() +
+            ' = np.einsum("mk,kn", ' +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             " , " +
             this.inputs[Object.keys(this.inputs)[1]].getOutput() +
@@ -978,6 +1077,14 @@ export const components = {
           return (
             this.getOutput() +
             " = np.transpose(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Gradient") {
+          return (
+            this.getOutput() +
+            " = np.gradient(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             ")"
           );
