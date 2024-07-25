@@ -27,6 +27,7 @@ const darkTheme = createTheme({
 	},
 });
 
+
 // get local storage for dark mode
 var darkMode = localStorage.getItem("darkMode");
 if (darkMode === null) {
