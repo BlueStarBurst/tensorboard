@@ -757,6 +757,8 @@ export const components = {
           "Parallelogram Area",
           "Parallelopiped Volume",
           "Einstein Summation",
+          "Plane Normal",
+          "Orthogonalization",
         ],
         value: "Integer",
         hidden: false,
@@ -870,6 +872,18 @@ export const components = {
             ")"
           );
         }
+        if (this.data.Type.value == "Orthogonalization") {
+          return (
+            this.getOutput() +
+            " = " + this.inputs[Object.keys(this.inputs)[1]].getOutput() + " - (np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") / np.vdot(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            " , " + this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")) * (" + this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+          );
+        }
       }
       if (Object.keys(this.inputs).length == 3) {
         if (this.data.Type.value == "Parallelopiped Volume") {
@@ -881,6 +895,15 @@ export const components = {
             this.inputs[Object.keys(this.inputs)[1]].getOutput() + " , " + 
             this.inputs[Object.keys(this.inputs)[2]].getOutput() +
             ")))"
+          );
+        }
+        if (this.data.Type.value == "Plane Normal") {
+          return (
+            this.getOutput() +
+            " = np.cross(np.subtract(" + this.inputs[Object.keys(this.inputs)[1]].getOutput() + " , "
+            + this.inputs[Object.keys(this.inputs)[0]].getOutput() + ") , np.subtract(" +
+            this.inputs[Object.keys(this.inputs)[2]].getOutput() + " , " +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + "))"
           );
         }
       }
@@ -931,6 +954,7 @@ export const components = {
           "Cross Product",
           "Matrix Power",
           "Kronecker Product",
+          "Hadamard Product",
           "Cholesky Decomposition",
           "Determinant",
           "Eigenvalues",
@@ -943,6 +967,7 @@ export const components = {
           "Transpose",
           "Einstein Summation",
           "Gradient",
+          "Orthonormal Basis",
         ],
         value: "Integer",
         hidden: false,
@@ -990,6 +1015,16 @@ export const components = {
             ")"
           );
         }
+        if (this.data.Type.value == "Hadamard Product") {
+          return (
+            this.getOutput() +
+            " = np.multiply(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
         if (this.data.Type.value == "Einstein Summation") {
           return (
             this.getOutput() +
@@ -1020,7 +1055,7 @@ export const components = {
         if (this.data.Type.value == "Eigenvalues") {
           return (
             this.getOutput() +
-            " = np.linalg.eigvals(" +
+            " = np.linalg.eig(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             ")"
           );
@@ -1085,6 +1120,14 @@ export const components = {
           return (
             this.getOutput() +
             " = np.gradient(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Orthonormal Basis") {
+          return (
+            this.getOutput() +
+            " = scipy.linalg.orth(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             ")"
           );
