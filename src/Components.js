@@ -15,6 +15,41 @@ export const components = {
     },
   },
 
+  Scipy: {
+    name: "Scipy",
+    description: "Import the scipy library",
+    color: "#7f538c",
+    id: -1,
+    priority: 2,
+    numInputs: 0,
+    numOutputs: -1,
+    data: {},
+    description:
+      "This component is used to import the scipy library for mathematical operations",
+    transpile: function () {
+      return `%pip install scipy\nimport scipy`;
+    },
+  },
+
+  Matplotlib: {
+    name: "Matplotlib",
+    description: "Import the matplotlib library",
+    color: "#7f538c",
+    id: -1,
+    priority: 2,
+    numInputs: 0,
+    numOutputs: -1,
+    data: {},
+    description:
+      "This component is used to import the matplotlib library for plotting graphs",
+    transpile: function () {
+      return `%pip install matplotlib\nimport matplotlib.cm as cm\nimport matplotlib.pyplot as plt\nimport io\nimport base64`;
+    },
+  },
+
+
+
+  
   Data: {
     name: "Data",
     // color: "#F1AB86",
@@ -546,7 +581,43 @@ export const components = {
     },
     output: "value",
   },
-
+  ArrayListOperator: {
+    name: "Arraylist Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#428737",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["Append"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      if (this.data.Type.value == "Append") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+          " + " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput()
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "ArraylistOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
   BooleanOperator: {
     name: "Boolean Operator",
     description: "Create boolean operator that can operate value(s)",
@@ -655,6 +726,11 @@ export const components = {
         type: "radio",
         options: [
           "Polynomial",
+          "Add Polynomials",
+          "Subtract Polynomials",
+          "Multiply Polynomials",
+          "Divide Polynomials",
+          "Polynomial Fit",
           "Value for x",
           "Roots",
           "Derivative",
@@ -666,7 +742,7 @@ export const components = {
       },
     },
     transpile: function () {
-      if (Object.keys(this.inputs).length > 1) {
+      if (Object.keys(this.inputs).length == 2) {
         if (this.data.Type.value == "Value for x") {
           return (
             this.getOutput() +
@@ -677,7 +753,56 @@ export const components = {
             ")"
           );
         }
-      } else if (Object.keys(this.inputs).length == 1) {
+        if (this.data.Type.value == "Add Polynomials") {
+          return (
+            this.getOutput() +
+            " = np.polyadd(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Subtract Polynomials") {
+          return (
+            this.getOutput() +
+            " = np.polysub(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Multiply Polynomials") {
+          return (
+            this.getOutput() +
+            " = np.polymul(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Divide Polynomials") {
+          return (
+            this.getOutput() +
+            " = np.polydiv(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+      }
+      else if (Object.keys(this.inputs).length == 3) {
+        if (this.data.Type.value == "Polynomial Fit") {
+        return (
+          this.getOutput() +
+          " = np.polyfit(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " , " +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + " , " +
+          this.inputs[Object.keys(this.inputs)[2]].getOutput() + 
+          ")"
+        );
+      }
+      }
+      else if (Object.keys(this.inputs).length == 1) {
         if (this.data.Type.value == "Polynomial") {
           return (
             this.getOutput() +
@@ -727,6 +852,127 @@ export const components = {
     inputs: {},
     getOutput: function () {
       return "PolynomialOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+
+  StatsOperator: {
+    name: "Statistic Operator",
+    description: "Create Statistic operator that can operate value(s)",
+    color: "#6f7529",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: [
+          "Median",
+          "Mean",
+          "Mode",
+          "Maximum",
+          "Minimum",
+          "Range",
+          "IQR",
+          "Standard Deviation",
+          "Variance",
+          "Skew",
+        ],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      if (this.data.Type.value == "Median") {
+        return (
+          this.getOutput() +
+          " = statistics.median(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Mean") {
+        return (
+          this.getOutput() +
+          " = statistics.mean(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Mode") {
+        return (
+          this.getOutput() +
+          " = statistics.mode(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Maximum") {
+        return (
+          this.getOutput() +
+          " = max(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Minimum") {
+        return (
+          this.getOutput() +
+          " = min(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Range") {
+        return (
+          this.getOutput() +
+          " = max(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ") - min(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "IQR") {
+        return (
+          this.getOutput() +
+          " = scipy.stats.iqr(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Standard Deviation") {
+        return (
+          this.getOutput() +
+          " = statistics.stdev(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Variance") {
+        return (
+          this.getOutput() +
+          " = statistics.variance(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      if (this.data.Type.value == "Skew") {
+        return (
+          this.getOutput() +
+          " = scipy.stats.skew(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ")"
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "StatsOperator" + this.id;
     },
     getValue: function () {
       return null;
@@ -970,6 +1216,8 @@ export const components = {
           "Orthonormal Basis",
           "Solve for Ax = B",
           "Subspace Angle",
+          "SVD",
+          "QR"
         ],
         value: "Integer",
         hidden: false,
@@ -1063,10 +1311,10 @@ export const components = {
             this.getOutput() +
             " = np.linalg.cholesky(" +
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
-            ", lower=True)"
+            ")"
           );
         }
-        if (this.data.Type.value == "Determinant") {
+        else if (this.data.Type.value == "Determinant") {
           return (
             this.getOutput() +
             " = np.linalg.det(" +
@@ -1074,7 +1322,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Eigenvalues") {
+        else if (this.data.Type.value == "Eigenvalues") {
           return (
             this.getOutput() +
             " = np.linalg.eig(" +
@@ -1082,7 +1330,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Normal") {
+        else if (this.data.Type.value == "Normal") {
           return (
             this.getOutput() +
             " = np.linalg.norm(" +
@@ -1090,7 +1338,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Condition") {
+        else if (this.data.Type.value == "Condition") {
           return (
             this.getOutput() +
             " = np.linalg.cond(" +
@@ -1098,7 +1346,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Rank") {
+        else if (this.data.Type.value == "Rank") {
           return (
             this.getOutput() +
             " = np.linalg.matrix_rank(" +
@@ -1106,7 +1354,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Trace") {
+        else if (this.data.Type.value == "Trace") {
           return (
             this.getOutput() +
             " = np.trace(" +
@@ -1114,7 +1362,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Inverse") {
+        else if (this.data.Type.value == "Inverse") {
           return (
             this.getOutput() +
             " = np.linalg.inv(" +
@@ -1122,7 +1370,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Diagonal") {
+        else if (this.data.Type.value == "Diagonal") {
           return (
             this.getOutput() +
             " = np.diagonal(" +
@@ -1130,7 +1378,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Transpose") {
+        else if (this.data.Type.value == "Transpose") {
           return (
             this.getOutput() +
             " = np.transpose(" +
@@ -1138,7 +1386,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Gradient") {
+        else if (this.data.Type.value == "Gradient") {
           return (
             this.getOutput() +
             " = np.gradient(" +
@@ -1146,7 +1394,7 @@ export const components = {
             ")"
           );
         }
-        if (this.data.Type.value == "Orthonormal Basis") {
+        else if (this.data.Type.value == "Orthonormal Basis") {
           return (
             this.getOutput() +
             " = scipy.linalg.orth(" +
@@ -1154,7 +1402,22 @@ export const components = {
             ")"
           );
         }
- 
+        else if (this.data.Type.value == "SVD") {
+          return (
+            this.getOutput() +
+            " = np.linalg.svd(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        else if (this.data.Type.value == "QR") {
+          return (
+            this.getOutput() +
+            " = np.linalg.qr(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
       }
 
       return "";
@@ -1941,4 +2204,53 @@ export const components = {
       return this.output + this.id;
     },
   },
+  MatplotTest: {
+    name: "Matplot Test",
+    description: "Test Matplotlib",
+    color: "#bda1cc",
+    numInputs: 0,
+    numOutputs: 0,
+    output: "matplot",
+    data: {
+      Data: {
+        type: "text",
+        value: "text",
+        readonly: true,
+        hidden: false,
+      },
+    },
+
+    transpile: function () {
+      return `import matplotlib.cm as cm
+import io
+import base64
+import js
+
+from matplotlib import pyplot as plt
+delta = 0.025
+x = y = np.arange(-3.0, 3.0, delta)
+X, Y = np.meshgrid(x, y)
+Z1 = np.exp(-(X**2) - Y**2)
+Z2 = np.exp(-((X - 1) ** 2) - (Y - 1) ** 2)
+Z = (Z1 - Z2) * 2
+plt.figure()
+plt.imshow(
+Z,
+interpolation="bilinear",
+cmap=cm.RdYlGn,
+origin="lower",
+extent=[-3, 3, -3, 3],
+vmax=abs(Z).max(),
+vmin=-abs(Z).max(),
+)
+plt.show()`
+    },
+    getOutput: function () {
+      return this.output + this.id;
+    },
+    getValue: function () {
+      return this.data.Data.value;
+    },
+    
+  }
 };

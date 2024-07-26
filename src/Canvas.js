@@ -830,7 +830,7 @@ export function CanvasOverlay(props) {
                                   style={{ width: "20%" }}
                                   variant="outlined"
                                   onChange={(e) => {
-                                    if (e.target.value == "") {
+                                    if (e.target.value == "" || e.target.value == "-") {
                                       data[key].value[i][j] = e.target.value;
                                       setData({ ...data, [key]: data[key] });
                                       return;
