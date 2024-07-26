@@ -1,5 +1,6 @@
 import { Button, CircularProgress, FormGroup, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import PyodideTest from "./Pyodide";
 
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
@@ -52,6 +53,7 @@ export function Notebook(props) {
 			tempStatuses[id] = {
 				status: "running",
 				error: "",
+				img: "",
 				output: "",
 				source: cell.source.join(""),
 			};
@@ -76,6 +78,7 @@ export function Notebook(props) {
 		tempStatuses[id] = {
 			status: "running",
 			error: "",
+			img: "",
 			output: "",
 			source: cell.source.join(""),
 		};
@@ -84,11 +87,19 @@ export function Notebook(props) {
 		var error = "";
 		var src = cell.source.join("");
 
+		var img = "";
+
 		props.pyodide.setStdout({
 			batched: (newOutput) => {
+				console.log(newOutput);
 				// remove the last newline character
 				// output = output.substring(0, output.length - 1);
-				if (newOutput != "<end>") {
+
+				if (newOutput.indexOf("<img>") != -1) {
+					img = newOutput.split("<img>")[1].split("</img>")[0];
+					output.push("");
+					console.log("img found", img);
+				} else if (newOutput != "<end>") {
 					output.push(newOutput);
 				} else {
 					console.log("<end> found");
@@ -98,6 +109,7 @@ export function Notebook(props) {
 				tempStatuses[id] = {
 					status: "done",
 					error: tempStatuses[id].error,
+					img: img,
 					output: output,
 					source: cell.source.join(""),
 				};
@@ -115,6 +127,7 @@ export function Notebook(props) {
 			tempStatuses[id] = {
 				status: "error",
 				error: output,
+				img: "",
 				output: tempStatuses[id].output,
 				source: cell.source.join(""),
 			};
@@ -132,6 +145,22 @@ export function Notebook(props) {
 			console.log("downloading " + pip, src);
 			isDownloading = true;
 		}
+
+		// if first instance of plt.plot, save the image
+		if (src.indexOf("plt.show()") != -1) {
+			src += `
+bytes_io = io.BytesIO()
+
+plt.savefig(bytes_io, format='jpg')
+
+bytes_io.seek(0)
+
+base64_encoded_spectrogram = base64.b64encode(bytes_io.read())
+
+print("<img>"+base64_encoded_spectrogram.decode('utf-8')+"</img>")`
+		}
+
+
 		console.log(src);
 
 		if (isDownloading && src == "") {
@@ -140,6 +169,7 @@ export function Notebook(props) {
 			tempStatuses[id] = {
 				status: "done",
 				error: tempStatuses[id].error,
+				img: "",
 				output: tempStatuses[id].output,
 				source: cell.source.join(""),
 			};
@@ -157,6 +187,7 @@ export function Notebook(props) {
 			tempStatuses[id] = {
 				status: "error",
 				error: e + "",
+				img: "",
 				output: tempStatuses[id].output,
 				source: cell.source.join(""),
 			};
@@ -178,6 +209,7 @@ export function Notebook(props) {
 			tempStatuses[id] = {
 				status: "running",
 				error: "",
+				img: "",
 				output: "",
 				source: cell.source.join(""),
 			};
@@ -199,6 +231,7 @@ export function Notebook(props) {
 			tempStatuses[key] = {
 				status: "",
 				error: "",
+				img: "",
 				output: "",
 				source: "",
 			};
@@ -229,6 +262,7 @@ export function Notebook(props) {
 								tempStatuses[cell.metadata.id] = {
 									status: "",
 									error: "",
+									img: "",
 									output: "",
 									source: cell.source.join(""),
 								};
@@ -264,6 +298,7 @@ export function Notebook(props) {
 
 	return (
 		<div className="notebook-container">
+			{/* <PyodideTest /> */}
 			<div className="cell-container" key={"1"} id="1">
 				{cells.map((cell, index) => {
 					return (
@@ -340,6 +375,14 @@ export function Notebook(props) {
 												(line, i) => {
 													return <p key={line}>{line}</p>;
 												}
+											)}
+											{props.statuses[cell.metadata.id].img != "" ? (
+												<img
+													className="cell-img w-100"
+													src={`data:image/png;base64,${props.statuses[cell.metadata.id].img}`}
+												/>
+											) : (
+												<></>
 											)}
 										</div>
 									) : (
