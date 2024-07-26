@@ -584,13 +584,13 @@ export const components = {
   ArrayListOperator: {
     name: "Arraylist Operator",
     description: "Create arraylist operator that can operate value(s)",
-    color: "#428737",
+    color: "#3a4563",
     numInputs: 1,
     numOutputs: -1,
     data: {
       Type: {
         type: "radio",
-        options: ["Append"],
+        options: ["Append","Index"],
         value: "Integer",
         hidden: false,
       },
@@ -612,6 +612,155 @@ export const components = {
     inputs: {},
     getOutput: function () {
       return "ArraylistOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  LinkedListOperator: {
+    name: "Linkedlist Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#444737",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["Append", "Insert"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      if (this.data.Type.value == "Append") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+          " + " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput()
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "LinkedlistOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  StacksOperator: {
+    name: "Stacks Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#428878",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "StacksOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  QueueOperator: {
+    name: "Queue Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#583877",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "QueueOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  BinaryTreeOperator: {
+    name: "Binary Tree Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#289877",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "BinaryTreeOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  HashingOperator: {
+    name: "Hashing Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#374577",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "HashingOperator" + this.id;
     },
     getValue: function () {
       return null;
