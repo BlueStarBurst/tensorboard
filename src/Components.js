@@ -1,3 +1,23 @@
+
+function getInputOfType(inputs, type) {
+  for (let i = 0; i < Object.keys(inputs).length; i++) {
+    if (inputs[Object.keys(inputs)[i]].name == type) {
+      return inputs[Object.keys(inputs)[i]];
+    }
+  }
+  return null;
+}
+
+function getInputsOfType(inputs, type) {
+  let inputsOfType = [];
+  for (let i = 0; i < Object.keys(inputs).length; i++) {
+    if (inputs[Object.keys(inputs)[i]].name == type) {
+      inputsOfType.push(inputs[Object.keys(inputs)[i]]);
+    }
+  }
+  return inputsOfType;
+}
+
 export const components = {
   Numpy: {
     name: "Numpy",
@@ -47,8 +67,21 @@ export const components = {
     },
   },
 
-
-
+  Collections: {
+    name: "Collections",
+    description: "Import the built-in collections library",
+    color: "#7f538c",
+    id: -1,
+    priority: 2,
+    numInputs: 0,
+    numOutputs: -1,
+    data: {},
+    description:
+      "This component is used to import the collections library for python data structures",
+    transpile: function () {
+      return `import collections`;
+    },
+  },
   
   Data: {
     name: "Data",
@@ -584,18 +617,19 @@ export const components = {
   ArrayListOperator: {
     name: "Arraylist Operator",
     description: "Create arraylist operator that can operate value(s)",
-    color: "#428737",
+    color: "#3a4563",
     numInputs: 1,
     numOutputs: -1,
     data: {
       Type: {
         type: "radio",
-        options: ["Append"],
+        options: ["Append","Count","Index","Pop","Remove","Reverse"],
         value: "Integer",
         hidden: false,
       },
     },
     transpile: function () {
+      if (Object.keys(this.inputs).length > 1){
       if (this.data.Type.value == "Append") {
         return (
           this.getOutput() +
@@ -605,6 +639,53 @@ export const components = {
           this.inputs[Object.keys(this.inputs)[0]].getOutput()
         );
       }
+      if (this.data.Type.value == "Count") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".count(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Index") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".index(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Pop") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".pop(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Remove") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".remove(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+    }
+      if (Object.keys(this.inputs).length == 1){
+      if (this.data.Type.value == "Reverse") {
+        return (
+          this.getOutput() +
+          " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".reverse()"
+        );
+      }
+    }
       return "";
     },
     reload: function () {},
@@ -612,6 +693,179 @@ export const components = {
     inputs: {},
     getOutput: function () {
       return "ArraylistOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  LinkedListOperator: {
+    name: "Linkedlist Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#444737",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["Append", "Insert", "Pop", "Remove"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+
+      if (this.data.Type.value == "Append") {
+        let linkedList = getInputOfType(this.inputs, "Linked List");
+        let value = getInputOfType(this.inputs, "Value");
+        console.log(linkedList.getOutput());
+        return (
+          linkedList.getOutput() +
+          ".append(" +
+          value.getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Insert") {
+        return (
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".insert(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ", " +
+          this.inputs[Object.keys(this.inputs)[2]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Pop") {
+        return (
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".pop() "
+        );
+      }
+      if (this.data.Type.value == "Remove") {
+        return (
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          ".remove(" +
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {      
+      let linkedList = getInputOfType(this.inputs, "Linked List");
+      return linkedList.getOutput();
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  StacksOperator: {
+    name: "Stacks Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#428878",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "StacksOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  QueueOperator: {
+    name: "Queue Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#583877",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "QueueOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  BinaryTreeOperator: {
+    name: "Binary Tree Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#289877",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "BinaryTreeOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  HashingOperator: {
+    name: "Hashing Operator",
+    description: "Create arraylist operator that can operate value(s)",
+    color: "#374577",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["WIP"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "HashingOperator" + this.id;
     },
     getValue: function () {
       return null;
@@ -852,6 +1106,90 @@ export const components = {
     inputs: {},
     getOutput: function () {
       return "PolynomialOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  GeometryOperator: {
+    name: "Geometry Operator",
+    description: "Create a geometry operator that can operate value(s)",
+    color: "#325637",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["Create Point", "Line Length"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+
+      if (this.data.Type.value == "Create Point") {
+        return (
+          this.getOutput() + " = Point(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Line Length") {
+        return (
+          this.getOutput() + " = LineString(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ").length"
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "GeometryOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+  SetsOperator: {
+    name: "Sets Operator",
+    description: "Create a sets operator that can operate value(s)",
+    color: "#325637",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: ["Union", "Intersection"],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+
+      if (this.data.Type.value == "Union") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " | "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "Intersection") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " & "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "SetsOperator" + this.id;
     },
     getValue: function () {
       return null;
@@ -1629,6 +1967,118 @@ export const components = {
     outputs: {},
   },
 
+  LinkedList: {
+    name: "Linked List",
+    color: "#0c7fc4",
+    numInputs: -1,
+    numOutputs: -1,
+    description: "Use Values as inputs to create an linked list of values",
+    data: {
+      Sort: {
+        type: "sort",
+        value: [],
+        hidden: false,
+      },
+      Data: {
+        type: "text",
+        value: "text",
+        readonly: true,
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      // get the outputs of the inputs
+      this.reload();
+
+      var tmpOutput = `${this.getOutput()} = collections.deque()\n`;
+
+      var vals = [];
+      var outputs = this.data.Sort.value.map((obj) => {
+        vals.push(obj.value);
+        tmpOutput += `${this.getOutput()}.append(${obj.id})\n`;
+        return obj.id;
+      });
+      // console.log(outputs);
+
+      this.data.Data.value = `[${vals.join(", ")}]`;
+
+      // return an array of the outputs
+      return tmpOutput;
+    },
+    reload: function () {
+      // loop through the inputs and if they are not in the sort, add them
+      if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+        var sorts = [];
+        var keys = Object.keys(this.inputs);
+        // push the new inputs to the sort
+        sorts = this.data.Sort.value;
+        for (var i = 0; i < keys.length; i++) {
+          if (
+            sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+              .length == 0
+          ) {
+            sorts.push({
+              id: this.inputs[keys[i]].getOutput(),
+              value:
+                this.inputs[keys[i]].getValue != null
+                  ? this.inputs[keys[i]].getValue()
+                  : this.inputs[keys[i]].getOutput(),
+              realId: keys[i],
+            });
+          }
+        }
+        this.data.Sort.value = sorts;
+      } else if (
+        Object.keys(this.inputs).length < this.data.Sort.value.length
+      ) {
+        // remove the inputs that are not in the sort
+
+        var temp = [];
+        var keys = Object.keys(this.inputs);
+        // remove the inputs that are not in the sort
+
+        for (var i = 0; i < this.data.Sort.value.length; i++) {
+          if (
+            keys.filter(
+              (obj) =>
+                this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+            ).length > 0
+          ) {
+            temp.push(this.data.Sort.value[i]);
+          }
+        }
+        this.data.Sort.value = temp;
+      }
+
+      for (var i = 0; i < this.data.Sort.value.length; i++) {
+        if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+          this.data.Sort.value[i].value =
+            this.inputs[this.data.Sort.value[i].realId].getValue();
+        } else {
+          this.data.Sort.value[i].value =
+            this.inputs[this.data.Sort.value[i].realId].getOutput();
+        }
+        this.data.Sort.value[i].id =
+          this.inputs[this.data.Sort.value[i].realId].getOutput();
+      }
+
+      if (this.data.Sort.value.length == 0) {
+        // hide the Sort
+        this.data.Sort.hidden = true;
+      } else {
+        this.data.Sort.hidden = false;
+      }
+    },
+    getOutput: function () {
+      return "ll" + this.id;
+    },
+    getValue: function () {
+      return this.data.Data.value;
+    },
+    inputs: {},
+    outputs: {},
+  },
+
   Vector: {
     name: "Vector",
     color: "#29697d",
@@ -1842,12 +2292,17 @@ export const components = {
             return this.inputs[key].getOutput();
           }
         });
+
+        outputs = outputs.filter((val) => val != null);
+
         this.data.Output.value = outputs.join(", ");
         this.data.Output.readonly = true;
 
         var trueOutputs = Object.keys(this.inputs).map((key, index) => {
           return this.inputs[key].getOutput();
         });
+
+        trueOutputs = trueOutputs.filter((val) => val != null);
 
         return `print(${trueOutputs.join(", ")})`;
       } else {
@@ -1878,7 +2333,8 @@ export const components = {
     outputs: [],
     inputs: [],
     getOutput: function () {
-      return this.output + this.id;
+      // return this.output + this.id;
+      return null
     },
     output: "connector",
   },

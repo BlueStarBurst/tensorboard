@@ -1,6 +1,5 @@
 import { Button, CircularProgress, FormGroup, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import PyodideTest from "./Pyodide";
 
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
@@ -298,7 +297,6 @@ print("<img>"+base64_encoded_spectrogram.decode('utf-8')+"</img>")`
 
 	return (
 		<div className="notebook-container">
-			{/* <PyodideTest /> */}
 			<div className="cell-container" key={"1"} id="1">
 				{cells.map((cell, index) => {
 					return (
