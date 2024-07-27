@@ -57,7 +57,7 @@ export default function Canvas(props) {
 
     Object.keys(temp).forEach((key) => {
       try {
-        const proto = components[temp[key].component.name];
+        const proto = components[temp[key].component.key];
 
         var obj = Object.create(proto);
         // var tComp = temp[key].component;
@@ -93,7 +93,7 @@ export default function Canvas(props) {
         );
 
         console.log("loading element", elem);
-        console.log(components[temp[key].component.name]);
+        console.log(components[temp[key].component.key]);
 
         elem.fromJSON(temp[key]);
         elementsList[temp[key].component.id] = elem;
@@ -1711,6 +1711,7 @@ class Element {
       h: this.h,
       component: {
         id: this.component.id,
+        key: this.component.key,
         name: this.component.name,
         description: this.component.description,
         data: this.component.data,

@@ -561,6 +561,10 @@ function App() {
     pyodide.runPython(`
       import matplotlib
       matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
+
+      import js
+
+      
     `);
     setPyodide(pyodide);
   }
@@ -649,7 +653,13 @@ function App() {
     var tcells = [];
     fcomponents.map((value, index) => {
       if (value && value.transpile) {
-        var raw_python = value.transpile();
+        let raw_python = "ERROR";
+
+        try {
+          raw_python = value.transpile();
+        } catch (e) {
+          console.log("ERROR", e);
+        }
         // split by new line
         raw_python = raw_python.split("\n");
         // add a new line to the end of each line
@@ -947,6 +957,7 @@ function App() {
                   return (
                     <DraggableTemplate
                       key={index}
+                      componentKey={key}
                       mouseX={mouseX}
                       mouseY={mouseY}
                       isDragging={isDragging}
@@ -1008,6 +1019,7 @@ function DraggableTemplate(props) {
     // newComponent.reload = props.component.reload;
     var newComponent = Object.create(props.component);
     newComponent.data = JSON.parse(JSON.stringify(props.component.data));
+    newComponent.key = props.componentKey;
     newComponent.inputs = {};
     newComponent.outputs = {};
     newComponent.helpers = {};
