@@ -8,8 +8,10 @@ import {
     IDockviewPanelHeaderProps,
     DockviewPanelApi
 } from "dockview";
-import Canvas from "./canvas";
+import Canvas from "./canvas/canvas";
 import Blocks from "./tabs/blocks";
+import Raw from "./tabs/raw";
+import Notebook from "./tabs/notebook";
 
 const components = {
     default: (props: IDockviewPanelProps) => {
@@ -33,8 +35,18 @@ const components = {
     Canvas: (props: IDockviewPanelProps) => {
         // remove header
         return (
-            <Canvas />
+            <Canvas canvasWidth={1920*2} canvasHeight={1080*2} maxScale={2} minScale={0.5} />
         );
+    },
+    Raw: (props: IDockviewPanelProps) => {
+        return (
+            <Raw />
+        )
+    },
+    Notebook: (props: IDockviewPanelProps) => {
+        return (
+            <Notebook />
+        )
     }
 
 };
@@ -45,7 +57,11 @@ const CustomTabRenderer = (props: IDockviewPanelHeaderProps) => {
 
     console.log(api.id, containerApi);
 
-    return <div>{/** logic */}</div>
+    return <div className="w-full h-full flex flex-row justify-center items-center px-5">
+        <p>
+            {api.id}
+        </p>
+    </div>
 }
 
 export default function DockViewContainer() {
@@ -60,28 +76,28 @@ export default function DockViewContainer() {
 
         const canvas = event.api.addPanel({
             id: "Canvas",
-            component: "default",
+            component: "Canvas",
             params: { color: "gray" },
         });
 
         canvas.group.header.hidden = true;
         canvas.group.locked = true;
 
-        
+
         event.api.addPanel({
             id: "Raw",
-            component: "default",
+            component: "Raw",
             params: { color: "red" },
             position: { referencePanel: "Canvas", direction: "right" }
         });
         event.api.addPanel({
             id: "Notebook",
-            component: "default",
+            component: "Notebook",
             params: { color: "red" }
         });
         event.api.addPanel({
             id: "Blocks",
-            component: "default",
+            component: "Blocks",
             params: { color: "red" },
             position: { referencePanel: "Canvas", direction: "below" }
         });
@@ -105,7 +121,7 @@ export default function DockViewContainer() {
             className="dockview-theme-dark overflow-hidden"
             components={components}
             onReady={onReady}
-        // defaultTabComponent={CustomTabRenderer}
+            defaultTabComponent={CustomTabRenderer}
         />
     );
 }

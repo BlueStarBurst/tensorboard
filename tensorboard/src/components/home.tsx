@@ -1,6 +1,5 @@
 "use client";
 
-import Canvas from "./canvas";
 import DockViewContainer from "./dockview-container";
 
 export default function Main() {
