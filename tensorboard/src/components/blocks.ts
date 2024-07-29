@@ -40,9 +40,7 @@ type Data = {
 export type Component = {
     bot?: boolean;
     top?: boolean;
-    topInputs?: {
-        [key: string]: Component;
-    }
+    
     name: string;
     description: string;
     color: string;
@@ -60,6 +58,9 @@ export type Component = {
     helpers: {
         [key: string]: Component;
     };
+    topInputs: {
+        [key: string]: Component;
+    }
     transpile: () => string;
     getOutput: () => string | null;
     reload: () => void;
@@ -79,6 +80,7 @@ const defaultComponent: Component = {
     inputs: {},
     outputs: {},
     helpers: {},
+    topInputs: {},
     priority: 0,
     numInputs: 0,
     numOutputs: 0,

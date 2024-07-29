@@ -35,7 +35,7 @@ const components = {
     Canvas: (props: IDockviewPanelProps) => {
         // remove header
         return (
-            <Canvas canvasWidth={1920*2} canvasHeight={1080*2} maxScale={2} minScale={0.5} />
+            <Canvas canvasWidth={4000} canvasHeight={4000} maxScale={2} minScale={0.4} />
         );
     },
     Raw: (props: IDockviewPanelProps) => {

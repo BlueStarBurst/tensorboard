@@ -1,8 +1,8 @@
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { Component } from "../blocks";
 import { ElementsContext } from "../canvas/elements-context";
 
-type Cell = {
+export type Cell = {
     cell_type: string;
     execution_count: number;
     metadata: {
@@ -13,9 +13,8 @@ type Cell = {
     source: string[];
 };
 
-export default function Notebook() {
-
-    const { elements, setElements } = useContext(ElementsContext);
+export function useNotebook() {
+    const { elements, setElements, setNotebookCells } = useContext(ElementsContext);
 
     function addChildrenToComponentList(component: Component, idList: number[] = []) {
         var finArray = [component.id];
@@ -140,6 +139,7 @@ export default function Notebook() {
 
                 try {
                     raw_python = value.transpile();
+                    console.log("RAW PYTHON", raw_python);
                 } catch (e) {
                     console.log("ERROR", e);
                 }
@@ -168,7 +168,7 @@ export default function Notebook() {
             }
         });
 
-        // setCells(tcells);
+        setNotebookCells(tcells);
 
         // if (ws && ws.readyState == 1) {
         //     const newNote = start + JSON.stringify(tcells, null, 4) + end;
@@ -185,9 +185,8 @@ export default function Notebook() {
         // }
     }
 
-    return (
-        <div className="w-full h-full flex items-center justify-center">
-            <h1>Notebook</h1>
-        </div>
-    )
+    return {
+        updateNotebook,
+    };
+
 }
