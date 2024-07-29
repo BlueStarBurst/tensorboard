@@ -881,13 +881,14 @@ export const components = {
     data: {
       Type: {
         type: "radio",
-        options: ["Or", "And", "Not", "Xor", "Nand", "Nor", "Xnor"],
+        options: ["Or", "And", "Not", "Xor", "Nand", "Nor", "Xnor", "Implies", "Converse", "Inverse", "Contrapositive", "Bicondition",
+      "DeMorgan's Law", "Distributive Property"],
         value: "Integer",
         hidden: false,
       },
     },
     transpile: function () {
-      if (Object.keys(this.inputs).length > 1) {
+      if (Object.keys(this.inputs).length == 2) {
         if (this.data.Type.value == "Or") {
           return (
             this.getOutput() +
@@ -950,6 +951,85 @@ export const components = {
             this.inputs[Object.keys(this.inputs)[0]].getOutput() +
             " ^ " +
             this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Implies") {
+          return (
+            this.getOutput() +
+            " = not(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ") or (" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Converse") {
+          return (
+            this.getOutput() +
+            " = not(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") or (" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Inverse") {
+          return (
+            this.getOutput() +
+            " = (" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ") or not(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Contrapositive") {
+          return (
+            this.getOutput() +
+            " = (" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") or not(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ")"
+          );
+        }
+        if (this.data.Type.value == "Bicondition") {
+          return (
+            this.getOutput() +
+            " = (not(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ") or (" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")) and (not(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") or (" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() + "))"
+          );
+        }
+        if (this.data.Type.value == "DeMorgan's Law") {
+          return (
+            this.getOutput() +
+            " = not(" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            ") or not(" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ")"
+          );
+        }
+      }
+      if (Object.keys(this.inputs).length == 3){
+        if (this.data.Type.value == "Distributive Property") {
+          return (
+            this.getOutput() +
+            " = (" +
+            this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+            " and " +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            ") or (" +
+            this.inputs[Object.keys(this.inputs)[1]].getOutput() +
+            " and " +
+            this.inputs[Object.keys(this.inputs)[2]].getOutput() +
             ")"
           );
         }
@@ -1162,7 +1242,8 @@ export const components = {
     data: {
       Type: {
         type: "radio",
-        options: ["Union", "Intersection"],
+        options: ["Union", "Intersection", "Difference", "Complement", "Symmetric Difference", "A Subset of B", "A Superset of B",
+      "A Disjoint B", "Cartesian Product"],
         value: "Integer",
         hidden: false,
       },
@@ -1181,6 +1262,55 @@ export const components = {
           this.getOutput() + " = " +
           this.inputs[Object.keys(this.inputs)[0]].getOutput() + " & "+
           this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "Difference") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " - "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "Complement of A") {
+        return (
+          this.getOutput() + " = not(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ") or "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "Symmetric Difference") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " ^ "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "A Subset of B") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " <= "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "A Superset of B") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + " >= "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput()
+        );
+      }
+      if (this.data.Type.value == "A Disjoint B") {
+        return (
+          this.getOutput() + " = " +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ".isdisjoint("+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + ")"
+        );
+      }
+      if (this.data.Type.value == "Cartesian Product") {
+        return (
+          this.getOutput() + " = list(itertools.product(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() + ", "+
+          this.inputs[Object.keys(this.inputs)[1]].getOutput() + "))"
         );
       }
       return "";
@@ -1311,6 +1441,46 @@ export const components = {
     inputs: {},
     getOutput: function () {
       return "StatsOperator" + this.id;
+    },
+    getValue: function () {
+      return null;
+    },
+    output: "value",
+  },
+
+  GraphOperator: {
+    name: "Graph Operator",
+    description: "Create Graph operator that can operate value(s)",
+    color: "#6f7529",
+    numInputs: 1,
+    numOutputs: -1,
+    data: {
+      Type: {
+        type: "radio",
+        options: [
+          "Complete Graph"
+        ],
+        value: "Integer",
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      if (this.data.Type.value == "Complete Graph") {
+        return (
+          this.getOutput() +
+          " = networkx.draw(networkx.complete_graph(" +
+          this.inputs[Object.keys(this.inputs)[0]].getOutput() +
+          "))"
+        );
+      }
+      
+      return "";
+    },
+    reload: function () {},
+    outputs: {},
+    inputs: {},
+    getOutput: function () {
+      return "GraphOperator" + this.id;
     },
     getValue: function () {
       return null;
@@ -1892,6 +2062,115 @@ export const components = {
 
       // return an array of the outputs
       return `${this.getOutput()} = [${outputs.join(", ")}]`;
+    },
+    reload: function () {
+      // loop through the inputs and if they are not in the sort, add them
+      if (Object.keys(this.inputs).length > this.data.Sort.value.length) {
+        var sorts = [];
+        var keys = Object.keys(this.inputs);
+        // push the new inputs to the sort
+        sorts = this.data.Sort.value;
+        for (var i = 0; i < keys.length; i++) {
+          if (
+            sorts.filter((obj) => obj.id == this.inputs[keys[i]].getOutput())
+              .length == 0
+          ) {
+            sorts.push({
+              id: this.inputs[keys[i]].getOutput(),
+              value:
+                this.inputs[keys[i]].getValue != null
+                  ? this.inputs[keys[i]].getValue()
+                  : this.inputs[keys[i]].getOutput(),
+              realId: keys[i],
+            });
+          }
+        }
+        this.data.Sort.value = sorts;
+      } else if (
+        Object.keys(this.inputs).length < this.data.Sort.value.length
+      ) {
+        // remove the inputs that are not in the sort
+
+        var temp = [];
+        var keys = Object.keys(this.inputs);
+        // remove the inputs that are not in the sort
+
+        for (var i = 0; i < this.data.Sort.value.length; i++) {
+          if (
+            keys.filter(
+              (obj) =>
+                this.inputs[obj].getOutput() == this.data.Sort.value[i].id
+            ).length > 0
+          ) {
+            temp.push(this.data.Sort.value[i]);
+          }
+        }
+        this.data.Sort.value = temp;
+      }
+
+      for (var i = 0; i < this.data.Sort.value.length; i++) {
+        if (this.inputs[this.data.Sort.value[i].realId].getValue) {
+          this.data.Sort.value[i].value =
+            this.inputs[this.data.Sort.value[i].realId].getValue();
+        } else {
+          this.data.Sort.value[i].value =
+            this.inputs[this.data.Sort.value[i].realId].getOutput();
+        }
+        this.data.Sort.value[i].id =
+          this.inputs[this.data.Sort.value[i].realId].getOutput();
+      }
+
+      if (this.data.Sort.value.length == 0) {
+        // hide the Sort
+        this.data.Sort.hidden = true;
+      } else {
+        this.data.Sort.hidden = false;
+      }
+    },
+    getOutput: function () {
+      return "array" + this.id;
+    },
+    getValue: function () {
+      return this.data.Data.value;
+    },
+    inputs: {},
+    outputs: {},
+  },
+
+  Set: {
+    name: "Set",
+    color: "#1f7e94",
+    numInputs: -1,
+    numOutputs: -1,
+    description: "Use Values as inputs to create an set of values",
+    data: {
+      Sort: {
+        type: "sort",
+        value: [],
+        hidden: false,
+      },
+      Data: {
+        type: "text",
+        value: "text",
+        readonly: true,
+        hidden: false,
+      },
+    },
+    transpile: function () {
+      // get the outputs of the inputs
+      this.reload();
+
+      var vals = [];
+      var outputs = this.data.Sort.value.map((obj) => {
+        vals.push(obj.value);
+        return obj.id;
+      });
+      // console.log(outputs);
+
+      this.data.Data.value = `{${vals.join(", ")}}`;
+
+      // return an array of the outputs
+      return `${this.getOutput()} = {${outputs.join(", ")}}`;
     },
     reload: function () {
       // loop through the inputs and if they are not in the sort, add them
