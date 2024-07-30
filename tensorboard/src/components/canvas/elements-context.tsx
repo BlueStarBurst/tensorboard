@@ -716,6 +716,8 @@ type ElementsContextType = {
     setSelectedElement: (element: Element | null) => void;
     notebookCells: Cell[];
     setNotebookCells: (cells: Cell[]) => void;
+    statuses: any;
+    setStatuses: (statuses: any) => void;
 };
 
 export const ElementsContext = createContext<ElementsContextType>({
@@ -725,4 +727,6 @@ export const ElementsContext = createContext<ElementsContextType>({
     setSelectedElement: () => { },
     notebookCells: [],
     setNotebookCells: () => { },
+    statuses: {},
+    setStatuses: () => { },
 });

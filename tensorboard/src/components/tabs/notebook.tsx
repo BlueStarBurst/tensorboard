@@ -1,6 +1,12 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Component } from "../blocks";
 import { ElementsContext } from "../canvas/elements-context";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlay, faCheck, faX, faArrowRotateLeft, faRefresh, faUpload, faFloppyDisk, faDownload } from '@fortawesome/free-solid-svg-icons'
+import Button from "../ui/button";
+import hljs from 'highlight.js';
+
+import { loadPyodide } from "pyodide";
 
 type Cell = {
     cell_type: string;
@@ -13,181 +19,200 @@ type Cell = {
     source: string[];
 };
 
-export default function Notebook() {
+export default async function Notebook() {
 
-    const { elements, setElements } = useContext(ElementsContext);
-
-    function addChildrenToComponentList(component: Component, idList: number[] = []) {
-        var finArray = [component.id];
-        // console.log("IDLIST", idList);
-
-        if (idList.includes(component.id)) {
-            // get index of id
-            var index = idList.lastIndexOf(component.id);
-            if (idList[index - 1] == idList[idList.length - 1]) {
-                return [];
-            }
-        }
-        idList.push(component.id);
-
-        Object.keys(component.helpers).map((key, index) => {
-            var tempArr = addChildrenToComponentList(component.helpers[key], idList);
-            // add the arr to the finArray
-            finArray = finArray.concat(tempArr);
-        });
-
-        // loop through keys of component outputs {id : component}
-        Object.keys(component.outputs).map((key, index) => {
-            var tempArr = addChildrenToComponentList(component.outputs[key], idList);
-            // add the arr to the finArray
-            finArray = finArray.concat(tempArr);
-        });
-
-        return finArray;
-    }
-
-
-    function updateNotebook() {
-
-        if (Object.keys(elements).length == 0) {
-            return;
-        }
-
-        var saveElements = {
-            [Object.keys(elements)[0]]: elements[Object.keys(elements)[0]].toJSON(),
-        };
-        Object.keys(elements).map((key, index) => {
-            saveElements[key] = elements[key].toJSON();
-        });
-        // DBManager.getInstance().setItem("elements", saveElements);
-
-        const tcomponents: Component[] = [];
-        var scomponents: {
-            [key: number]: Component
-        } = {};
-        var rootComponents: Component[] = [];
-        var keyList: number[] = [];
-        var fcomponents: Component[] = [];
-
-        var tempElements = Object.values(elements);
-
-        for (var i = 0; i < tempElements.length; i++) {
-            var element = tempElements[i];
-            tcomponents.push(element.component);
-            scomponents[element.component.id] = element.component;
-        }
-
-        // get all components with no inputs
-        for (var i = 0; i < tcomponents.length; i++) {
-            var component = tcomponents[i];
-
-            if (Object.keys(component.inputs).length == 0) {
-                // keyList.push(component.id);
-                rootComponents.push(component);
-                console.log("ROOT COMPONENT", component);
-            }
-        }
-
-        // sort root components by priority low to high
-        rootComponents = rootComponents.sort((a, b) => {
-            var ap = a.priority || 100;
-            var bp = b.priority || 100;
-            return ap - bp;
-        });
-
-        for (var i = 0; i < rootComponents.length; i++) {
-            keyList.push(rootComponents[i].id);
-        }
-
-        // loop through all components with no inputs, adding their outputs to the inputs of other components
-        for (var i = 0; i < rootComponents.length; i++) {
-            var children = rootComponents[i].outputs;
-
-            Object.keys(children).map((key, index) => {
-                // add the children to the components array
-                var tempArr = addChildrenToComponentList(children[key]);
-
-                keyList = keyList.concat(tempArr);
-            });
-        }
-
-        // make sure 0 priority components are after 1 priority components
-        // sort the keyList by priority
-        keyList = keyList.sort((a, b) => {
-            var ap = scomponents[a].priority || 100;
-            var bp = scomponents[b].priority || 100;
-            return ap - bp;
-        });
-
-        // loop backwards through the keyList, keeping only the unique keys
-        var uniqueKeyList: number[] = [];
-        for (var i = keyList.length - 1; i >= 0; i--) {
-            if (
-                !uniqueKeyList.includes(keyList[i]) &&
-                scomponents[keyList[i]].name != "Connector"
-            ) {
-                // add to front of array
-                uniqueKeyList.push(keyList[i]);
-                fcomponents.unshift(scomponents[keyList[i]]);
-            }
-        }
-
-        // parse the components into JSON cells
-        var tcells: Cell[] = [];
-        fcomponents.map((value, index) => {
-            if (value && value.transpile) {
-                let raw_python = "ERROR";
-
-                try {
-                    raw_python = value.transpile();
-                } catch (e) {
-                    console.log("ERROR", e);
-                }
-                // split by new line
-                const raw_python_arr = raw_python.split("\n");
-                // add a new line to the end of each line
-                const parsed_raw_python_arr = raw_python_arr.map((line, i) => {
-                    if (i != raw_python.length - 1) {
-                        return line + "\n";
-                    } else {
-                        return line;
-                    }
-                });
-                // remove the last new line
-
-                tcells.push({
-                    cell_type: "code",
-                    execution_count: 1,
-                    metadata: {
-                        id: value.id,
-                        selected: elements[value.id].dragging,
-                    },
-                    outputs: [],
-                    source: parsed_raw_python_arr,
-                });
-            }
-        });
-
-        // setCells(tcells);
-
-        // if (ws && ws.readyState == 1) {
-        //     const newNote = start + JSON.stringify(tcells, null, 4) + end;
-        //     console.log("NOTE: " + newNote + " " + oldNote);
-        //     if (newNote != oldNote) {
-        //         ws.send(
-        //             JSON.stringify({
-        //                 type: "setNotebook",
-        //                 data: newNote,
-        //             })
-        //         );
-        //     }
-        //     setOldNote(newNote);
-        // }
-    }
+    const { elements, setElements, notebookCells, statuses, setStatuses } = useContext(ElementsContext);
 
     return (
-        <div className="w-full h-full flex items-center justify-center">
-            <h1>Notebook</h1>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+            <div className="w-full h-full flex flex-col" key={"1"} id="1">
+                {notebookCells.map((cell, index) => {
+                    return (
+                        <div key={index} className="cell">
+                            <div
+                                className={
+                                    cell.metadata.selected
+                                        ? "cell-line cell-selected"
+                                        : "cell-line"
+                                }
+                                key={index}
+                            >
+                                <div className="cell-left">
+                                    <p className="cell-index">
+                                        [{" " + (index + 1) + " "}]
+                                        <FontAwesomeIcon
+                                            className="play"
+                                            icon={faPlay}
+                                            onClick={(e) => {
+                                                // runCell(cell, index);
+                                            }}
+                                        />
+                                        {/* <div className="status">
+                                            {statuses[cell.metadata.id] != null &&
+                                                statuses[cell.metadata.id].status != "" ? (
+                                                statuses[cell.metadata.id].status == "running" ||
+                                                    restarting ? (
+                                                    <CircularProgress className="stat-circular" />
+                                                ) : (
+                                                    <FontAwesomeIcon
+                                                        className={
+                                                            statuses[cell.metadata.id].status == "error"
+                                                                ? "stat red"
+                                                                : "stat green"
+                                                        }
+                                                        icon={
+                                                            statuses[cell.metadata.id].status == "error"
+                                                                ? faX
+                                                                : faCheck
+                                                        }
+                                                        onClick={(e) => {
+                                                            // runCell(cell, index);
+                                                        }}
+                                                    />
+                                                )
+                                            ) : (
+                                                <></>
+                                            )}
+                                        </div> */}
+                                    </p>
+
+                                    {/* <p className="cell-id">{cell.metadata.id}</p> */}
+                                </div>
+                                <div className="cell-right">
+                                    <pre style={{ width: "100%" }}>
+                                        <code
+                                            id={JSON.stringify(cell)}
+                                            className="python highlight"
+                                        >
+                                            {/* {cell.source.map((line, i) => {
+											return (
+												<div key={i} className="cell-code">
+													{line}
+												</div>
+											);
+										})} */}
+                                        </code>
+                                    </pre>
+                                    {/* {statuses[cell.metadata.id] != null &&
+                                        statuses[cell.metadata.id].output != null &&
+                                        statuses[cell.metadata.id].output.length > 0 ? (
+                                        <div className="cell-output">
+                                            {statuses[cell.metadata.id].output.map(
+                                                (line, i) => {
+                                                    return <p key={line}>{line}</p>;
+                                                }
+                                            )}
+                                            {statuses[cell.metadata.id].img != "" ? (
+                                                <img
+                                                    className="cell-img w-100"
+                                                    src={`data:image/png;base64,${statuses[cell.metadata.id].img}`}
+                                                />
+                                            ) : (
+                                                <></>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {statuses[cell.metadata.id] != null &&
+                                        statuses[cell.metadata.id].status == "error" &&
+                                        statuses[cell.metadata.id].error != null &&
+                                        statuses[cell.metadata.id].error != "" ? (
+                                        <div className="cell-output error">
+                                            <p>{statuses[cell.metadata.id].error}</p>
+                                        </div>
+                                    ) : (
+                                        <></>
+                                    )} */}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="w-full flex flex-row justify-between">
+                <div className="notebook-python-options">
+                    <Button
+                        // variant="contained"
+                        // color="error"
+                        onClick={(e) => {
+                            // setRestarting(true);
+                            // restartPyodide();
+                        }}
+                    // disabled={restarting}
+                    >
+                        <FontAwesomeIcon icon={faArrowRotateLeft} />
+                    </Button>
+                    <Button
+                        // variant="contained"
+                        // color="warning"
+                        onClick={(e) => {
+                            // runAllCells();
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faPlay} />
+                    </Button>
+                </div>
+
+                <div className="notebook-file-options">
+                    <Button
+                        // variant="contained"
+                        // color="warning"
+                        onClick={(e) => {
+                            // upload the database
+                            var input = document.createElement("input");
+                            input.type = "file";
+                            input.onchange = (e: any) => {
+                                var file = e.target!.files[0];
+                                var reader = new FileReader();
+                                reader.onload = (e: any) => {
+                                    var text = e.target.result;
+                                    var temp = JSON.parse(text);
+                                    // DBManager.getInstance().setItems(temp);
+                                    // flop();
+                                };
+                                reader.readAsText(file);
+                            };
+                            input.click();
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faUpload} />
+                    </Button>
+                    <Button
+                        // variant="contained"
+                        // color="success"
+                        onClick={(e) => {
+                            // download the database
+                            // var temp = DBManager.getInstance().getItems();
+                            // var json = JSON.stringify(temp, null, 4);
+                            // var blob = new Blob([json], { type: "application/json" });
+                            // var url = URL.createObjectURL(blob);
+                            // var a = document.createElement("a");
+                            // a.href = url;
+                            // a.download = "notebook.tensorboard";
+                            // a.click();
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faFloppyDisk} />
+                    </Button>
+                    <Button
+                        // variant="contained"
+                        // color="primary"
+                        onClick={(e) => {
+                            // var json =
+                            //     start + JSON.stringify(notebookCells, null, 4) + end;
+                            // var blob = new Blob([json], { type: "application/json" });
+                            // var url = URL.createObjectURL(blob);
+                            // var a = document.createElement("a");
+                            // a.href = url;
+                            // a.download = "notebook.ipynb";
+                            // a.click();
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faDownload} />
+                    </Button>
+                </div>
+            </div>
         </div>
     )
 }

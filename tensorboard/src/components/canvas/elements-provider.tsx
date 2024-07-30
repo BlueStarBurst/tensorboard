@@ -17,8 +17,21 @@ export function ElementsContextProvider({
 
     const [notebookCells, setNotebookCells] = useState<Cell[]>([]);
 
+    const [statuses, setStatuses] = useState<{
+        [key: string]: string;
+    }>({});
+
     return (
-        <ElementsContext.Provider value={{ elements, setElements, selectedElement, setSelectedElement, notebookCells, setNotebookCells }}>
+        <ElementsContext.Provider value={{
+            elements,
+            setElements,
+            selectedElement,
+            setSelectedElement,
+            notebookCells,
+            setNotebookCells,
+            statuses,
+            setStatuses,
+        }}>
             {children}
         </ElementsContext.Provider>
     );

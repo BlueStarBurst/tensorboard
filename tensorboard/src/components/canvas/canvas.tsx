@@ -10,7 +10,7 @@ import {
 import * as React from "react";
 import { Element, ElementsContext } from "./elements-context";
 import components from "../blocks";
-import { useNotebook } from "../tabs/notebook-utils";
+import { clone, useNotebook } from "../tabs/notebook-utils";
 
 type CanvasProps = {
     canvasWidth: number;
@@ -101,7 +101,7 @@ export default function Canvas({
     }, [offset]);
 
     // functions for selecting elements
-    const isOverLine = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    const isOverLineStart = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         const canvasPoint = {
             x: (e.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
             y: (e.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
@@ -114,7 +114,7 @@ export default function Canvas({
         return null;
     }
 
-    const isOverLineEnd = (e: MouseEvent) => {
+    const isOverLineStartEnd = (e: MouseEvent) => {
         const canvasPoint = {
             x: (e.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
             y: (e.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
@@ -134,6 +134,19 @@ export default function Canvas({
         };
         for (var key in elements) {
             if (elements[key].isDragging(canvasPoint.x, canvasPoint.y)) {
+                return elements[key];
+            }
+        }
+        return null;
+    }
+
+    const isOverLine = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+        const canvasPoint = {
+            x: (e.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
+            y: (e.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
+        };
+        for (var key in elements) {
+            if (elements[key].isLineSelected(canvasPoint.x, canvasPoint.y)) {
                 return elements[key];
             }
         }
@@ -202,9 +215,7 @@ export default function Canvas({
 
     const dragElements = useCallback(
         (event: MouseEvent) => {
-            // console.log("drag elements");
             if (context && selectedElems && selectedElems.length > 0) {
-                console.log("drag elements", selectBox);
                 const canvasPoint = {
                     x: (event.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
                     y: (event.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
@@ -213,8 +224,6 @@ export default function Canvas({
                 const diff = diffPoints(canvasPoint, { x: lastMousePosRef.current.x, y: lastMousePosRef.current.y });
 
                 lastMousePosRef.current = { x: canvasPoint.x, y: canvasPoint.y };
-
-                console.log("diff", diff);
 
                 selectedElems.forEach((element) => {
                     element.move(diff.x, diff.y);
@@ -246,17 +255,14 @@ export default function Canvas({
     const selectBoxDrag = useCallback(
         (event: MouseEvent) => {
             if (context) {
-                console.log("select box drag");
                 const canvasPoint = {
                     x: (event.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
                     y: (event.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
                 };
 
-                console.log("canvas point", lastMousePosRef.current, canvasPoint);
-
                 const selectedElements = Object.values(elements).filter((element) => {
                     const shouldSelect = element.isInBounds(lastMousePosRef.current.x, lastMousePosRef.current.y, canvasPoint.x, canvasPoint.y);
-                    console.log("should select", shouldSelect);
+                    
                     if (shouldSelect) {
                         element.dragging = true;
                     } else {
@@ -290,7 +296,6 @@ export default function Canvas({
 
                 if (timer) {
                     // stay selected
-                    console.log("stay selected");
                     clearTimeout(timer);
                     setDragging(false);
                     document.removeEventListener("mousemove", dragElement);
@@ -334,7 +339,7 @@ export default function Canvas({
             if (context && selectedElement) {
 
                 //check if line is over element
-                const lineEnd = isOverLineEnd(event);
+                const lineEnd = isOverLineStartEnd(event);
                 if (lineEnd) {
                     selectedElement.lineToElement(lineEnd.id);
                 } else {
@@ -344,7 +349,6 @@ export default function Canvas({
                 redrawCanvas();
                 setDragging(false);
                 setLining(false);
-                console.log("end line element");
                 updateNotebook();
             }
             document.removeEventListener("mousemove", lineElement);
@@ -356,7 +360,6 @@ export default function Canvas({
     const selectBoxEnd = useCallback(
         (event: MouseEvent) => {
             if (context) {
-                console.log("select box end");
                 setSelectBox(null);
             }
             document.removeEventListener("mousemove", selectBoxDrag);
@@ -366,7 +369,6 @@ export default function Canvas({
     );
 
     const mouseUp = useCallback(() => {
-        console.log("mouse up");
         document.removeEventListener("mousemove", panCanvas);
         document.removeEventListener("mouseup", mouseUp);
     }, [panCanvas, dragElement, selectedElement]);
@@ -396,7 +398,6 @@ export default function Canvas({
     useEffect(() => {
         if (multiDrag) {
             setSelectBox(null);
-            console.log("multi drag");
             document.addEventListener("mouseup", dropElements);
             document.addEventListener("mousemove", dragElements);
         } else {
@@ -427,14 +428,34 @@ export default function Canvas({
                 return;
             }
 
+
             const line = isOverLine(event);
 
             if (line) {
-                setLining(true);
+                if (selectedElement) {
+                    selectedElement.dragging = false;
+                }
                 setSelectedElement(line);
                 setOldSelectedElement(line);
-                line.lining = true;
-                line.dragging = true;
+                setSelectedElems([]);
+                redrawCanvas();
+                return;
+            } else {
+                if (selectedElement) {
+                    selectedElement.selectedLine = null;
+                }
+                setSelectedElement(null);
+            }
+
+
+            const lineStart = isOverLineStart(event);
+
+            if (lineStart) {
+                setLining(true);
+                setSelectedElement(lineStart);
+                setOldSelectedElement(lineStart);
+                lineStart.lining = true;
+                lineStart.dragging = true;
                 return;
             } else {
                 if (selectedElement) {
@@ -447,8 +468,9 @@ export default function Canvas({
             const element = isOverElement(event);
 
             if (selectedElems.length > 0) {
+                console.log("selected elems", selectedElems);
                 setSelectBox(null);
-                if (element) {
+                if (element && selectedElems.includes(element)) {
                     selectedElems.forEach((elem) => {
                         elem.dragging = true;
                     });
@@ -462,15 +484,18 @@ export default function Canvas({
                     // setDragging(false);
                     setMultiDrag(false);
                     setSelectedElems([]);
+                    setSelectedElement(null);
+                    setOldSelectedElement(null);
+                    redrawCanvas();
                 }
             }
-
-
 
             if (element) {
 
                 if (selectedElement) {
                     selectedElement.dragging = false;
+                    selectedElement.selectedLine = null;
+                    
                 }
 
                 timer = setTimeout(() => {
@@ -482,8 +507,10 @@ export default function Canvas({
                 element.dragging = true;
                 setSelectedElement(element);
                 setOldSelectedElement(element);
+                redrawCanvas();
 
                 // document.addEventListener("mousemove", dragElement);
+                updateNotebook();
                 return;
             } else {
                 if (selectedElement) {
@@ -499,7 +526,7 @@ export default function Canvas({
 
             lastMousePosRef.current = { x: event.pageX, y: event.pageY };
         },
-        [panCanvas, dragElement, dropElement, mouseUp, scale, viewportTopLeft, selectedElement, selectBoxDrag, selectBoxEnd, selectBox]
+        [panCanvas, dragElement, dropElement, mouseUp, scale, viewportTopLeft, selectedElement, selectBoxDrag, selectBoxEnd, selectBox, selectedElems]
     );
 
     // setup canvas and set context
@@ -661,7 +688,7 @@ export default function Canvas({
         (event: React.KeyboardEvent<HTMLCanvasElement>) => {
             console.log("key", event.key);
             if (event.key === "Delete") {
-                
+
                 if (selectedElems.length > 0) {
                     selectedElems.forEach((element) => {
                         element.deleteSelf();
@@ -673,12 +700,19 @@ export default function Canvas({
                     updateNotebook();
                     redrawCanvas();
                 } else if (selectedElement) {
-                    selectedElement.deleteSelf();
-                    delete elements[selectedElement.id];
-                    setElements(elements);
-                    setSelectedElement(null);
-                    updateNotebook();
+
+                    if (selectedElement.selectedLine) {
+                        selectedElement.disconnectOutput();
+                        selectedElement.selectedLine = null;
+                        
+                    } else {
+                        selectedElement.deleteSelf();
+                        delete elements[selectedElement.id];
+                        setElements(elements);
+                        setSelectedElement(null);
+                    }
                     redrawCanvas();
+                    updateNotebook();
                 }
             }
         },
@@ -704,7 +738,10 @@ export default function Canvas({
             return;
         }
 
-        const newComponent = Object.assign({}, components[componentKey]);
+        // const obj = Object.create(components[componentKey]);
+        
+        // const newComponent = Object.assign(obj, components[componentKey]);
+        const newComponent = clone(components[componentKey]);
         newComponent.id = getNewId();
 
         // mouse position relative to canvas
@@ -772,14 +809,12 @@ export default function Canvas({
 
 
 
-
-
     return (
         <div ref={containerRef} className="w-full h-full">
             <div draggable={false} className="absolute pointer-events-none opacity-50" style={{
                 userSelect: "none",
             }}>
-                <button onClick={() => context && reset(context)}>Reset</button>
+                {/* <button onClick={() => context && reset(context)}>Reset</button> */}
                 <pre>scale: {scale}</pre>
                 <pre>offset: {JSON.stringify(offset)}</pre>
                 <pre>viewportTopLeft: {JSON.stringify(viewportTopLeft)}</pre>

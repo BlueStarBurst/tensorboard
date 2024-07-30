@@ -80,6 +80,8 @@ export function useNotebook() {
         for (var i = 0; i < tcomponents.length; i++) {
             var component = tcomponents[i];
 
+            console.log("COMPONENT", component.name, component.id, component.inputs);
+
             if (Object.keys(component.inputs).length == 0) {
                 // keyList.push(component.id);
                 rootComponents.push(component);
@@ -98,6 +100,8 @@ export function useNotebook() {
             keyList.push(rootComponents[i].id);
         }
 
+        console.log("ROOT COMPONENTS", rootComponents, keyList);
+
         // loop through all components with no inputs, adding their outputs to the inputs of other components
         for (var i = 0; i < rootComponents.length; i++) {
             var children = rootComponents[i].outputs;
@@ -105,6 +109,8 @@ export function useNotebook() {
             Object.keys(children).map((key, index) => {
                 // add the children to the components array
                 var tempArr = addChildrenToComponentList(children[key]);
+
+                console.log("TEMPARR", tempArr);
 
                 keyList = keyList.concat(tempArr);
             });
@@ -130,6 +136,10 @@ export function useNotebook() {
                 fcomponents.unshift(scomponents[keyList[i]]);
             }
         }
+        console.log("F COMPONENTS", fcomponents);
+        console.log("S COMPONENTS", scomponents);
+        console.log("KEY LIST", keyList);
+        console.log("UNIQUE KEY LIST", uniqueKeyList);
 
         // parse the components into JSON cells
         var tcells: Cell[] = [];
@@ -189,4 +199,38 @@ export function useNotebook() {
         updateNotebook,
     };
 
+}
+
+export function clone(obj: any) {
+    var copy: any;
+
+    // Handle the 3 simple types, and null or undefined
+    if (null == obj || "object" != typeof obj) return obj;
+
+    // Handle Date
+    if (obj instanceof Date) {
+        copy = new Date();
+        copy.setTime(obj.getTime());
+        return copy;
+    }
+
+    // Handle Array
+    if (obj instanceof Array) {
+        copy = [];
+        for (var i = 0, len = obj.length; i < len; i++) {
+            copy[i] = clone(obj[i]);
+        }
+        return copy;
+    }
+
+    // Handle Object
+    if (obj instanceof Object) {
+        copy = {};
+        for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+        return copy;
+    }
+
+    throw new Error("Unable to copy obj! Its type isn't supported.");
 }

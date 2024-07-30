@@ -4,6 +4,10 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+import { config } from '@fortawesome/fontawesome-svg-core'
+import '@fortawesome/fontawesome-svg-core/styles.css'
+config.autoAddCss = false
+
 export const metadata: Metadata = {
   title: "Tensorboard",
   description: "Drag and Drop python notebook editor",
