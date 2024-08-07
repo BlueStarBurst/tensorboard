@@ -55,3 +55,8 @@ body {
     text-wrap: balance;
   }
 }
+
+.dv-resize-container {
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

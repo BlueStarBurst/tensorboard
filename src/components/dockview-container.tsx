@@ -6,12 +6,72 @@ import {
     DockviewReadyEvent,
     DockviewDefaultTab,
     IDockviewPanelHeaderProps,
-    DockviewPanelApi
+    DockviewPanelApi,
+    GroupviewPanelState,
+    IGroupPanelInitParameters,
+    PanelUpdateEvent
 } from "dockview";
 import Canvas from "./canvas/canvas";
 import Blocks from "./tabs/blocks";
 import Raw from "./tabs/raw";
 import Notebook from "./tabs/notebook";
+import Inspector from "./tabs/inspector";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpRightFromSquare, faMinimize, faShare } from "@fortawesome/free-solid-svg-icons";
+
+const CustomTabRenderer = (props: IDockviewPanelHeaderProps) => {
+    const api: DockviewPanelApi = props.api;
+    const containerApi: DockviewApi = props.containerApi;
+
+    return <div className="w-full h-full flex flex-row justify-center items-center px-5 scroll">
+        <p>
+            {api.id}
+        </p>
+    </div>
+}
+
+const FloatingTabRenderer = (props: IDockviewPanelHeaderProps) => {
+    const api: DockviewPanelApi = props.api;
+    const containerApi: DockviewApi = props.containerApi;
+
+
+    function makeFloating(e: React.MouseEvent) {
+
+
+        console.log("makeFloating", api.id);
+
+        if (api.location.type === "floating") {
+            return;
+        }
+
+        const group = containerApi.addGroup();
+        api.moveTo({ group });
+
+        containerApi.addFloatingGroup(group, {
+            width: 400,
+            height: 500,
+            x: e.clientX,
+            y: e.clientY
+        });
+    }
+
+
+    return <div className="w-full h-full flex flex-row justify-center items-center px-5 scroll">
+        <p>
+            {api.id}
+            <FontAwesomeIcon
+                icon={faArrowUpRightFromSquare}
+                className="text-gray-300 ml-2 cursor-pointer opacity-50 hover:opacity-100"
+                onClick={makeFloating}
+            />
+        </p>
+    </div>
+}
+
+const tabComponents = {
+    default: CustomTabRenderer,
+    FloatingTabRenderer: FloatingTabRenderer
+}
 
 const components = {
     default: (props: IDockviewPanelProps) => {
@@ -47,22 +107,13 @@ const components = {
         return (
             <Notebook />
         )
-    }
-
+    },
+    Inspector: (props: IDockviewPanelProps) => {
+        return (
+            <Inspector />
+        )
+    },
 };
-
-const CustomTabRenderer = (props: IDockviewPanelHeaderProps) => {
-    const api: DockviewPanelApi = props.api;
-    const containerApi: DockviewApi = props.containerApi;
-
-    console.log(api.id, containerApi);
-
-    return <div className="w-full h-full flex flex-row justify-center items-center px-5">
-        <p>
-            {api.id}
-        </p>
-    </div>
-}
 
 export default function DockViewContainer() {
     const api = React.useRef<DockviewApi>();
@@ -82,25 +133,35 @@ export default function DockViewContainer() {
 
         canvas.group.header.hidden = true;
         canvas.group.locked = true;
+        const blocks = event.api.addPanel({
+            id: "Blocks",
+            component: "Blocks",
+            params: { color: "red" },
+            position: { referencePanel: "Canvas", direction: "right" }
+        });
+        event.api.addPanel({
+            id: "Inspector",
+            component: "Inspector",
+            params: { color: "red" },
+            tabComponent: "FloatingTabRenderer"
+        });
 
+        blocks.focus();
 
         event.api.addPanel({
             id: "Raw",
             component: "Raw",
             params: { color: "red" },
-            position: { referencePanel: "Canvas", direction: "right" }
+            position: { referencePanel: "Blocks", direction: "below" }
         });
         event.api.addPanel({
             id: "Notebook",
             component: "Notebook",
             params: { color: "red" }
         });
-        event.api.addPanel({
-            id: "Blocks",
-            component: "Blocks",
-            params: { color: "red" },
-            position: { referencePanel: "Canvas", direction: "below" }
-        });
+        
+
+        
     };
 
     React.useEffect(() => {
@@ -118,8 +179,9 @@ export default function DockViewContainer() {
 
     return (
         <DockviewReact
-            className="dockview-theme-dark overflow-hidden"
+            className="dockview-theme-dark overflow-hidden scroll"
             components={components}
+            tabComponents={tabComponents}
             onReady={onReady}
             defaultTabComponent={CustomTabRenderer}
         />

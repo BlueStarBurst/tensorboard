@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext } from "react";
-import { Component } from "../blocks";
-import { Cell } from "../tabs/notebook-utils";
+import { Component, defaultComponent } from "../blocks";
+import { Cell, clone, Status } from "../tabs/notebook-utils";
 
 export class Element {
     x: number;
@@ -16,7 +16,7 @@ export class Element {
     dragging: boolean;
     color: string;
     dragColor: string;
-    component: any;
+    component: Component;
     text: string;
     id: any;
     selectedLine: any;
@@ -46,13 +46,13 @@ export class Element {
         this.dragging = false;
         this.color = component?.color || "#ff0000";
         this.dragColor = "#fff";
-        this.component = component || {};
-        this.text = this.component.name || "Component";
-        this.id = this.component.id;
+        this.component = component || clone(defaultComponent);
+        this.text = this.component?.name || "Component";
+        this.id = this.component?.id;
         this.selectedLine = null;
         this.selectedBot = null;
-        this.top = this.component.top || false;
-        this.bot = this.component.bot || false;
+        this.top = this.component?.top || false;
+        this.bot = this.component?.bot || false;
         this.lineBotX = -1;
         this.lineBotY = -1;
         this.liningBot = false;
@@ -98,10 +98,10 @@ export class Element {
         } else {
             ctx.fillStyle = "#fff";
         }
-        if (this.component.numOutputs != 0) {
+        if (this.component?.numOutputs != 0) {
             ctx.fillRect(this.x + this.w - 10, this.y + this.h / 2 - 10, 20, 20);
         }
-        if (this.component.numInputs != 0) {
+        if (this.component?.numInputs != 0) {
             ctx.fillRect(this.x - 10, this.y + this.h / 2 - 10, 20, 20);
         }
         if (this.bot) {
@@ -130,7 +130,7 @@ export class Element {
             ctx.font = "18px Arial";
             ctx.textAlign = "center";
             ctx.fillText(
-                this.component.id,
+                this.component.id + "",
                 this.x + this.w / 2,
                 this.y + this.h / 2 + 20
             );
@@ -165,7 +165,14 @@ export class Element {
             if (tlineToX >= 0 && tlineToY >= 0) {
                 // draw a line with bezier curves
                 if (this.selectedLine != this.elements[i]) {
+                    // const grad = ctx.createLinearGradient(this.x + this.w, this.y + this.h / 2, tlineToX, tlineToY);
+                    // grad.addColorStop(0, this.color);
+                    // // grad.addColorStop(0.5, "#fff");
+                    // grad.addColorStop(1, this.getElements()[this.elements[i]].color);
+                    // ctx.strokeStyle = grad;
+
                     ctx.strokeStyle = "#fff";
+
                 } else {
                     ctx.strokeStyle = this.color;
                 }
@@ -320,7 +327,7 @@ export class Element {
     }
 
     isLineEnd(x: number, y: number, override = false) {
-        if (!override && this.component.numInputs == 0) return false;
+        if (!override && this.component?.numInputs == 0) return false;
 
         return (
             x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h
@@ -349,7 +356,7 @@ export class Element {
             y <= this.y + this.h / 2 + 25
         ));
 
-        if (this.component.numOutputs == 0) return false;
+        if (this.component?.numOutputs == 0) return false;
 
         // check if the mouse is over the small rectangle at the right center of the element
         return (
@@ -468,7 +475,7 @@ export class Element {
             // if not in component outputs, add it
             this.component.outputs[this.elements[i]] =
                 this.getElements()[this.elements[i]].component;
-            this.getElements()[this.elements[i]].component.inputs[this.component.id] =
+            this.getElements()[this.elements[i]].component.inputs[this.component?.id] =
                 this.component;
         }
         for (var i = 0; i < this.botElements.length; i++) {
@@ -480,7 +487,7 @@ export class Element {
             // if not in component outputs, add it
             this.component.topInputs[this.botElements[i]] =
                 this.getElements()[this.botElements[i]].component;
-            this.getElements()[this.botElements[i]].component.helpers[this.component.id] =
+            this.getElements()[this.botElements[i]].component.helpers[this.component?.id] =
                 this.component;
         }
         this.lineToX = -1;
@@ -489,7 +496,7 @@ export class Element {
 
     findSelf(component: Component | null) {
         if (component == null) return false;
-        if (this.component.id + "" == component.id + "") return true;
+        if (this.component?.id + "" == component.id + "") return true;
 
         var flip = false;
         Object.keys(component.outputs).forEach((key) => {
@@ -504,7 +511,7 @@ export class Element {
     lineToElement(i: string | number) {
         if (
             i == this.id ||
-            this.component.id in Object.keys(this.getElements()[i].component.outputs)
+            (this.component?.id ?? "-1") in Object.keys(this.getElements()[i].component?.outputs ?? {})
         ) {
             this.lineToX = -1;
             this.lineToY = -1;
@@ -518,8 +525,8 @@ export class Element {
                 this.lineToX = -1;
                 this.lineToY = -1;
                 this.botElements.push(i);
-                // this.component.helpers[this.component.id] = this.getElements()[i].component;
-                this.getElements()[i].component.helpers[i] = this.component;
+                // this.component?.helpers[this.component?.id] = this.getElements()[i].component;
+                this.getElements()[i].component!.helpers[i] = this.component;
                 this.component.topInputs[i] = this.getElements()[i].component;
                 return true;
             }
@@ -539,65 +546,65 @@ export class Element {
 
         this.elements.push(i);
         this.component.outputs[i] = this.getElements()[i].component;
-        this.getElements()[i].component.inputs[this.component.id] = this.component;
+        this.getElements()[i].component.inputs[this.component?.id] = this.component;
         return true;
     }
 
     removeElement() {
         for (var i = 0; i < this.elements.length; i++) {
-            delete this.getElements()[this.elements[i]].component.inputs[this.component.id];
-            delete this.component.outputs[this.elements[i]];
+            delete this.getElements()[this.elements[i]].component.inputs[this.component?.id];
+            delete this.component?.outputs[this.elements[i]];
         }
         for (var i = 0; i < this.botElements.length; i++) {
             delete this.getElements()[this.botElements[i]].component.helpers[
-                this.component.id
+                this.component?.id
             ];
-            delete this.component.topInputs[this.botElements[i]];
+            delete this.component?.topInputs[this.botElements[i]];
         }
     }
 
     deleteSelf() {
-        var inputs = this.component.inputs;
-        var outputs = this.component.outputs;
+        var inputs = this.component?.inputs;
+        var outputs = this.component?.outputs;
 
-        var topIns = this.component.topInputs;
-        var bots = this.component.helpers;
+        var topIns = this.component?.topInputs;
+        var bots = this.component?.helpers;
         Object.keys(inputs).forEach((key) => {
             if (this.getElements()[key] == null) return;
             if (this.getElements()[key].elements == null) return;
             this.getElements()[key].elements = this.getElements()[key].elements.filter(
-                (item: any) => item !== this.component.id
+                (item: any) => item !== this.component?.id
             );
-            delete inputs[key].outputs[this.component.id];
+            delete inputs[key].outputs[this.component?.id];
         });
         Object.keys(outputs).forEach((key) => {
-            delete outputs[key].inputs[this.component.id];
+            delete outputs[key].inputs[this.component?.id];
         });
 
         Object.keys(topIns).forEach((key) => {
             if (this.getElements()[key] == null) return;
             if (this.getElements()[key].botElements == null) return;
             this.getElements()[key].botElements = this.getElements()[key].botElements.filter(
-                (item: any) => item !== this.component.id
+                (item: any) => item !== this.component?.id
             );
-            delete topIns[key].helpers[this.component.id];
+            delete topIns[key].helpers[this.component?.id];
         });
         Object.keys(bots).forEach((key) => {
-            delete bots[key].topInputs[this.component.id];
+            delete bots[key].topInputs[this.component?.id];
         });
 
         for (var i = 0; i < this.botElements.length; i++) {
             delete this.getElements()[this.botElements[i]].component.helpers[
-                this.component.id
+                this.component?.id
             ];
-            delete this.component.topInputs[this.botElements[i]];
+            delete this.component?.topInputs[this.botElements[i]];
         }
     }
 
     disconnectOutput() {
         if (this.selectedBot) {
-            // delete this.getElements()[this.botElement].component.inputs[this.component.id];
-            // delete this.component.outputs[this.botElement];
+            // delete this.getElements()[this.botElement].component.inputs[this.component?.id];
+            // delete this.component?.outputs[this.botElement];
 
             console.log("DISCONNECTED", this.botElements);
             this.botLineX = -1;
@@ -609,9 +616,9 @@ export class Element {
             );
 
             delete this.getElements()[this.selectedBot].component.helpers[
-                this.component.id
+                this.component?.id
             ];
-            delete this.component.topInputs[this.selectedBot];
+            delete this.component?.topInputs[this.selectedBot];
 
             this.selectedBot = null;
 
@@ -620,9 +627,9 @@ export class Element {
 
         if (this.elements.length > 0) {
             delete this.getElements()[this.selectedLine].component.inputs[
-                this.component.id
+                this.component?.id
             ];
-            delete this.component.outputs[this.selectedLine];
+            delete this.component?.outputs[this.selectedLine];
             this.elements = this.elements.filter(
                 (item: any) => item !== this.selectedLine
             );
@@ -634,7 +641,7 @@ export class Element {
 
     getNext() {
         // get random next element id from component outputs
-        var keys = Object.keys(this.component.outputs);
+        var keys = Object.keys(this.component?.outputs);
         if (keys.length == 0) return null;
         var rand = Math.floor(Math.random() * keys.length);
 
@@ -643,7 +650,7 @@ export class Element {
 
     getPrev() {
         // get random prev element id from component inputs
-        var keys = Object.keys(this.component.inputs);
+        var keys = Object.keys(this.component?.inputs);
         if (keys.length == 0) return null;
         var rand = Math.floor(Math.random() * keys.length);
 
@@ -652,7 +659,7 @@ export class Element {
 
     getBot() {
         // get random prev element id from component inputs
-        var keys = Object.keys(this.component.topInputs);
+        var keys = Object.keys(this.component?.topInputs);
         if (keys.length == 0) return null;
         var rand = Math.floor(Math.random() * keys.length);
 
@@ -661,7 +668,7 @@ export class Element {
 
     getTop() {
         // get random prev element id from component inputs
-        var keys = Object.keys(this.component.helpers);
+        var keys = Object.keys(this.component?.helpers);
         if (keys.length == 0) return null;
         var rand = Math.floor(Math.random() * keys.length);
 
@@ -678,14 +685,14 @@ export class Element {
             component: {
                 id: this.component.id,
                 key: this.component.key,
-                name: this.component.name,
-                description: this.component.description,
-                data: this.component.data,
+                name: this.component?.name,
+                description: this.component?.description,
+                data: this.component?.data,
                 inputs: {},
                 outputs: {},
                 helpers: {},
                 topInputs: {},
-                color: this.component.color,
+                color: this.component?.color,
             },
             elements: this.elements,
             botElements: this.botElements,
@@ -716,8 +723,8 @@ type ElementsContextType = {
     setSelectedElement: (element: Element | null) => void;
     notebookCells: Cell[];
     setNotebookCells: (cells: Cell[]) => void;
-    statuses: any;
-    setStatuses: (statuses: any) => void;
+    statuses: { [key: string]: Status };
+    setStatuses: (statuses: { [key: string]: Status }) => void;
 };
 
 export const ElementsContext = createContext<ElementsContextType>({

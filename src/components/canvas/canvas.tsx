@@ -58,7 +58,9 @@ export default function Canvas({
 
     const {
         elements,
-        setElements
+        setElements,
+        selectedElement,
+        setSelectedElement,
     } = React.useContext(ElementsContext);
 
     function getElements() {
@@ -82,7 +84,7 @@ export default function Canvas({
     const [dragging, setDragging] = React.useState(false);
     const [multiDrag, setMultiDrag] = React.useState(false);
     const [lining, setLining] = React.useState(false);
-    const [selectedElement, setSelectedElement] = React.useState<Element | null>(null);
+    // const [selectedElement, setSelectedElement] = React.useState<Element | null>(null);
     const [oldSelectedElement, setOldSelectedElement] = React.useState<Element | null>(null);
     const [isPanning, setIsPanning] = React.useState(false);
     const [relativePos, setRelativePos] = React.useState({});
@@ -252,6 +254,8 @@ export default function Canvas({
         [scale, viewportTopLeft, selectedElement]
     );
 
+
+
     const selectBoxDrag = useCallback(
         (event: MouseEvent) => {
             if (context) {
@@ -262,7 +266,7 @@ export default function Canvas({
 
                 const selectedElements = Object.values(elements).filter((element) => {
                     const shouldSelect = element.isInBounds(lastMousePosRef.current.x, lastMousePosRef.current.y, canvasPoint.x, canvasPoint.y);
-                    
+
                     if (shouldSelect) {
                         element.dragging = true;
                     } else {
@@ -272,6 +276,7 @@ export default function Canvas({
                 });
 
                 setSelectedElems(selectedElements);
+                updateNotebook();
 
                 setSelectBox((prev) => {
                     if (prev) {
@@ -287,7 +292,36 @@ export default function Canvas({
                 // redrawCanvas();
             }
         },
-        [selectBox, scale, viewportTopLeft, elements]
+        [selectBox, scale, viewportTopLeft, elements, selectedElems]
+    );
+
+    const selectBoxEnd = useCallback(
+        (event: MouseEvent) => {
+            if (context) {
+                const canvasPoint = {
+                    x: (event.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
+                    y: (event.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
+                };
+
+                const selectedElements = Object.values(elements).filter((element) => {
+                    const shouldSelect = element.isInBounds(lastMousePosRef.current.x, lastMousePosRef.current.y, canvasPoint.x, canvasPoint.y);
+
+                    if (shouldSelect) {
+                        element.dragging = true;
+                    } else {
+                        element.dragging = false;
+                    }
+                    return shouldSelect;
+                });
+
+                setSelectedElems(selectedElements);
+                updateNotebook();
+                setSelectBox(null);
+            }
+            document.removeEventListener("mousemove", selectBoxDrag);
+            document.removeEventListener("mouseup", selectBoxEnd);
+        },
+        [selectBox, selectBoxDrag, selectedElems]
     );
 
     const dropElement = useCallback(
@@ -303,7 +337,7 @@ export default function Canvas({
                     return;
                 }
 
-                selectedElement.dragging = false;
+                // selectedElement.dragging = false;
                 selectedElement.lining = false;
                 setDragging(false);
                 setLining(false);
@@ -357,16 +391,7 @@ export default function Canvas({
         [panCanvas, lineElement, selectedElement]
     );
 
-    const selectBoxEnd = useCallback(
-        (event: MouseEvent) => {
-            if (context) {
-                setSelectBox(null);
-            }
-            document.removeEventListener("mousemove", selectBoxDrag);
-            document.removeEventListener("mouseup", selectBoxEnd);
-        },
-        [selectBox, selectBoxDrag]
-    );
+
 
     const mouseUp = useCallback(() => {
         document.removeEventListener("mousemove", panCanvas);
@@ -432,8 +457,13 @@ export default function Canvas({
             const line = isOverLine(event);
 
             if (line) {
+
                 if (selectedElement) {
                     selectedElement.dragging = false;
+                    updateNotebook();
+                }
+                if (selectedElement && line.id != selectedElement.id) {
+                    selectedElement.selectedLine = null;
                 }
                 setSelectedElement(line);
                 setOldSelectedElement(line);
@@ -468,7 +498,6 @@ export default function Canvas({
             const element = isOverElement(event);
 
             if (selectedElems.length > 0) {
-                console.log("selected elems", selectedElems);
                 setSelectBox(null);
                 if (element && selectedElems.includes(element)) {
                     selectedElems.forEach((elem) => {
@@ -495,7 +524,7 @@ export default function Canvas({
                 if (selectedElement) {
                     selectedElement.dragging = false;
                     selectedElement.selectedLine = null;
-                    
+
                 }
 
                 timer = setTimeout(() => {
@@ -515,6 +544,7 @@ export default function Canvas({
             } else {
                 if (selectedElement) {
                     selectedElement.dragging = false;
+                    updateNotebook();
                 }
                 setDragging(false);
                 setSelectedElement(null);
@@ -682,8 +712,6 @@ export default function Canvas({
         return () => canvasElem.removeEventListener("wheel", handleWheel);
     }, [context, mousePos.x, mousePos.y, viewportTopLeft, scale]);
 
-
-
     const keyboardHandler = useCallback(
         (event: React.KeyboardEvent<HTMLCanvasElement>) => {
             console.log("key", event.key);
@@ -692,6 +720,8 @@ export default function Canvas({
                 if (selectedElems.length > 0) {
                     selectedElems.forEach((element) => {
                         element.deleteSelf();
+                        console.log("delete", selectedElems);
+                        console.log("elements", elements);
                         delete elements[element.id];
                     });
                     setElements(elements);
@@ -704,10 +734,12 @@ export default function Canvas({
                     if (selectedElement.selectedLine) {
                         selectedElement.disconnectOutput();
                         selectedElement.selectedLine = null;
-                        
+
                     } else {
                         selectedElement.deleteSelf();
                         delete elements[selectedElement.id];
+                        console.log("delete", selectedElement.id);
+                        console.log("elements", elements);
                         setElements(elements);
                         setSelectedElement(null);
                     }
@@ -716,9 +748,8 @@ export default function Canvas({
                 }
             }
         },
-        [elements, selectedElement, selectedElems, selectBox]
+        [elements, setElements, selectedElement, setSelectedElement, selectedElems, setSelectedElems, selectBox, updateNotebook]
     );
-
 
     function getNewId() {
         // get new id of only 6 digits
@@ -739,7 +770,7 @@ export default function Canvas({
         }
 
         // const obj = Object.create(components[componentKey]);
-        
+
         // const newComponent = Object.assign(obj, components[componentKey]);
         const newComponent = clone(components[componentKey]);
         newComponent.id = getNewId();
@@ -810,8 +841,8 @@ export default function Canvas({
 
 
     return (
-        <div ref={containerRef} className="w-full h-full">
-            <div draggable={false} className="absolute pointer-events-none opacity-50" style={{
+        <div ref={containerRef} className="w-full h-full overflow-hidden">
+            <div draggable={false} className="absolute pointer-events-none opacity-50 overflow-hidden" style={{
                 userSelect: "none",
             }}>
                 {/* <button onClick={() => context && reset(context)}>Reset</button> */}

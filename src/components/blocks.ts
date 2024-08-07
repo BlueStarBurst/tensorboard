@@ -21,7 +21,7 @@ type Inputs = {
     [key: string]: Component;
 };
 
-type Data = {
+export type Data = {
     [key: string]: {
         type: string;
         value: any;
@@ -40,7 +40,7 @@ type Data = {
 export type Component = {
     bot?: boolean;
     top?: boolean;
-    
+    key?: string;
     name: string;
     description: string;
     color: string;
@@ -69,7 +69,7 @@ export type Component = {
     output: string;
 };
 
-const defaultComponent: Component = {
+export const defaultComponent: Component = {
     bot: false,
     top: false,
     name: "Default",

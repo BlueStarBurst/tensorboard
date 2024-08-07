@@ -14,13 +14,14 @@ export default function Raw() {
         <textarea
             autoCorrect="off"
             spellCheck="false"
+            className="text-gray-400 scroll p-4"
             style={{
                 width: "100%",
                 height: "100%",
                 backgroundColor: "transparent",
                 border: "none",
-                color: "white",
                 fontSize: "0.8em",
+                resize: "none",
             }}
             value={start + JSON.stringify(notebookCells, null, 4) + end}
         ></textarea>

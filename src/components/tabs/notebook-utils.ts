@@ -8,10 +8,19 @@ export type Cell = {
     metadata: {
         id: number;
         selected: boolean;
+        run: boolean;
     };
     outputs: any[];
     source: string[];
 };
+
+export type Status = {
+    status: string;
+    error: string;
+    img: string;
+    output: string;
+    source: string;
+}
 
 export function useNotebook() {
     const { elements, setElements, setNotebookCells } = useContext(ElementsContext);
@@ -49,6 +58,7 @@ export function useNotebook() {
     function updateNotebook() {
 
         if (Object.keys(elements).length == 0) {
+            setNotebookCells([]);
             return;
         }
 
@@ -80,12 +90,9 @@ export function useNotebook() {
         for (var i = 0; i < tcomponents.length; i++) {
             var component = tcomponents[i];
 
-            console.log("COMPONENT", component.name, component.id, component.inputs);
-
             if (Object.keys(component.inputs).length == 0) {
                 // keyList.push(component.id);
                 rootComponents.push(component);
-                console.log("ROOT COMPONENT", component);
             }
         }
 
@@ -100,8 +107,6 @@ export function useNotebook() {
             keyList.push(rootComponents[i].id);
         }
 
-        console.log("ROOT COMPONENTS", rootComponents, keyList);
-
         // loop through all components with no inputs, adding their outputs to the inputs of other components
         for (var i = 0; i < rootComponents.length; i++) {
             var children = rootComponents[i].outputs;
@@ -109,8 +114,6 @@ export function useNotebook() {
             Object.keys(children).map((key, index) => {
                 // add the children to the components array
                 var tempArr = addChildrenToComponentList(children[key]);
-
-                console.log("TEMPARR", tempArr);
 
                 keyList = keyList.concat(tempArr);
             });
@@ -136,10 +139,6 @@ export function useNotebook() {
                 fcomponents.unshift(scomponents[keyList[i]]);
             }
         }
-        console.log("F COMPONENTS", fcomponents);
-        console.log("S COMPONENTS", scomponents);
-        console.log("KEY LIST", keyList);
-        console.log("UNIQUE KEY LIST", uniqueKeyList);
 
         // parse the components into JSON cells
         var tcells: Cell[] = [];
@@ -149,7 +148,6 @@ export function useNotebook() {
 
                 try {
                     raw_python = value.transpile();
-                    console.log("RAW PYTHON", raw_python);
                 } catch (e) {
                     console.log("ERROR", e);
                 }
@@ -171,6 +169,7 @@ export function useNotebook() {
                     metadata: {
                         id: value.id,
                         selected: elements[value.id].dragging,
+                        run: false,
                     },
                     outputs: [],
                     source: parsed_raw_python_arr,

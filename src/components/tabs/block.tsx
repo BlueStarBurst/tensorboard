@@ -16,15 +16,15 @@ export default function Block({
 
     return (
         <div
-            className="w-max h-max flex items-center justify-center p-6 rounded-lg cursor-pointer opacity-75 hover:opacity-100 transition-opacity"
+            className="w-max h-max flex items-center justify-center p-5 rounded-lg cursor-pointer opacity-75 hover:opacity-100 transition-opacity"
             style={{
                 backgroundColor: component.color,
-                margin: "10px"
+                margin: "6px"
             }}
             draggable
             onDragStart={dragStartHandler}
         >
-            <h1>{component.name}</h1>
+            <h1 className="text-sm">{component.name}</h1>
         </ div>
     )
 }

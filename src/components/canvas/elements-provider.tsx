@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Element, ElementsContext } from "./elements-context";
-import { Cell } from "../tabs/notebook-utils";
+import { Cell, Status } from "../tabs/notebook-utils";
 
 export function ElementsContextProvider({
     children,
@@ -18,7 +18,7 @@ export function ElementsContextProvider({
     const [notebookCells, setNotebookCells] = useState<Cell[]>([]);
 
     const [statuses, setStatuses] = useState<{
-        [key: string]: string;
+        [key: string]: Status;
     }>({});
 
     return (
