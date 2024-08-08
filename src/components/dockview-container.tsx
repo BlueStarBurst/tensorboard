@@ -143,7 +143,7 @@ export default function DockViewContainer() {
             window.localStorage.setItem("layout", JSON.stringify(event.api.toJSON()));
         });
 
-        if (window.localStorage.getItem("layout") !== "undefined") {
+        if (window.localStorage.getItem("layout")) {
             console.log("loading layout");
             event.api.fromJSON(JSON.parse(window.localStorage.getItem("layout")!));
             return;
@@ -197,7 +197,7 @@ export default function DockViewContainer() {
             api.current?.layout(window.innerWidth, window.innerHeight);
 
             if (!isMobile) {
-                if (window.localStorage.getItem("layout") !== "undefined") {
+                if (window.localStorage.getItem("layout")) {
                     console.log("loading layout");
                     api.current?.fromJSON(JSON.parse(window.localStorage.getItem("layout")!));
                 }
