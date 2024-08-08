@@ -1,17 +1,15 @@
 import { Component } from "../blocks";
 
 export default function Block({
-    key,
     componentKey,
     component
 }: {
-    key: number;
     componentKey: string;
     component: Component;
 }) {
 
     function dragStartHandler(event: React.DragEvent) {
-        console.log("dragging", componentKey);
+        // console.log("dragging", componentKey);
         event.dataTransfer.setData("componentKey", componentKey);
     }
 

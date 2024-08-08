@@ -1,13 +1,15 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { defaultElement, Element, ElementsContext } from "../canvas/elements-context";
+import { clone } from "../tabs/notebook-utils";
 
 type StorageContextType = {
-    storage: Storage | null;
-    setStorage: (storage: Storage) => void;
+    currentElements: { [key: string]: Element };
+    setCurrentElements: (elements: { [key: string]: Element }) => void;
 };
 
 export const StorageContext = createContext<StorageContextType>({
-    storage: null,
-    setStorage: () => {},
+    currentElements: {},
+    setCurrentElements: () => { },
 });
 
 export function StorageContextProvider({
@@ -16,21 +18,14 @@ export function StorageContextProvider({
     children: React.ReactNode;
 }) {
 
-    const [storage, setStorage] = useState<Storage | null>(null);
+    const [currentElements, setCurrentElements] = useState<{ [key: string]: Element }>({});
 
-    useEffect(() => {
-        console.log("SETTING STORAGE");
-        setStorage(window.localStorage);
-    }, []);
+    const { elements, setElements } = useContext(ElementsContext);
 
-    useEffect(() => {
-        if (storage) {
-            console.log("STORAGE", storage);
-        }
-    }, [storage]);
+    
 
     return (
-        <StorageContext.Provider value={{ storage, setStorage }}>
+        <StorageContext.Provider value={{ currentElements, setCurrentElements }}>
             {children}
         </StorageContext.Provider>
     );

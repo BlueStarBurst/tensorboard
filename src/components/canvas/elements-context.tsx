@@ -34,7 +34,7 @@ export class Element {
         [key: string]: Element;
     };
 
-    constructor(x: number, y: number, w: number, h: number, component: Component | null = null, getElements: any = {}) {
+    constructor(x: number = 0, y: number = 0, w: number = 100, h: number = 100, component: Component | null = clone(defaultComponent), getElements: any = {}) {
         this.x = x - w / 2;
         this.y = y - h / 2;
         this.w = w;
@@ -319,8 +319,8 @@ export class Element {
         }
     }
     isDragging(x: number, y: number) {
-        console.log("isDragging", x, y, this.x, this.y, this.w, this.h,
-            x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h);
+        // console.log("isDragging", x, y, this.x, this.y, this.w, this.h,
+        //     x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h);
         return (
             x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h
         );
@@ -344,17 +344,17 @@ export class Element {
                 y <= this.y + this.h + 25
             ) {
                 this.liningBot = true;
-                console.log("lining bot");
+                // console.log("lining bot");
                 return true;
             }
         }
 
-        console.log("lining", x, y, this.x + this.w, this.y + this.h, (
-            x >= this.x + this.w - 15 &&
-            x <= this.x + this.w + 25 &&
-            y >= this.y + this.h / 2 - 15 &&
-            y <= this.y + this.h / 2 + 25
-        ));
+        // console.log("lining", x, y, this.x + this.w, this.y + this.h, (
+        //     x >= this.x + this.w - 15 &&
+        //     x <= this.x + this.w + 25 &&
+        //     y >= this.y + this.h / 2 - 15 &&
+        //     y <= this.y + this.h / 2 + 25
+        // ));
 
         if (this.component?.numOutputs == 0) return false;
 
@@ -606,7 +606,7 @@ export class Element {
             // delete this.getElements()[this.botElement].component.inputs[this.component?.id];
             // delete this.component?.outputs[this.botElement];
 
-            console.log("DISCONNECTED", this.botElements);
+            // console.log("DISCONNECTED", this.botElements);
             this.botLineX = -1;
             this.botLineY = -1;
 
@@ -677,42 +677,23 @@ export class Element {
 
     // to json
     toJSON() {
-        return {
-            x: this.x,
-            y: this.y,
-            w: this.w,
-            h: this.h,
-            component: {
-                id: this.component.id,
-                key: this.component.key,
-                name: this.component?.name,
-                description: this.component?.description,
-                data: this.component?.data,
-                inputs: {},
-                outputs: {},
-                helpers: {},
-                topInputs: {},
-                color: this.component?.color,
-            },
-            elements: this.elements,
-            botElements: this.botElements,
-            lineToX: this.lineToX,
-            lineToY: this.lineToY,
-        };
+
+        const tmp = clone(this);
+        tmp.component.inputs = {};
+        tmp.component.outputs = {};
+        tmp.component.helpers = {};
+        tmp.component.topInputs = {};
+        return tmp;
+
     }
 
     // from json
-    fromJSON(json: { x: any; y: any; w: any; h: any; elements: any; lineToX: any; lineToY: any; botElements: any; }) {
-        this.x = json.x;
-        this.y = json.y;
-        this.w = json.w;
-        this.h = json.h;
-        this.elements = json.elements;
-        this.lineToX = json.lineToX;
-        this.lineToY = json.lineToY;
-        this.botElements = json.botElements;
+    fromJSON(json: Element) {
+        Object.assign(this, json);
     }
 }
+
+export const defaultElement = new Element(0, 0, 200, 100, defaultComponent);
 
 type ElementsContextType = {
     elements: {

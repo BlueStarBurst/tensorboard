@@ -335,7 +335,7 @@ export function NotebookCell({ pyodide, cell, index }: {
 
     return (
         <div className="w-full rounded-md shadow-md transition-colors p-4" style={{
-            backgroundColor: cell.metadata.selected ? "#ffffff09" : "transparent"
+            backgroundColor: cell.metadata.selected ? "#f7800010" : "transparent"
         }}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center justify-between w-full">

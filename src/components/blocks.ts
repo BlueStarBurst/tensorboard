@@ -2890,4 +2890,9 @@ components["MatplotTest"] = {
 
 }
 
+// for each component, add the key to the object
+Object.keys(components).forEach((key) => {
+    components[key].key = key;
+});
+
 export default components;

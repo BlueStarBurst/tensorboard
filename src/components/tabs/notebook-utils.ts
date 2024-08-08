@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Component } from "../blocks";
 import { ElementsContext } from "../canvas/elements-context";
+import { useStorage } from "../misc/local-storage";
 
 export type Cell = {
     cell_type: string;
@@ -24,6 +25,11 @@ export type Status = {
 
 export function useNotebook() {
     const { elements, setElements, setNotebookCells } = useContext(ElementsContext);
+
+    const {
+        saveElements,
+        loadElements
+    } = useStorage();
 
     function addChildrenToComponentList(component: Component, idList: number[] = []) {
         var finArray = [component.id];
@@ -62,12 +68,14 @@ export function useNotebook() {
             return;
         }
 
-        var saveElements = {
+        var savedElements = {
             [Object.keys(elements)[0]]: elements[Object.keys(elements)[0]].toJSON(),
         };
         Object.keys(elements).map((key, index) => {
-            saveElements[key] = elements[key].toJSON();
+            savedElements[key] = elements[key].toJSON();
         });
+        console.log("UPDATING NOTEBOOK", savedElements);
+        saveElements(elements);
         // DBManager.getInstance().setItem("elements", saveElements);
 
         const tcomponents: Component[] = [];
@@ -200,7 +208,12 @@ export function useNotebook() {
 
 }
 
-export function clone(obj: any) {
+export function clone(obj: any, depth: number = 0) {
+    
+    if (depth > 5) {
+        return obj;
+    }
+    
     var copy: any;
 
     // Handle the 3 simple types, and null or undefined
@@ -217,7 +230,7 @@ export function clone(obj: any) {
     if (obj instanceof Array) {
         copy = [];
         for (var i = 0, len = obj.length; i < len; i++) {
-            copy[i] = clone(obj[i]);
+            copy[i] = clone(obj[i], depth + 1);
         }
         return copy;
     }
@@ -226,7 +239,7 @@ export function clone(obj: any) {
     if (obj instanceof Object) {
         copy = {};
         for (var attr in obj) {
-            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr], depth + 1);
         }
         return copy;
     }

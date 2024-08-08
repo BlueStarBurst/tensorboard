@@ -11,6 +11,7 @@ import * as React from "react";
 import { Element, ElementsContext } from "./elements-context";
 import components from "../blocks";
 import { clone, useNotebook } from "../tabs/notebook-utils";
+import { useStorage } from "../misc/local-storage";
 
 type CanvasProps = {
     canvasWidth: number;
@@ -55,6 +56,11 @@ export default function Canvas({
     const {
         updateNotebook
     } = useNotebook();
+
+    const {
+        saveElements,
+        loadElements
+    } = useStorage();
 
     const {
         elements,
@@ -159,22 +165,27 @@ export default function Canvas({
     const reset = useCallback(
         (context: CanvasRenderingContext2D) => {
             if (context && !isResetRef.current) {
+                const _viewportTopLeft = JSON.parse(localStorage.getItem("viewportTopLeft") || JSON.stringify(ORIGIN));
+                const _scale = JSON.parse(localStorage.getItem("scale") || "1");
+                console.log("reset", _viewportTopLeft, _scale);
                 // adjust for device pixel density
                 context.canvas.width = props.canvasWidth * ratio;
                 context.canvas.height = props.canvasHeight * ratio;
-                context.scale(ratio, ratio);
-                setScale(1);
+                context.scale(ratio * _scale, ratio * _scale);
+                setScale(_scale);
 
                 // reset state and refs
                 setContext(context);
                 setOffset(ORIGIN);
                 setMousePos(ORIGIN);
-                setViewportTopLeft(ORIGIN);
+                context.translate(-_viewportTopLeft.x, -_viewportTopLeft.y);
+                setViewportTopLeft(_viewportTopLeft);
                 lastOffsetRef.current = ORIGIN;
                 lastMousePosRef.current = ORIGIN;
 
                 // this thing is so multiple resets in a row don't clear canvas
                 isResetRef.current = true;
+                redrawCanvas();
             }
         },
         [props.canvasWidth, props.canvasHeight]
@@ -297,7 +308,7 @@ export default function Canvas({
         (event: MouseEvent) => {
             if (context) {
                 const canvasPoint = {
-                    x: (event.clientX  - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
+                    x: (event.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
                     y: (event.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
                 };
 
@@ -589,6 +600,8 @@ export default function Canvas({
             context.translate(offsetDiff.x, offsetDiff.y);
             setViewportTopLeft((prevVal) => diffPoints(prevVal, offsetDiff));
             isResetRef.current = false;
+            localStorage.setItem("viewportTopLeft", JSON.stringify(viewportTopLeft));
+            localStorage.setItem("scale", JSON.stringify(scale));
         }
     }, [context, offset, scale, containerRef.current?.getBoundingClientRect().width]);
 
@@ -636,6 +649,12 @@ export default function Canvas({
 
     // add event listener on canvas for mouse position
     useEffect(() => {
+
+        loadElements();
+        // set viewport top left
+
+
+
         const canvasElem = canvasRef.current;
         if (canvasElem === null) {
             return;
@@ -699,6 +718,8 @@ export default function Canvas({
                 setViewportTopLeft(newViewportTopLeft);
                 setScale(scale * zoom);
                 isResetRef.current = false;
+
+                localStorage.setItem("scale", JSON.stringify(scale * zoom));
             }
         }
 
@@ -706,9 +727,19 @@ export default function Canvas({
         return () => canvasElem.removeEventListener("wheel", handleWheel);
     }, [context, mousePos.x, mousePos.y, viewportTopLeft, scale]);
 
-    const keyboardHandler = useCallback(
+    const [currentKeys, setCurrentKeys] = useState<string[]>([]);
+
+    const keyboardDownHandler = useCallback(
         (event: React.KeyboardEvent<HTMLCanvasElement>) => {
-            console.log("key", event.key);
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("key", event.key, currentKeys);
+            setCurrentKeys((prev) => {
+                if (prev.includes(event.key)) {
+                    return prev;
+                }
+                return [...prev, event.key];
+            });
             if (event.key === "Delete") {
 
                 if (selectedElems.length > 0) {
@@ -742,8 +773,27 @@ export default function Canvas({
                 }
             }
         },
-        [elements, setElements, selectedElement, setSelectedElement, selectedElems, setSelectedElems, selectBox, updateNotebook]
+        [elements, setElements, selectedElement, setSelectedElement, selectedElems, setSelectedElems, selectBox, updateNotebook, currentKeys, setCurrentKeys]
     );
+
+    const keyboardUpHandler = useCallback(
+        (event: React.KeyboardEvent<HTMLCanvasElement>) => {
+            setCurrentKeys((prev) => {
+                return prev.filter((key) => key !== event.key);
+            });
+        },
+        [currentKeys, setCurrentKeys]
+    );
+
+    useEffect(() => {
+        if (currentKeys.includes("Control")) {
+            if (currentKeys.includes("z")) {
+                console.log("undo");
+            } else if (currentKeys.includes("y")) {
+                console.log("redo");
+            }
+        }
+    }, [currentKeys]);
 
     function getNewId() {
         // get new id of only 6 digits
@@ -768,6 +818,7 @@ export default function Canvas({
         // const newComponent = Object.assign(obj, components[componentKey]);
         const newComponent = clone(components[componentKey]);
         newComponent.id = getNewId();
+        newComponent.key = componentKey;
 
         // mouse position relative to canvas
         const canvasPoint = {
@@ -823,33 +874,37 @@ export default function Canvas({
         }
     }
 
+    useEffect(() => {
+        if (context) {
+            console.log("REDRAWING NEW ELEMENTS", elements);
 
+            // set getElements function for each element
+            Object.keys(elements).forEach((key) => {
+                elements[key].getElements = getElements;
+                elements[key].fixLines();
+            });
 
-    // useEffect(() => {
-    //     if (context) {
-    //         redrawCanvas();
-    //     }
-    // }, [elements, selectedElement, oldSelectedElement, selectBox]);
-
-
-
+            updateNotebook();
+            redrawCanvas();
+        }
+    }, [elements]);
 
     return (
         <div ref={containerRef} className="w-full h-full overflow-hidden border-none outline-none">
-            <div draggable={false} className="absolute pointer-events-none opacity-50 overflow-hidden" style={{
+            {/* <div draggable={false} className="absolute pointer-events-none opacity-50 overflow-hidden" style={{
                 userSelect: "none",
             }}>
-                {/* <button onClick={() => context && reset(context)}>Reset</button> */}
                 <pre>scale: {scale}</pre>
                 <pre>offset: {JSON.stringify(offset)}</pre>
                 <pre>viewportTopLeft: {JSON.stringify(viewportTopLeft)}</pre>
                 <pre>mousePos: {JSON.stringify(mousePos)}</pre>
-            </div>
+            </div> */}
             <canvas
                 tabIndex={0}
                 onDrop={dropHandler}
                 onMouseDown={interactCanvas}
-                onKeyDown={keyboardHandler}
+                onKeyDown={keyboardDownHandler}
+                onKeyUp={keyboardUpHandler}
                 ref={canvasRef}
                 width={props.canvasWidth * ratio}
                 height={props.canvasHeight * ratio}

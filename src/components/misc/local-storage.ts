@@ -3,36 +3,60 @@
 import { SerializedDockview } from "dockview-core";
 import { useContext, useEffect } from "react";
 import { StorageContext } from "./storage-context";
+import { defaultElement, Element, ElementsContext } from "../canvas/elements-context";
+import { clone } from "../tabs/notebook-utils";
+import components from "../blocks";
 
 export function useStorage() {
 
     const {
-        storage
-    } = useContext(StorageContext);
+        elements,
+        setElements
+    } = useContext(ElementsContext);
 
-    function doesExist(key: string) {
-        console.log("KEY", key, storage);
-        return storage?.getItem(key) !== null;
+    function saveElements(newElements: { [key: string]: Element }) {
+        localStorage.setItem("elements", JSON.stringify(newElements));
     }
 
-    function saveLayout(page: SerializedDockview) {
-        console.log("SAVING LAYOUT", page, storage);
-        storage?.setItem("layout", JSON.stringify(page));
+    function getElements() {
+        return elements;
     }
 
-    function loadLayout(): SerializedDockview | undefined {
-        const layout = storage?.getItem("layout");
-        if (layout) {
-            return JSON.parse(layout);
-        } else {
-            return undefined;
+    function loadElements() {
+        const elements = localStorage.getItem("elements");
+        if (elements) {
+
+            const newElements = JSON.parse(elements) as { [key: string]: Element };
+
+            Object.keys(newElements).forEach((key) => {
+                const newElement = new Element();
+
+                // assign the new element to the old element
+                newElement.fromJSON(newElements[key]);
+
+                newElement.dragging = false;
+                newElement.lining = false;
+                
+                newElement.component = clone(components[newElement.component.key!]);
+                newElement.component.id = newElement.id;
+
+                newElements[key] = newElement;
+
+            });
+
+            console.log(newElements);
+
+            Object.keys(newElements).forEach((key) => {
+                const newElement = newElements[key];
+                newElement.getElements = () => {
+                    return newElements;
+                };
+                newElement.fixLines();
+            });
+
+            setElements(newElements);
         }
     }
 
-    return {
-        doesExist,
-        saveLayout,
-        loadLayout,
-    };
-
+    return { saveElements, loadElements };
 }
