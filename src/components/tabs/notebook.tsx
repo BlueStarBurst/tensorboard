@@ -17,6 +17,7 @@ import { loadPyodide, PyodideInterface } from "pyodide";
 import { useScript } from "usehooks-ts";
 import { Cell } from "./notebook-utils";
 import { stat } from "fs";
+import { cn } from "@nextui-org/react";
 const PYODIDE_VERSION = "0.25.0";
 export function usePythonRunner() {
     const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
@@ -109,36 +110,42 @@ export default function Notebook() {
     }
 
     return (
-        <div className="w-full h-full overflow-auto scroll flex flex-col justify-start items-center">
-
-            <div className="fixed bottom-0 p-2 flex flex-row gap-1 rounded-t-lg" style={{ backgroundColor: "#252526" }}>
+        <div className="w-full h-full flex items-center justify-center">
+            <div className="absolute z-20 bottom-0 p-2 flex flex-row gap-1 rounded-t-lg" style={{ backgroundColor: "#252526" }}>
                 <FontAwesomeIcon
                     icon={faPlay}
                     onClick={runAllCellsButton}
-                    className="text-black bg-yellow-400 p-2 rounded-lg cursor-pointer w-4 h-4"
+                    className={cn("text-black bg-yellow-400 p-2 rounded-lg cursor-pointer w-4 h-4 transition-opacity", pyodide ? "" : "opacity-50")}
                 />
                 <FontAwesomeIcon
                     icon={faArrowRotateLeft}
                     onClick={restartNotebook}
-                    className="text-black bg-red-400 p-2 rounded-lg cursor-pointer w-4 h-4"
+                    className={cn("text-black bg-red-400 p-2 rounded-lg cursor-pointer w-4 h-4 transition-opacity", pyodide ? "" : "opacity-50")}
                 />
                 <FontAwesomeIcon
                     icon={faUpload}
-                    className="text-black bg-purple-400 p-2 rounded-lg cursor-pointer w-4 h-4"
+                    className={cn("text-black bg-purple-400 p-2 rounded-lg cursor-pointer w-4 h-4 transition-opacity", pyodide ? "" : "opacity-50")}
                 />
                 <FontAwesomeIcon
                     icon={faFloppyDisk}
-                    className="text-black bg-blue-400 p-2 rounded-lg cursor-pointer w-4 h-4"
+                    className={cn("text-black bg-blue-400 p-2 rounded-lg cursor-pointer w-4 h-4 transition-opacity", pyodide ? "" : "opacity-50")}
                 />
                 <FontAwesomeIcon
                     icon={faDownload}
-                    className="text-black bg-green-400 p-2 rounded-lg cursor-pointer w-4 h-4"
+                    className={cn("text-black bg-green-400 p-2 rounded-lg cursor-pointer w-4 h-4 transition-opacity", pyodide ? "" : "opacity-50")}
                 />
             </div>
+            <div className="relative w-full h-full overflow-auto pb-6 flex flex-col justify-start items-center scroll">
 
-            {notebookCells.map((cell, index) => {
-                return <NotebookCell pyodide={pyodide} cell={cell} index={index} key={cell.metadata.id} />
-            })}
+                {notebookCells.length == 0 ? <div className="w-full h-full flex flex-col p-16 text-center justify-center items-center">
+                    <p className="text-xl">No Cells to Display</p>
+                    <p className="text-gray-400">Drag and drop a block from the blocks tab to create an executable python cell</p>
+                </div> : null}
+
+                {notebookCells.map((cell, index) => {
+                    return <NotebookCell pyodide={pyodide} cell={cell} index={index} key={cell.metadata.id} />
+                })}
+            </div>
         </div>
     )
 }
@@ -159,7 +166,20 @@ export function NotebookCell({ pyodide, cell, index }: {
 
     useEffect(() => {
         setSource(cell.source.join("\n"));
-        console.log("Setting source", cell.source.join("\n"));
+        console.log("Setting source", cell.source.join("\n"), statuses[cell.metadata.id]?.status, statuses[cell.metadata.id]?.output);
+
+        // set status to not running
+        setStatuses({
+            ...statuses,
+            [cell.metadata.id]: {
+                status: "",
+                error: statuses[cell.metadata.id]?.error || "",
+                img: statuses[cell.metadata.id]?.img || "",
+                output: statuses[cell.metadata.id]?.output || "",
+                source: cell.source.join("\n"),
+            }
+        });
+
     }, [cell.source.join("\n")])
 
     useEffect(() => {
@@ -174,19 +194,19 @@ export function NotebookCell({ pyodide, cell, index }: {
             }
 
             hljs.highlightElement(codeRef.current!);
-            if (outputRef.current) {
-                if (outputRef.current!.attributes.getNamedItem("data-highlighted")) {
-                    outputRef.current!.attributes.removeNamedItem("data-highlighted");
-                }
-                hljs.highlightElement(outputRef.current!);
-            }
+            // if (outputRef.current) {
+            //     if (outputRef.current!.attributes.getNamedItem("data-highlighted")) {
+            //         outputRef.current!.attributes.removeNamedItem("data-highlighted");
+            //     }
+            //     hljs.highlightElement(outputRef.current!);
+            // }
 
-            if (errorRef.current) {
-                if (errorRef.current!.attributes.getNamedItem("data-highlighted")) {
-                    errorRef.current!.attributes.removeNamedItem("data-highlighted");
-                }
-                hljs.highlightElement(errorRef.current!);
-            }
+            // if (errorRef.current) {
+            //     if (errorRef.current!.attributes.getNamedItem("data-highlighted")) {
+            //         errorRef.current!.attributes.removeNamedItem("data-highlighted");
+            //     }
+            //     hljs.highlightElement(errorRef.current!);
+            // }
         }
 
         highlightCode();
@@ -294,6 +314,7 @@ export function NotebookCell({ pyodide, cell, index }: {
     useEffect(() => {
         if (statuses[cell.metadata.id]?.status == "running") {
             runCell();
+            codeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, [statuses[cell.metadata.id]?.status])
 
@@ -317,14 +338,18 @@ export function NotebookCell({ pyodide, cell, index }: {
             backgroundColor: cell.metadata.selected ? "#ffffff09" : "transparent"
         }}>
             <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <FontAwesomeIcon icon={faPlay} className="text-gray-500 mr-2 cursor-pointer" onClick={prepareCell} />
-                    <span className="text-sm text-gray-500">[{index + 1}]:</span>
+                <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-row items-center">
+                        <FontAwesomeIcon icon={faPlay} className="text-gray-500 mr-2 cursor-pointer" onClick={prepareCell} />
+                        <span className="text-sm text-gray-500">[{index + 1}]:</span>
 
-                    {statuses[cell.metadata.id]?.status == "running" ? <FontAwesomeIcon icon={faSpinner} className="animate-spin text-blue-500 ml-2" /> : null}
-                    {statuses[cell.metadata.id]?.status == "completed" ? <FontAwesomeIcon icon={faCheck} className="text-green-500 ml-2" /> : null}
-                    {statuses[cell.metadata.id]?.status == "error" ? <FontAwesomeIcon icon={faX} className="text-red-500 ml-2" /> : null}
-
+                        {statuses[cell.metadata.id]?.status == "running" ? <FontAwesomeIcon icon={faSpinner} className="animate-spin text-blue-500 ml-2" /> : null}
+                        {statuses[cell.metadata.id]?.status == "completed" ? <FontAwesomeIcon icon={faCheck} className="text-green-500 ml-2" /> : null}
+                        {statuses[cell.metadata.id]?.status == "error" ? <FontAwesomeIcon icon={faX} className="text-red-500 ml-2" /> : null}
+                    </div>
+                    <div>
+                        <span className="text-sm text-gray-500">{cell.metadata.id}</span>
+                    </div>
                 </div>
                 <div className="flex items-center">
 
@@ -334,10 +359,10 @@ export function NotebookCell({ pyodide, cell, index }: {
                 <pre ref={codeRef} className="python p-4 text-sm w-full overflow-auto scroll rounded-sm">
                     {source}
                 </pre>
-                {statuses[cell.metadata.id]?.status == "completed" && statuses[cell.metadata.id]?.output != "" ? <pre ref={outputRef} className="p-4 text-sm w-full overflow-auto scroll rounded-sm">
+                {statuses[cell.metadata.id]?.output && statuses[cell.metadata.id]?.output != "" ? <pre ref={outputRef} className="p-4 bg-[#181818] text-sm w-full overflow-auto scroll rounded-sm">
                     {statuses[cell.metadata.id]?.output}
                 </pre> : null}
-                {statuses[cell.metadata.id]?.status == "error" ? <pre ref={errorRef} className="p-4 text-sm w-full overflow-auto scroll rounded-sm text-red-500">
+                {statuses[cell.metadata.id]?.status == "error" ? <pre ref={errorRef} className="p-4 bg-[#181818] text-sm w-full overflow-auto scroll rounded-sm text-red-500">
                     {statuses[cell.metadata.id]?.error}
                 </pre> : null}
             </div>

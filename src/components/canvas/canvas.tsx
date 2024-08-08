@@ -254,8 +254,6 @@ export default function Canvas({
         [scale, viewportTopLeft, selectedElement]
     );
 
-
-
     const selectBoxDrag = useCallback(
         (event: MouseEvent) => {
             if (context) {
@@ -299,7 +297,7 @@ export default function Canvas({
         (event: MouseEvent) => {
             if (context) {
                 const canvasPoint = {
-                    x: (event.clientX - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
+                    x: (event.clientX  - canvasRef.current!.offsetLeft) / scale + viewportTopLeft.x,
                     y: (event.clientY - canvasRef.current!.offsetTop) / scale + viewportTopLeft.y
                 };
 
@@ -391,14 +389,10 @@ export default function Canvas({
         [panCanvas, lineElement, selectedElement]
     );
 
-
-
     const mouseUp = useCallback(() => {
         document.removeEventListener("mousemove", panCanvas);
         document.removeEventListener("mouseup", mouseUp);
     }, [panCanvas, dragElement, selectedElement]);
-
-
 
     useEffect(() => {
         if (dragging) {
@@ -841,7 +835,7 @@ export default function Canvas({
 
 
     return (
-        <div ref={containerRef} className="w-full h-full overflow-hidden">
+        <div ref={containerRef} className="w-full h-full overflow-hidden border-none outline-none">
             <div draggable={false} className="absolute pointer-events-none opacity-50 overflow-hidden" style={{
                 userSelect: "none",
             }}>
@@ -860,9 +854,10 @@ export default function Canvas({
                 width={props.canvasWidth * ratio}
                 height={props.canvasHeight * ratio}
                 style={{
-                    border: "2px solid #000",
                     width: `${props.canvasWidth}px`,
-                    height: `${props.canvasHeight}px`
+                    height: `${props.canvasHeight}px`,
+                    border: "none",
+                    outline: "none",
                 }}
                 onContextMenu={(e) => {
                     e.preventDefault();

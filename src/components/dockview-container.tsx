@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import {
     IDockviewPanelProps,
     DockviewApi,
@@ -18,6 +20,8 @@ import Notebook from "./tabs/notebook";
 import Inspector from "./tabs/inspector";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUpRightFromSquare, faMinimize, faShare } from "@fortawesome/free-solid-svg-icons";
+import { useStorage } from "./misc/local-storage";
+import { StorageContext } from "./misc/storage-context";
 
 const CustomTabRenderer = (props: IDockviewPanelHeaderProps) => {
     const api: DockviewPanelApi = props.api;
@@ -88,6 +92,7 @@ const components = {
         );
     },
     Blocks: (props: IDockviewPanelProps) => {
+
         return (
             <Blocks />
         );
@@ -116,6 +121,7 @@ const components = {
 };
 
 export default function DockViewContainer() {
+
     const api = React.useRef<DockviewApi>();
 
     const onReady = (event: DockviewReadyEvent) => {
@@ -124,6 +130,24 @@ export default function DockViewContainer() {
         // if we add panels without initially rendering the grid
         // with a size the default width and height are zero.
         event.api.layout(window.innerWidth, window.innerHeight);
+
+        event.api.onDidLayoutChange(() => {
+
+            const isMobile = window.innerWidth < 800;
+
+            if (isMobile) {
+                return;
+            }
+
+            console.log("layout changed");
+            window.localStorage.setItem("layout", JSON.stringify(event.api.toJSON()));
+        });
+
+        if (window.localStorage.getItem("layout") !== "undefined") {
+            console.log("loading layout");
+            event.api.fromJSON(JSON.parse(window.localStorage.getItem("layout")!));
+            return;
+        }
 
         const canvas = event.api.addPanel({
             id: "Canvas",
@@ -159,14 +183,48 @@ export default function DockViewContainer() {
             component: "Notebook",
             params: { color: "red" }
         });
-        
 
-        
+
+
     };
 
     React.useEffect(() => {
         const onResize = () => {
+
+            const isMobile = window.innerWidth < 800;
+            console.log("isMobile", isMobile);
+
             api.current?.layout(window.innerWidth, window.innerHeight);
+
+            if (!isMobile) {
+                if (window.localStorage.getItem("layout") !== "undefined") {
+                    console.log("loading layout");
+                    api.current?.fromJSON(JSON.parse(window.localStorage.getItem("layout")!));
+                }
+                return;
+            }
+
+            const panels = api.current?.panels;
+
+            const canvasPanel = panels?.find((panel) => panel.id === "Canvas");
+
+            const nonCanvasPanels = panels?.filter((panel) => panel.id !== "Canvas");
+
+            console.log("nonCanvasPanels", nonCanvasPanels);
+
+            const newGroup = api.current?.addGroup();
+
+            if (!newGroup) {
+                return;
+            }
+
+            for (const panel of nonCanvasPanels ?? []) {
+                panel.api.moveTo({ group: newGroup });
+            }
+
+            //move group to below canvas
+            newGroup.api.moveTo({ group: canvasPanel?.group, position: "bottom" });
+
         };
 
         window.addEventListener("resize", onResize);
