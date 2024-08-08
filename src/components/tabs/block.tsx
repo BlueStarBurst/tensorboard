@@ -1,16 +1,15 @@
 import { Component } from "../blocks";
 
 export default function Block({
-    key,
     componentKey,
     component
 }: {
-    key: number;
     componentKey: string;
     component: Component;
 }) {
 
     function dragStartHandler(event: React.DragEvent) {
+        // console.log("dragging", componentKey);
         event.dataTransfer.setData("componentKey", componentKey);
     }
 
@@ -23,6 +22,8 @@ export default function Block({
             }}
             draggable
             onDragStart={dragStartHandler}
+            onDrag={dragStartHandler}
+            onDragCapture={dragStartHandler}
         >
             <h1 className="text-sm">{component.name}</h1>
         </ div>

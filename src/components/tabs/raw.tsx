@@ -12,6 +12,7 @@ export default function Raw() {
 
     return (
         <textarea
+            readOnly
             autoCorrect="off"
             spellCheck="false"
             className="text-gray-400 scroll p-4"
